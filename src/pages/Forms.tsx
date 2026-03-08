@@ -68,7 +68,7 @@ export default function Forms() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else if (data) {
-      navigate(`/forms/${data.id}`);
+      navigate(`/forms/${data.id}/edit`);
     }
     setCreating(false);
     setDialogOpen(false);
@@ -135,7 +135,7 @@ export default function Forms() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((form) => (
-            <Card key={form.id} className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate(`/forms/${form.id}`)}>
+            <Card key={form.id} className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate(`/forms/${form.id}/edit`)}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base font-semibold line-clamp-1">{form.title}</CardTitle>
