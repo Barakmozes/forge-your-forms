@@ -56,7 +56,7 @@ export default function Submissions() {
       }
 
       const { data } = await query;
-      setSubmissions(data ?? []);
+      setSubmissions((data ?? []).map((s) => ({ ...s, data: (s.data as Record<string, unknown>) ?? {} })));
       setLoading(false);
     };
     fetchSubmissions();
