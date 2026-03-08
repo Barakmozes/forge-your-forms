@@ -31,7 +31,7 @@ const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
-    <Route path="/forms/:id" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
+    <Route path="/forms/:id/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
