@@ -68,7 +68,7 @@ export default function Forms() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else if (data) {
-      navigate(`/forms/${data.id}`);
+      navigate(`/forms/${data.id}/edit`);
     }
     setCreating(false);
     setDialogOpen(false);
