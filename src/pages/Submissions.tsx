@@ -17,6 +17,14 @@ interface Submission {
   submitted_at: string;
 }
 
+type RawSubmission = {
+  id: string;
+  form_id: string;
+  data: Record<string, unknown>;
+  submitted_by_email: string | null;
+  submitted_at: string;
+}
+
 export default function Submissions() {
   const { currentWorkspace } = useWorkspace();
   const [forms, setForms] = useState<FormOption[]>([]);
