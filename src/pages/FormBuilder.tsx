@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Copy, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft } from "lucide-react";
+import { ArrowLeft, Save, Copy, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2, ExternalLink } from "lucide-react";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import FormResponsesTab from "@/components/FormResponsesTab";
 
 type FieldType = "text" | "textarea" | "number" | "email" | "phone" | "date" | "select" | "multi_select" | "checkbox" | "radio" | "file_upload" | "section_header" | "paragraph_text";
 
