@@ -8,6 +8,8 @@ import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import Auth from "./pages/Auth";
 import Forms from "./pages/Forms";
 import FormBuilder from "./pages/FormBuilder";
+import FormPreview from "./pages/FormPreview";
+import PublicForm from "./pages/PublicForm";
 import Submissions from "./pages/Submissions";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +34,8 @@ const AppRoutes = () => (
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
     <Route path="/forms/:id/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
+    <Route path="/forms/:id/preview" element={<ProtectedRoute><FormPreview /></ProtectedRoute>} />
+    <Route path="/f/:id" element={<PublicForm />} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

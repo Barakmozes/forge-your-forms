@@ -1,0 +1,154 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { FormRenderer, FormField } from "@/components/FormRenderer";
+import { FileText, AlertCircle } from "lucide-react";
+
+interface FormData {
+  id: string;
+  title: string;
+  description: string | null;
+  fields: FormField[];
+  status: string;
+}
+
+export default function PublicForm() {
+  const { id } = useParams<{ id: string }>();
+  const [form, setForm] = useState<FormData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from("forms")
+      .select("id, title, description, fields, status")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setNotFound(true);
+        } else {
+          setForm({
+            ...data,
+            fields: Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : [],
+          });
+        }
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <p className="text-sm">Loading form...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !form) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">Form not found</h1>
+          <p className="text-sm text-muted-foreground">
+            This form doesn't exist or may have been removed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (form.status === "closed") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">
+            This form is no longer accepting responses
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            The form has been closed by its creator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (form.status === "draft") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">
+            This form is not yet available
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            This form is still a draft and not open for submissions.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Top accent bar */}
+      <div className="h-1 bg-primary w-full" />
+
+      <div className="max-w-2xl mx-auto px-4 py-12 sm:py-16">
+        {/* Form Header */}
+        <div className="mb-10 space-y-3">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="h-4 w-4 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            {form.title}
+          </h1>
+          {form.description && (
+            <p className="text-muted-foreground text-base leading-relaxed">
+              {form.description}
+            </p>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-border mb-10" />
+
+        {/* Form Fields */}
+        {form.fields.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <p className="text-sm">This form has no fields yet.</p>
+          </div>
+        ) : (
+          <FormRenderer
+            fields={form.fields}
+            formId={form.id}
+            isPreview={false}
+          />
+        )}
+
+        {/* Footer */}
+        <div className="mt-12 pt-6 border-t text-center">
+          <p className="text-xs text-muted-foreground">
+            Powered by <span className="font-medium text-foreground">FormForge</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

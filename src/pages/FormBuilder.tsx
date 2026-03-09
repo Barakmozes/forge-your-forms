@@ -271,9 +271,9 @@ export default function FormBuilder() {
   };
 
   const copyShareLink = () => {
-    const url = `${window.location.origin}/forms/${id}/submit`;
+    const url = `${window.location.origin}/f/${id}`;
     navigator.clipboard.writeText(url);
-    toast({ title: "Link copied to clipboard!" });
+    toast({ title: "Share link copied!", description: "Anyone with this link can submit the form." });
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -312,7 +312,7 @@ export default function FormBuilder() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/submit`, '_blank')}>
+          <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/preview`, '_blank')}>
             <Eye className="h-4 w-4" /> Preview
           </Button>
           
