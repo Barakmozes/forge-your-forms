@@ -545,6 +545,8 @@ export default function FormBuilder() {
           ) : null}
         </DragOverlay>
       </DndContext>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
