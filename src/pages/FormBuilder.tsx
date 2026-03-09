@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Copy, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft } from "lucide-react";
+import { ArrowLeft, Save, Copy, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2, ExternalLink } from "lucide-react";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import FormResponsesTab from "@/components/FormResponsesTab";
 
 type FieldType = "text" | "textarea" | "number" | "email" | "phone" | "date" | "select" | "multi_select" | "checkbox" | "radio" | "file_upload" | "section_header" | "paragraph_text";
 
@@ -326,6 +328,23 @@ export default function FormBuilder() {
         </div>
       </header>
 
+      <Tabs defaultValue="build" className="flex flex-col flex-1 overflow-hidden">
+        <div className="border-b bg-background px-4 shrink-0">
+          <TabsList className="h-9 bg-transparent gap-1 p-0">
+            <TabsTrigger value="build" className="h-9 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm gap-2 px-3">
+              <LayoutTemplate className="h-3.5 w-3.5" /> Build
+            </TabsTrigger>
+            <TabsTrigger value="responses" className="h-9 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm gap-2 px-3">
+              <BarChart2 className="h-3.5 w-3.5" /> Responses
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="responses" className="flex-1 overflow-y-auto m-0 data-[state=inactive]:hidden">
+          {id && <FormResponsesTab formId={id} fields={fields} />}
+        </TabsContent>
+
+        <TabsContent value="build" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex flex-1 overflow-hidden">
           
@@ -526,6 +545,8 @@ export default function FormBuilder() {
           ) : null}
         </DragOverlay>
       </DndContext>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

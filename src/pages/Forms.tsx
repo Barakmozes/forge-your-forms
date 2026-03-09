@@ -7,7 +7,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, MoreHorizontal } from "lucide-react";
+import { Plus, FileText, Inbox } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,27 @@ export default function Forms() {
       setLoading(false);
     };
     fetchForms();
+
+    // Real-time: update submission_count when new submissions arrive
+    const channel = supabase
+      .channel(`workspace-submissions-${currentWorkspace.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "submissions" },
+        (payload) => {
+          const newSub = payload.new as { form_id: string };
+          setForms((prev) =>
+            prev.map((f) =>
+              f.id === newSub.form_id
+                ? { ...f, submission_count: f.submission_count + 1 }
+                : f
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [currentWorkspace]);
 
   const createForm = async () => {
@@ -135,7 +156,11 @@ export default function Forms() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {forms.map((form) => (
-            <Card key={form.id} className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate(`/forms/${form.id}/edit`)}>
+            <Card
+              key={form.id}
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => navigate(`/forms/${form.id}/edit`)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base font-semibold line-clamp-1">{form.title}</CardTitle>
@@ -146,9 +171,24 @@ export default function Forms() {
                 {form.description && <CardDescription className="line-clamp-2 mt-1">{form.description}</CardDescription>}
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{form.submission_count} submission{form.submission_count !== 1 ? "s" : ""}</span>
-                  <span>Updated {new Date(form.updated_at).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between">
+                  <button
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/forms/${form.id}/submissions`);
+                    }}
+                    title="View submissions"
+                  >
+                    <Inbox className="h-3.5 w-3.5" />
+                    <span className="font-medium tabular-nums">
+                      {form.submission_count}
+                    </span>
+                    <span>{form.submission_count === 1 ? "response" : "responses"}</span>
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    Updated {new Date(form.updated_at).toLocaleDateString()}
+                  </span>
                 </div>
               </CardContent>
             </Card>

@@ -37,6 +37,7 @@ const AppRoutes = () => (
     <Route path="/forms/:id/preview" element={<ProtectedRoute><FormPreview /></ProtectedRoute>} />
     <Route path="/f/:id" element={<PublicForm />} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
+    <Route path="/forms/:id/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
