@@ -413,7 +413,7 @@ export function FormRenderer({ fields, formId, isPreview = false, onSubmitSucces
 
       const { error } = await supabase
         .from("submissions")
-        .insert({ form_id: formId, data: resolvedData });
+        .insert([{ form_id: formId, data: resolvedData as import("@/integrations/supabase/types").Json }]);
 
       if (error) throw error;
 
