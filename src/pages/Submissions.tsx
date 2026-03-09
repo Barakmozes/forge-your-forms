@@ -67,7 +67,7 @@ export default function Submissions() {
         const mapped = (data ?? []).map((f) => ({
           id: f.id,
           title: f.title,
-          fields: (Array.isArray(f.fields) ? f.fields : []) as FormField[],
+          fields: (Array.isArray(f.fields) ? f.fields : []) as unknown as FormField[],
         }));
         setForms(mapped);
         if (preFilterFormId && !selectedFormId) setSelectedFormId(preFilterFormId);
