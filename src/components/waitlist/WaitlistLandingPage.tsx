@@ -48,6 +48,7 @@ export default function WaitlistLandingPage({
   const showPosition = settings?.showPosition !== false;
   const showCount = settings?.showCount !== false;
   const enableReferrals = settings?.enableReferrals !== false;
+  const referralBoost = typeof settings?.referral_boost === "number" ? settings.referral_boost : 0;
 
   const primaryColor = branding?.primaryColor ?? "";
   const backgroundColor = branding?.backgroundColor ?? "";
@@ -416,6 +417,11 @@ export default function WaitlistLandingPage({
                         Share to move up the list
                       </p>
                     </div>
+                    {referralBoost > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Each referral moves you up {referralBoost} {referralBoost === 1 ? "spot" : "spots"}!
+                      </p>
+                    )}
 
                     {/* Referral link copy */}
                     <div className="flex gap-2">

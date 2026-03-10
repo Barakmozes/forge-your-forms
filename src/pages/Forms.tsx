@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { useForms } from "@/hooks/useForms";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,17 +23,6 @@ import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
 
-interface Form {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  mode: FormMode;
-  submission_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
 const MODE_CONFIG: Record<FormMode, { label: string; icon: React.ElementType; color: string; badgeClass: string; description: string; available: boolean }> = {
   standard: { label: "Standard Form", icon: ClipboardList, color: "border-blue-500/50 bg-blue-500/5", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Collect responses with custom fields", available: true },
   waitlist: { label: "Waitlist", icon: Users, color: "border-purple-500/50 bg-purple-500/5", badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Capture leads with referral tracking", available: true },
@@ -52,67 +41,47 @@ function ModeBadge({ mode }: { mode: FormMode }) {
 
 export default function Forms() {
   const { currentWorkspace } = useWorkspace();
-  const { user } = useAuth();
-  const [forms, setForms] = useState<Form[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { forms, isLoading, refetch } = useForms();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [selectedMode, setSelectedMode] = useState<FormMode>("standard");
-  const [creating, setCreating] = useState(false);
+  const { createForm } = useForms();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Real-time: refetch when new submissions arrive to update counts
   useEffect(() => {
     if (!currentWorkspace) return;
-    const fetchForms = async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("forms")
-        .select("id, title, description, status, mode, submission_count, created_at, updated_at")
-        .eq("workspace_id", currentWorkspace.id)
-        .order("updated_at", { ascending: false });
-      setForms(data ?? []);
-      setLoading(false);
-    };
-    fetchForms();
-
-    // Real-time: update submission_count when new submissions arrive
     const channel = supabase
       .channel(`workspace-submissions-${currentWorkspace.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "submissions" },
-        (payload) => {
-          const newSub = payload.new as { form_id: string };
-          setForms((prev) =>
-            prev.map((f) =>
-              f.id === newSub.form_id
-                ? { ...f, submission_count: f.submission_count + 1 }
-                : f
-            )
-          );
+        () => {
+          refetch();
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentWorkspace]);
+  }, [currentWorkspace, refetch]);
 
-  const createForm = async () => {
-    if (!currentWorkspace || !user || !newTitle.trim()) return;
-    setCreating(true);
-    const { data, error } = await supabase
-      .from("forms")
-      .insert({ workspace_id: currentWorkspace.id, created_by: user.id, title: newTitle.trim(), description: newDesc.trim() || null, mode: selectedMode })
-      .select("id")
-      .single();
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else if (data) {
-      navigate(`/forms/${data.id}/edit`);
+  const handleCreate = async () => {
+    if (!newTitle.trim()) return;
+    try {
+      const result = await createForm.mutateAsync({
+        title: newTitle,
+        description: newDesc || null,
+        mode: selectedMode,
+      });
+      if (result) {
+        navigate(`/forms/${result.id}/edit`);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create form";
+      toast({ title: "Error", description: message, variant: "destructive" });
     }
-    setCreating(false);
     setDialogOpen(false);
     setSelectedMode("standard");
     setNewTitle("");
@@ -179,15 +148,15 @@ export default function Forms() {
                 <Label>Description (optional)</Label>
                 <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="What's this form for?" rows={3} />
               </div>
-              <Button onClick={createForm} disabled={creating || !newTitle.trim()} className="w-full">
-                {creating ? "Creating..." : "Create Form"}
+              <Button onClick={handleCreate} disabled={createForm.isPending || !newTitle.trim()} className="w-full">
+                {createForm.isPending ? "Creating..." : "Create Form"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">

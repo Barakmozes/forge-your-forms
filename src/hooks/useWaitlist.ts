@@ -33,8 +33,30 @@ export function useWaitlist(formId: string) {
         { event: "INSERT", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
         (payload) => {
           const newEntry = payload.new as WaitlistEntry;
-          setEntries((prev) => [...prev, newEntry]);
+          setEntries((prev) => {
+            if (prev.some((e) => e.id === newEntry.id)) return prev;
+            return [...prev, newEntry];
+          });
           setTotalCount((prev) => prev + 1);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          const updated = payload.new as WaitlistEntry;
+          setEntries((prev) =>
+            prev.map((e) => (e.id === updated.id ? updated : e))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          const deletedId = (payload.old as { id: string }).id;
+          setEntries((prev) => prev.filter((e) => e.id !== deletedId));
+          setTotalCount((prev) => Math.max(0, prev - 1));
         }
       )
       .subscribe();
@@ -133,9 +155,10 @@ export function useWaitlist(formId: string) {
     return { error };
   };
 
-  const exportCSV = () => {
+  const exportCSV = (filteredEntries?: WaitlistEntry[]) => {
+    const data = filteredEntries ?? entries;
     const headers = ["Position", "Email", "Name", "Referral Code", "Referral Count", "Status", "Joined"];
-    const rows = entries.map((e) => [
+    const rows = data.map((e) => [
       e.position,
       e.email,
       e.name ?? "",
@@ -154,6 +177,18 @@ export function useWaitlist(formId: string) {
     URL.revokeObjectURL(url);
   };
 
+  const exportEmailsOnly = (filteredEntries?: WaitlistEntry[]) => {
+    const data = filteredEntries ?? entries;
+    const emails = data.map((e) => e.email).join("\n");
+    const blob = new Blob([emails], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `waitlist-emails-${formId}-${new Date().toISOString().split("T")[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return {
     entries,
     loading,
@@ -163,6 +198,7 @@ export function useWaitlist(formId: string) {
     bulkInvite,
     deleteEntry,
     exportCSV,
+    exportEmailsOnly,
     refetch: fetchEntries,
   };
 }

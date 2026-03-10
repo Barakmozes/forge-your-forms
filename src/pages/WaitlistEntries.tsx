@@ -21,7 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Download, Mail, Search, Trash2, Users } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Download, FileText, Mail, Search, Trash2, Users } from "lucide-react";
 import { useWaitlist } from "@/hooks/useWaitlist";
 import { toast } from "sonner";
 
@@ -35,13 +36,16 @@ const STATUS_COLORS: Record<string, string> = {
 export default function WaitlistEntries() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { entries, loading, totalCount, bulkInvite, deleteEntry, exportCSV } = useWaitlist(id ?? "");
+  const { entries, loading, totalCount, bulkInvite, deleteEntry, exportCSV, exportEmailsOnly } = useWaitlist(id ?? "");
 
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [inviteTopNOpen, setInviteTopNOpen] = useState(false);
+  const [topN, setTopN] = useState(10);
+  const [topNMessage, setTopNMessage] = useState("");
 
   const filtered = entries.filter(
     (e) =>
@@ -80,6 +84,32 @@ export default function WaitlistEntries() {
       setSelected(new Set());
       setInviteDialogOpen(false);
       setInviteMessage("");
+    }
+    setInviting(false);
+  };
+
+  const handleInviteTopN = async () => {
+    const waitingEntries = entries
+      .filter((e) => e.status === "waiting")
+      .sort((a, b) => a.position - b.position)
+      .slice(0, topN);
+
+    if (waitingEntries.length === 0) {
+      toast.info("No waiting entries to invite");
+      return;
+    }
+
+    setInviting(true);
+    const { error } = await bulkInvite(
+      waitingEntries.map((e) => e.id),
+      topNMessage.trim() || undefined
+    );
+    if (error) {
+      toast.error("Failed to send invites: " + error.message);
+    } else {
+      toast.success(`Invited top ${waitingEntries.length} entries`);
+      setInviteTopNOpen(false);
+      setTopNMessage("");
     }
     setInviting(false);
   };
@@ -135,8 +165,20 @@ export default function WaitlistEntries() {
                   Invite ({selected.size})
                 </Button>
               )}
-              <Button variant="outline" size="sm" className="gap-2" onClick={exportCSV}>
-                <Download className="h-4 w-4" /> Export
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setInviteTopNOpen(true)}
+              >
+                <Users className="h-4 w-4" />
+                Invite Top N
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportCSV(filtered)}>
+                <Download className="h-4 w-4" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportEmailsOnly(filtered)}>
+                <FileText className="h-4 w-4" /> Emails
               </Button>
             </div>
           </div>
@@ -220,7 +262,7 @@ export default function WaitlistEntries() {
         </CardContent>
       </Card>
 
-      {/* Invite Dialog */}
+      {/* Invite Selected Dialog */}
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -228,7 +270,7 @@ export default function WaitlistEntries() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Message (optional)</label>
+              <Label>Message (optional)</Label>
               <Textarea
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
@@ -243,6 +285,47 @@ export default function WaitlistEntries() {
             >
               <Mail className="h-4 w-4" />
               {inviting ? "Sending..." : `Send Invites (${selected.size})`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Top N Dialog */}
+      <Dialog open={inviteTopNOpen} onOpenChange={setInviteTopNOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Top Entries</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Number of entries to invite</Label>
+              <Input
+                type="number"
+                min={1}
+                max={entries.filter((e) => e.status === "waiting").length || 1}
+                value={topN}
+                onChange={(e) => setTopN(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+              <p className="text-xs text-muted-foreground">
+                {entries.filter((e) => e.status === "waiting").length} waiting entries available
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Message (optional)</Label>
+              <Textarea
+                value={topNMessage}
+                onChange={(e) => setTopNMessage(e.target.value)}
+                placeholder="Add a personal message to include with the invite..."
+                rows={3}
+              />
+            </div>
+            <Button
+              onClick={handleInviteTopN}
+              disabled={inviting}
+              className="w-full gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              {inviting ? "Sending..." : `Invite Top ${topN}`}
             </Button>
           </div>
         </DialogContent>

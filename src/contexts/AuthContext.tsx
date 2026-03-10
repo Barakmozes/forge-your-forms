@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useErrorHandler } from "@/hooks/useErrorHandler";
 
 interface AuthContextType {
   session: Session | null;
@@ -21,6 +22,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { handleAsync } = useErrorHandler();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -39,7 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await handleAsync(() => supabase.auth.signOut(), {
+      context: { component: "AuthProvider", action: "signOut" },
+      errorMessage: "Failed to sign out. Please try again.",
+    });
   };
 
   return (

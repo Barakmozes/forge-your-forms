@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Auth from "./pages/Auth";
+import Index from "./pages/Index";
 import Forms from "./pages/Forms";
 import FormBuilder from "./pages/FormBuilder";
 import FormPreview from "./pages/FormPreview";
@@ -34,10 +36,21 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// === AGENT 4 ROUTES — Homepage dispatch: landing (anon) vs dashboard (auth) ===
+function HomepageRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  if (user) return <Forms />;
+  return <Index />;
+}
+// === END AGENT 4 ROUTES ===
+
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-    <Route path="/" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
+    {/* === AGENT 4 ROUTES — "/" shows landing or dashboard based on auth === */}
+    <Route path="/" element={<HomepageRoute />} />
+    {/* === END AGENT 4 ROUTES === */}
     <Route path="/forms/:id" element={<ProtectedRoute><FormDashboard /></ProtectedRoute>} />
     <Route path="/forms/:id/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
     <Route path="/forms/:id/preview" element={<ProtectedRoute><FormPreview /></ProtectedRoute>} />
@@ -60,7 +73,11 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <WorkspaceProvider>
-            <AppRoutes />
+            {/* === AGENT 1: ErrorBoundary wraps all routes === */}
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
+            {/* === END AGENT 1 === */}
           </WorkspaceProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useSubmissions } from "@/hooks/useSubmissions";
+import { usePagination } from "@/hooks/usePagination";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Search, Download, Eye, ArrowLeft, Calendar } from "lucide-react";
-import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
+import { Inbox, Search, Download, Eye, ArrowLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 
 interface FormField {
   id: string;
@@ -25,14 +27,6 @@ interface FormOption {
   fields: FormField[];
 }
 
-interface Submission {
-  id: string;
-  form_id: string;
-  data: Record<string, unknown>;
-  submitted_by_email: string | null;
-  submitted_at: string;
-}
-
 function formatValue(value: unknown, type?: string): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) return value.join(", ");
@@ -41,23 +35,25 @@ function formatValue(value: unknown, type?: string): string {
   return String(value);
 }
 
+const PAGE_SIZE = 25;
+
 export default function Submissions() {
   const { id: preFilterFormId } = useParams<{ id?: string }>();
   const { currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
 
   const [forms, setForms] = useState<FormOption[]>([]);
+  const [formsLoading, setFormsLoading] = useState(true);
   const [selectedFormId, setSelectedFormId] = useState<string>(preFilterFormId ?? "all");
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [selectedSub, setSelectedSub] = useState<Submission | null>(null);
+  const [selectedSub, setSelectedSub] = useState<ReturnType<typeof useSubmissions>["submissions"][number] | null>(null);
 
-  // Load forms with their fields
+  // Load forms with their fields (for column headers + form selector)
   useEffect(() => {
     if (!currentWorkspace) return;
+    setFormsLoading(true);
     supabase
       .from("forms")
       .select("id, title, fields")
@@ -70,36 +66,67 @@ export default function Submissions() {
           fields: (Array.isArray(f.fields) ? f.fields : []) as unknown as FormField[],
         }));
         setForms(mapped);
-        if (preFilterFormId && !selectedFormId) setSelectedFormId(preFilterFormId);
+        setFormsLoading(false);
       });
   }, [currentWorkspace]);
 
-  // Load submissions
+  const formIds = useMemo(() => forms.map((f) => f.id), [forms]);
+
+  const effectiveFormId = selectedFormId === "all" ? null : selectedFormId;
+
+  const { submissions, totalCount, isLoading: subsLoading, refetch } = useSubmissions(
+    effectiveFormId,
+    formIds,
+    1, // We fetch all for the current filter, paginate client-side after filtering
+    1000 // Large page to get all, then client-side paginate after search/date filter
+  );
+
+  // Client-side filtering (search + date range)
+  const filtered = useMemo(() => {
+    return submissions.filter((sub) => {
+      if (search) {
+        const hay = [
+          sub.submitted_by_email ?? "",
+          ...Object.values(sub.data).map((v) => String(v ?? "")),
+        ].join(" ").toLowerCase();
+        if (!hay.includes(search.toLowerCase())) return false;
+      }
+      if (dateFrom || dateTo) {
+        const dt = parseISO(sub.submitted_at);
+        if (dateFrom && dt < startOfDay(parseISO(dateFrom))) return false;
+        if (dateTo && dt > endOfDay(parseISO(dateTo))) return false;
+      }
+      return true;
+    });
+  }, [submissions, search, dateFrom, dateTo]);
+
+  // Paginate the filtered results
+  const pagination = usePagination(filtered.length, PAGE_SIZE);
+  const paginatedSubmissions = useMemo(
+    () => filtered.slice(pagination.range.from, pagination.range.to + 1),
+    [filtered, pagination.range]
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    pagination.setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, dateFrom, dateTo, selectedFormId]);
+
+  // Realtime: refetch when new submissions arrive
   useEffect(() => {
     if (!currentWorkspace) return;
-    const fetch = async () => {
-      setLoading(true);
-      let query = supabase
-        .from("submissions")
-        .select("id, form_id, data, submitted_by_email, submitted_at")
-        .order("submitted_at", { ascending: false });
+    const channel = supabase
+      .channel(`submissions-realtime-${currentWorkspace.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "submissions" },
+        () => { refetch(); }
+      )
+      .subscribe();
 
-      if (selectedFormId !== "all") {
-        query = query.eq("form_id", selectedFormId);
-      } else {
-        const ids = forms.map((f) => f.id);
-        if (ids.length > 0) query = query.in("form_id", ids);
-        else { setSubmissions([]); setLoading(false); return; }
-      }
-
-      const { data } = await query;
-      setSubmissions(
-        (data ?? []).map((s) => ({ ...s, data: (s.data as Record<string, unknown>) ?? {} }))
-      );
-      setLoading(false);
-    };
-    if (forms.length > 0 || selectedFormId !== "all") fetch();
-  }, [currentWorkspace, selectedFormId, forms]);
+    return () => { supabase.removeChannel(channel); };
+  }, [currentWorkspace, refetch]);
 
   const currentForm = useMemo(
     () => forms.find((f) => f.id === selectedFormId),
@@ -108,7 +135,6 @@ export default function Submissions() {
 
   const displayFields = useMemo((): FormField[] => {
     if (currentForm) return currentForm.fields.filter((f) => !["section_header", "paragraph_text"].includes(f.type));
-    // Merge all fields across all forms when "all" is selected
     const seen = new Set<string>();
     const out: FormField[] = [];
     for (const f of forms) {
@@ -119,28 +145,8 @@ export default function Submissions() {
         }
       }
     }
-    return out.slice(0, 8); // cap columns in multi-form view
+    return out.slice(0, 8);
   }, [currentForm, forms]);
-
-  const filtered = useMemo(() => {
-    return submissions.filter((sub) => {
-      // Search
-      if (search) {
-        const hay = [
-          sub.submitted_by_email ?? "",
-          ...Object.values(sub.data).map((v) => String(v ?? "")),
-        ].join(" ").toLowerCase();
-        if (!hay.includes(search.toLowerCase())) return false;
-      }
-      // Date range
-      if (dateFrom || dateTo) {
-        const dt = parseISO(sub.submitted_at);
-        if (dateFrom && dt < startOfDay(parseISO(dateFrom))) return false;
-        if (dateTo && dt > endOfDay(parseISO(dateTo))) return false;
-      }
-      return true;
-    });
-  }, [submissions, search, dateFrom, dateTo]);
 
   const exportCSV = () => {
     const headers = [
@@ -177,6 +183,8 @@ export default function Submissions() {
   const getFormTitle = (id: string) => forms.find((f) => f.id === id)?.title ?? "Unknown";
   const getFormFields = (formId: string) =>
     forms.find((f) => f.id === formId)?.fields.filter((f) => !["section_header", "paragraph_text"].includes(f.type)) ?? [];
+
+  const loading = formsLoading || subsLoading;
 
   return (
     <AppLayout>
@@ -272,24 +280,23 @@ export default function Submissions() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {selectedFormId === "all" && <TableHead className="whitespace-nowrap">Form</TableHead>}
-                  {displayFields.map((f) => (
-                    <TableHead key={f.id} className="whitespace-nowrap min-w-[140px]">{f.label}</TableHead>
-                  ))}
-                  <TableHead className="whitespace-nowrap">Submitted By</TableHead>
-                  <TableHead className="whitespace-nowrap">Submitted At</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((sub) => {
-                  const rowFields = selectedFormId === "all" ? getFormFields(sub.form_id) : displayFields;
-                  return (
+        <>
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {selectedFormId === "all" && <TableHead className="whitespace-nowrap">Form</TableHead>}
+                    {displayFields.map((f) => (
+                      <TableHead key={f.id} className="whitespace-nowrap min-w-[140px]">{f.label}</TableHead>
+                    ))}
+                    <TableHead className="whitespace-nowrap">Submitted By</TableHead>
+                    <TableHead className="whitespace-nowrap">Submitted At</TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSubmissions.map((sub) => (
                     <TableRow
                       key={sub.id}
                       className="cursor-pointer"
@@ -328,12 +335,42 @@ export default function Submissions() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {pagination.range.from + 1}–{Math.min(pagination.range.to + 1, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={pagination.prevPage}
+                  disabled={!pagination.hasPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={pagination.nextPage}
+                  disabled={!pagination.hasNext}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Detail Slide-over */}
