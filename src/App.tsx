@@ -18,6 +18,8 @@ import WaitlistEntries from "./pages/WaitlistEntries";
 import TicketDetailPage from "./pages/TicketDetail";
 import TicketTracking from "./pages/TicketTracking";
 import CannedResponses from "./pages/CannedResponses";
+import Pricing from "./pages/Pricing";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,9 @@ const AppRoutes = () => (
     {/* === AGENT 4 ROUTES — "/" shows landing or dashboard based on auth === */}
     <Route path="/" element={<HomepageRoute />} />
     {/* === END AGENT 4 ROUTES === */}
+    {/* === AGENT 4 ROUTES — Public pricing page === */}
+    <Route path="/pricing" element={<Pricing />} />
+    {/* === END AGENT 4 ROUTES === */}
     <Route path="/forms/:id" element={<ProtectedRoute><FormDashboard /></ProtectedRoute>} />
     <Route path="/forms/:id/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
     <Route path="/forms/:id/preview" element={<ProtectedRoute><FormPreview /></ProtectedRoute>} />
@@ -58,6 +63,9 @@ const AppRoutes = () => (
     <Route path="/forms/:id/tickets/:ticketId" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
     <Route path="/f/:id" element={<PublicForm />} />
     <Route path="/track/:formId" element={<TicketTracking />} />
+    {/* === AGENT 1 ROUTES === */}
+    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+    {/* === END AGENT 1 ROUTES === */}
     <Route path="/canned-responses" element={<ProtectedRoute><CannedResponses /></ProtectedRoute>} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="/forms/:id/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />

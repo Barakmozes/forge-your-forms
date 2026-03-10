@@ -38,7 +38,29 @@ export function useFeedback(formId: string) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "feedback_responses", filter: `form_id=eq.${formId}` },
         (payload) => {
-          setResponses((prev) => [payload.new as FeedbackResponse, ...prev]);
+          const newResponse = payload.new as FeedbackResponse;
+          setResponses((prev) => {
+            if (prev.some((r) => r.id === newResponse.id)) return prev;
+            return [newResponse, ...prev];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "feedback_responses", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          const updated = payload.new as FeedbackResponse;
+          setResponses((prev) =>
+            prev.map((r) => (r.id === updated.id ? updated : r))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "feedback_responses", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          const deletedId = (payload.old as { id: string }).id;
+          setResponses((prev) => prev.filter((r) => r.id !== deletedId));
         }
       )
       .subscribe();

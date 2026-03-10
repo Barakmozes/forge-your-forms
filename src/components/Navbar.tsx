@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, User } from "lucide-react";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, User, Settings } from "lucide-react";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -71,6 +71,14 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* === AGENT 1: Settings link === */}
+          <Link to="/settings">
+            <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
+          {/* === END AGENT 1 === */}
 
           {/* User menu */}
           <DropdownMenu>

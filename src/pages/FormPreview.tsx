@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye } from "lucide-react";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
+import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 
 interface FormData {
   id: string;
@@ -11,6 +12,7 @@ interface FormData {
   description: string | null;
   fields: FormField[];
   status: string;
+  settings: FormSettings;
 }
 
 export default function FormPreview() {
@@ -23,7 +25,7 @@ export default function FormPreview() {
     if (!id) return;
     supabase
       .from("forms")
-      .select("id, title, description, fields, status")
+      .select("id, title, description, fields, status, settings")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -34,6 +36,7 @@ export default function FormPreview() {
         setForm({
           ...data,
           fields: Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : [],
+          settings: (data.settings as FormSettings) ?? {},
         });
         setLoading(false);
       });
@@ -97,6 +100,7 @@ export default function FormPreview() {
             fields={form.fields}
             formId={form.id}
             isPreview={true}
+            settings={form.settings}
           />
         )}
       </div>

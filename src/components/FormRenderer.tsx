@@ -10,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { UploadCloud, X, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { evaluateCondition, type FieldCondition } from "@/components/builder/ConditionalLogic";
+import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 
 export type FieldType =
   | "text"
@@ -39,7 +41,11 @@ export interface FormField {
     max?: number;
     minLength?: number;
     maxLength?: number;
+    phonePattern?: string;
+    maxFileSize?: number;
+    allowedFileTypes?: string[];
   };
+  condition?: FieldCondition;
 }
 
 export type FormValues = Record<string, string | string[] | File | null>;
@@ -311,6 +317,10 @@ export function validateFields(
 
   for (const field of fields) {
     if (["section_header", "paragraph_text"].includes(field.type)) continue;
+
+    // Skip hidden fields (conditional logic)
+    if (!evaluateCondition(field.condition, values)) continue;
+
     const value = values[field.id];
     const isEmpty =
       value === undefined ||
@@ -329,6 +339,17 @@ export function validateFields(
       }
     }
 
+    if (!isEmpty && field.type === "phone" && typeof value === "string") {
+      const pattern = field.validation.phonePattern || "^[+]?[\\d\\s()-]{7,20}$";
+      try {
+        if (!new RegExp(pattern).test(value)) {
+          errors[field.id] = "Please enter a valid phone number.";
+        }
+      } catch {
+        // Invalid regex — skip validation
+      }
+    }
+
     if (!isEmpty && field.type === "number" && typeof value === "string") {
       const num = parseFloat(value);
       if (field.validation.min !== undefined && num < field.validation.min)
@@ -342,6 +363,18 @@ export function validateFields(
         errors[field.id] = `Minimum ${field.validation.minLength} characters required.`;
       if (field.validation.maxLength && value.length > field.validation.maxLength)
         errors[field.id] = `Maximum ${field.validation.maxLength} characters allowed.`;
+    }
+
+    if (!isEmpty && field.type === "file_upload" && value instanceof File) {
+      if (field.validation.maxFileSize && value.size > field.validation.maxFileSize * 1024 * 1024) {
+        errors[field.id] = `File must be smaller than ${field.validation.maxFileSize} MB.`;
+      }
+      if (field.validation.allowedFileTypes && field.validation.allowedFileTypes.length > 0) {
+        const ext = value.name.split(".").pop()?.toLowerCase() ?? "";
+        if (!field.validation.allowedFileTypes.includes(ext)) {
+          errors[field.id] = `Allowed file types: ${field.validation.allowedFileTypes.join(", ")}`;
+        }
+      }
     }
   }
 
@@ -367,10 +400,11 @@ interface FormRendererProps {
   fields: FormField[];
   formId: string;
   isPreview?: boolean;
+  settings?: FormSettings;
   onSubmitSuccess?: () => void;
 }
 
-export function FormRenderer({ fields, formId, isPreview = false, onSubmitSuccess }: FormRendererProps) {
+export function FormRenderer({ fields, formId, isPreview = false, settings, onSubmitSuccess }: FormRendererProps) {
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -417,6 +451,10 @@ export function FormRenderer({ fields, formId, isPreview = false, onSubmitSucces
 
       if (error) throw error;
 
+      if (settings?.redirectUrl) {
+        window.location.href = settings.redirectUrl;
+        return;
+      }
       setSubmitted(true);
       onSubmitSuccess?.();
     } catch (err: unknown) {
@@ -435,7 +473,7 @@ export function FormRenderer({ fields, formId, isPreview = false, onSubmitSucces
         </div>
         <h2 className="text-2xl font-semibold text-foreground">Response submitted!</h2>
         <p className="text-muted-foreground max-w-sm">
-          Thank you — your response has been recorded successfully.
+          {settings?.thankYouMessage || "Thank you — your response has been recorded successfully."}
         </p>
       </div>
     );
@@ -449,6 +487,10 @@ export function FormRenderer({ fields, formId, isPreview = false, onSubmitSucces
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
       {fields.map((field) => {
         const isDisplay = ["section_header", "paragraph_text"].includes(field.type);
+
+        // Evaluate conditional logic
+        if (!evaluateCondition(field.condition, values)) return null;
+
         return (
           <div key={field.id} id={`field-${field.id}`} className="space-y-2">
             {!isDisplay && (

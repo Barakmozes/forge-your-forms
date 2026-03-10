@@ -16,6 +16,8 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from "@dnd-kit/utilities";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import FormResponsesTab from "@/components/FormResponsesTab";
+import FormSettingsPanel, { type FormSettings } from "@/components/builder/FormSettingsPanel";
+import ConditionalLogic, { type FieldCondition } from "@/components/builder/ConditionalLogic";
 import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
@@ -34,7 +36,11 @@ interface FormField {
     max?: number;
     minLength?: number;
     maxLength?: number;
+    phonePattern?: string;
+    maxFileSize?: number;
+    allowedFileTypes?: string[];
   };
+  condition?: FieldCondition;
 }
 
 const FIELD_CATEGORIES = [
@@ -154,7 +160,8 @@ export default function FormBuilder() {
   const [status, setStatus] = useState("draft");
   const [mode, setMode] = useState<FormMode>("standard");
   const [fields, setFields] = useState<FormField[]>([]);
-  
+  const [settings, setSettings] = useState<FormSettings>({});
+
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -180,6 +187,7 @@ export default function FormBuilder() {
         setStatus(data.status);
         setMode((data as { mode?: FormMode }).mode ?? "standard");
         setFields(Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : []);
+        setSettings((data.settings as FormSettings) ?? {});
         setLoading(false);
         setTimeout(() => { isInitialLoad.current = false; }, 500);
       });
@@ -190,7 +198,13 @@ export default function FormBuilder() {
     setSaveStatus("Saving...");
     const { error } = await supabase
       .from("forms")
-      .update({ title, description: description || null, status: status as Database["public"]["Enums"]["form_status"], fields: fields as unknown as Database["public"]["Tables"]["forms"]["Update"]["fields"] })
+      .update({
+        title,
+        description: description || null,
+        status: status as Database["public"]["Enums"]["form_status"],
+        fields: fields as unknown as Database["public"]["Tables"]["forms"]["Update"]["fields"],
+        settings: settings as unknown as Database["public"]["Tables"]["forms"]["Update"]["settings"],
+      })
       .eq("id", id);
     
     if (error) {
@@ -208,11 +222,11 @@ export default function FormBuilder() {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       save();
-    }, 1000);
+    }, 500);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [fields, title, description, status]);
+  }, [fields, title, description, status, settings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -318,6 +332,8 @@ export default function FormBuilder() {
             </SelectContent>
           </Select>
           
+          <FormSettingsPanel settings={settings} onChange={setSettings} />
+
           <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/preview`, '_blank')}>
             <Eye className="h-4 w-4" /> Preview
           </Button>
@@ -506,21 +522,76 @@ export default function FormBuilder() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Min Length</Label>
-                      <Input 
-                        type="number" 
-                        value={selectedField.validation.minLength ?? ''} 
-                        onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, minLength: e.target.value ? Number(e.target.value) : undefined } })} 
+                      <Input
+                        type="number"
+                        value={selectedField.validation.minLength ?? ''}
+                        onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, minLength: e.target.value ? Number(e.target.value) : undefined } })}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Max Length</Label>
-                      <Input 
-                        type="number" 
-                        value={selectedField.validation.maxLength ?? ''} 
-                        onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, maxLength: e.target.value ? Number(e.target.value) : undefined } })} 
+                      <Input
+                        type="number"
+                        value={selectedField.validation.maxLength ?? ''}
+                        onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, maxLength: e.target.value ? Number(e.target.value) : undefined } })}
                       />
                     </div>
                   </div>
+                )}
+
+                {/* Phone Validation */}
+                {selectedField.type === 'phone' && (
+                  <div className="space-y-2">
+                    <Label>Regex Pattern</Label>
+                    <Input
+                      value={selectedField.validation.phonePattern ?? ''}
+                      onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, phonePattern: e.target.value || undefined } })}
+                      placeholder="^[+]?[\d\s()-]{7,20}$"
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">Custom regex for phone validation. Leave blank for default.</p>
+                  </div>
+                )}
+
+                {/* File Upload Validation */}
+                {selectedField.type === 'file_upload' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Max File Size (MB)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={selectedField.validation.maxFileSize ?? ''}
+                        onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, maxFileSize: e.target.value ? Number(e.target.value) : undefined } })}
+                        placeholder="20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Allowed File Types</Label>
+                      <Input
+                        value={selectedField.validation.allowedFileTypes?.join(', ') ?? ''}
+                        onChange={(e) => {
+                          const types = e.target.value
+                            ? e.target.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+                            : undefined;
+                          updateField(selectedField.id, { validation: { ...selectedField.validation, allowedFileTypes: types } });
+                        }}
+                        placeholder="pdf, jpg, png, docx"
+                      />
+                      <p className="text-xs text-muted-foreground">Comma-separated extensions. Leave blank for any.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Logic */}
+                {!['section_header', 'paragraph_text'].includes(selectedField.type) && (
+                  <ConditionalLogic
+                    condition={selectedField.condition}
+                    onChange={(condition) => updateField(selectedField.id, { condition })}
+                    availableFields={fields
+                      .filter(f => f.id !== selectedField.id && !['section_header', 'paragraph_text'].includes(f.type))
+                      .map(f => ({ id: f.id, label: f.label }))}
+                  />
                 )}
 
               </div>

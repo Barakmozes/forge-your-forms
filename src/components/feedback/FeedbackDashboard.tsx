@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFeedback } from "@/hooks/useFeedback";
-import { useFeedbackAnalytics } from "@/hooks/useFeedbackAnalytics";
+import { useFeedbackAnalytics, type DateRange } from "@/hooks/useFeedbackAnalytics";
 import {
   PieChart,
   Pie,
@@ -228,15 +228,19 @@ export default function FeedbackDashboard({
   const navigate = useNavigate();
   const { responses, alerts, loading, toggleFlag, markAlertRead } =
     useFeedback(formId);
+
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+
   const {
     npsScore,
+    npsDelta,
     breakdown,
     weeklyTrend,
     volumeBySentiment,
     categoryBreakdown,
     atRiskClients,
     totalResponses,
-  } = useFeedbackAnalytics(responses);
+  } = useFeedbackAnalytics(responses, dateRange);
 
   const [copyLabel, setCopyLabel] = useState("Copy Survey Link");
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(
@@ -338,6 +342,19 @@ export default function FeedbackDashboard({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center border rounded-md">
+            {(["7d", "30d", "90d", "all"] as const).map((range) => (
+              <Button
+                key={range}
+                variant={dateRange === range ? "default" : "ghost"}
+                size="sm"
+                className="h-8 px-3 rounded-none first:rounded-l-md last:rounded-r-md"
+                onClick={() => setDateRange(range)}
+              >
+                {range === "all" ? "All" : range}
+              </Button>
+            ))}
+          </div>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
             <Copy className="mr-1.5 h-4 w-4" />
             {copyLabel}
@@ -365,12 +382,31 @@ export default function FeedbackDashboard({
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`text-4xl font-bold tabular-nums ${getNpsColor(npsScore)}`}>
-                {npsScore > 0 ? "+" : ""}
-                {npsScore}
+              <div className="flex items-baseline gap-2">
+                <span className={`text-4xl font-bold tabular-nums ${getNpsColor(npsScore)}`}>
+                  {npsScore > 0 ? "+" : ""}
+                  {npsScore}
+                </span>
+                {npsDelta !== null && (
+                  <span
+                    className={`flex items-center gap-0.5 text-sm font-medium ${
+                      npsDelta >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {npsDelta >= 0 ? (
+                      <TrendingUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <TrendingDown className="h-3.5 w-3.5" />
+                    )}
+                    {npsDelta > 0 ? "+" : ""}
+                    {npsDelta}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Range: -100 to +100
+                {npsDelta !== null ? "vs previous period" : "Range: -100 to +100"}
               </p>
             </CardContent>
           </Card>

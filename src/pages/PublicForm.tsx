@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
+import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 import { FileText, AlertCircle } from "lucide-react";
 import WaitlistLandingPage from "@/components/waitlist/WaitlistLandingPage";
 import FeedbackSurveyPage from "@/components/feedback/FeedbackSurveyPage";
@@ -185,6 +186,7 @@ export default function PublicForm() {
             fields={form.fields}
             formId={form.id}
             isPreview={false}
+            settings={form.settings as FormSettings}
           />
         )}
         <div className="mt-12 pt-6 border-t text-center">
