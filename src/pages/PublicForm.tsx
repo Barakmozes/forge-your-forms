@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
+import type { FormBranding } from "@/components/builder/BrandingPanel";
 import { FileText, AlertCircle } from "lucide-react";
 import WaitlistLandingPage from "@/components/waitlist/WaitlistLandingPage";
 import FeedbackSurveyPage from "@/components/feedback/FeedbackSurveyPage";
@@ -157,15 +158,25 @@ export default function PublicForm() {
   }
 
   // Default: standard form
+  const formBranding = form.branding as FormBranding | null;
+  const pageStyle: React.CSSProperties = {
+    ...(formBranding?.backgroundColor ? { backgroundColor: formBranding.backgroundColor } : {}),
+    ...(formBranding?.font ? { fontFamily: formBranding.font } : {}),
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="h-1 bg-primary w-full" />
+    <div className="min-h-screen bg-background" style={pageStyle}>
+      <div className="h-1 w-full" style={{ backgroundColor: formBranding?.primaryColor ?? "hsl(var(--primary))" }} />
       <div className="max-w-2xl mx-auto px-4 py-12 sm:py-16">
         <div className="mb-10 space-y-3">
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="h-4 w-4 text-primary" />
-            </div>
+            {formBranding?.logoUrl ? (
+              <img src={formBranding.logoUrl} alt="" className="h-10 object-contain" />
+            ) : (
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+            )}
           </div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
             {form.title}
@@ -187,13 +198,16 @@ export default function PublicForm() {
             formId={form.id}
             isPreview={false}
             settings={form.settings as FormSettings}
+            branding={form.branding as FormBranding}
           />
         )}
-        <div className="mt-12 pt-6 border-t text-center">
-          <p className="text-xs text-muted-foreground">
-            Powered by <span className="font-medium text-foreground">FormForge</span>
-          </p>
-        </div>
+        {(form.branding as FormBranding)?.showPoweredBy !== false && (
+          <div className="mt-12 pt-6 border-t text-center">
+            <p className="text-xs text-muted-foreground">
+              Powered by <span className="font-medium text-foreground">FormForge</span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

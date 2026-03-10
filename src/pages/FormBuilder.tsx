@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Copy, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2 } from "lucide-react";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -18,6 +18,8 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import FormResponsesTab from "@/components/FormResponsesTab";
 import FormSettingsPanel, { type FormSettings } from "@/components/builder/FormSettingsPanel";
 import ConditionalLogic, { type FieldCondition } from "@/components/builder/ConditionalLogic";
+import SharePanel from "@/components/embed/SharePanel";
+import BrandingPanel, { type FormBranding } from "@/components/builder/BrandingPanel";
 import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
@@ -161,6 +163,7 @@ export default function FormBuilder() {
   const [mode, setMode] = useState<FormMode>("standard");
   const [fields, setFields] = useState<FormField[]>([]);
   const [settings, setSettings] = useState<FormSettings>({});
+  const [branding, setBranding] = useState<FormBranding>({});
 
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,6 +191,7 @@ export default function FormBuilder() {
         setMode((data as { mode?: FormMode }).mode ?? "standard");
         setFields(Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : []);
         setSettings((data.settings as FormSettings) ?? {});
+        setBranding((data.branding as FormBranding) ?? {});
         setLoading(false);
         setTimeout(() => { isInitialLoad.current = false; }, 500);
       });
@@ -204,6 +208,7 @@ export default function FormBuilder() {
         status: status as Database["public"]["Enums"]["form_status"],
         fields: fields as unknown as Database["public"]["Tables"]["forms"]["Update"]["fields"],
         settings: settings as unknown as Database["public"]["Tables"]["forms"]["Update"]["settings"],
+        branding: branding as unknown as Database["public"]["Tables"]["forms"]["Update"]["branding"],
       })
       .eq("id", id);
     
@@ -226,7 +231,7 @@ export default function FormBuilder() {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [fields, title, description, status, settings]);
+  }, [fields, title, description, status, settings, branding]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -290,12 +295,6 @@ export default function FormBuilder() {
     if (selectedFieldId === id) setSelectedFieldId(null);
   };
 
-  const copyShareLink = () => {
-    const url = `${window.location.origin}/f/${id}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: "Share link copied!", description: "Anyone with this link can submit the form." });
-  };
-
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
@@ -333,14 +332,13 @@ export default function FormBuilder() {
           </Select>
           
           <FormSettingsPanel settings={settings} onChange={setSettings} />
+          <BrandingPanel branding={branding} onChange={setBranding} formId={id ?? ""} />
 
           <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/preview`, '_blank')}>
             <Eye className="h-4 w-4" /> Preview
           </Button>
           
-          <Button variant="outline" size="sm" className="h-8 gap-2" onClick={copyShareLink}>
-            <Copy className="h-4 w-4" /> Copy Link
-          </Button>
+          <SharePanel formId={id ?? ""} formTitle={title} />
 
           <Button size="sm" className="h-8 gap-2" onClick={save} disabled={saveStatus === "Saving..."}>
             <Save className="h-4 w-4" /> Save

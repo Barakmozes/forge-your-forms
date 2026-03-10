@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye } from "lucide-react";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
+import type { FormBranding } from "@/components/builder/BrandingPanel";
 
 interface FormData {
   id: string;
@@ -13,6 +14,7 @@ interface FormData {
   fields: FormField[];
   status: string;
   settings: FormSettings;
+  branding: FormBranding;
 }
 
 export default function FormPreview() {

@@ -12,6 +12,7 @@ import { UploadCloud, X, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { evaluateCondition, type FieldCondition } from "@/components/builder/ConditionalLogic";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
+import type { FormBranding } from "@/components/builder/BrandingPanel";
 
 export type FieldType =
   | "text"
@@ -401,10 +402,11 @@ interface FormRendererProps {
   formId: string;
   isPreview?: boolean;
   settings?: FormSettings;
+  branding?: FormBranding;
   onSubmitSuccess?: () => void;
 }
 
-export function FormRenderer({ fields, formId, isPreview = false, settings, onSubmitSuccess }: FormRendererProps) {
+export function FormRenderer({ fields, formId, isPreview = false, settings, branding, onSubmitSuccess }: FormRendererProps) {
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -483,8 +485,17 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, onSu
     (f) => !["section_header", "paragraph_text"].includes(f.type)
   );
 
+  const brandingStyle: React.CSSProperties = branding
+    ? {
+        ...(branding.primaryColor ? { "--ff-primary": branding.primaryColor } as React.CSSProperties : {}),
+        ...(branding.backgroundColor ? { "--ff-bg": branding.backgroundColor, backgroundColor: branding.backgroundColor } as React.CSSProperties : {}),
+        ...(branding.borderRadius ? { "--ff-radius": branding.borderRadius } as React.CSSProperties : {}),
+        ...(branding.font ? { fontFamily: branding.font } : {}),
+      }
+    : {};
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-8">
+    <form onSubmit={handleSubmit} noValidate className="space-y-8" style={brandingStyle}>
       {fields.map((field) => {
         const isDisplay = ["section_header", "paragraph_text"].includes(field.type);
 

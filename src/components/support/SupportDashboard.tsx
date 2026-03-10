@@ -1,5 +1,16 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { useTickets } from "@/hooks/useTickets";
 import { useSupportAnalytics } from "@/hooks/useSupportAnalytics";
 import {
@@ -285,6 +296,112 @@ function CategoryTooltip({
   );
 }
 
+// ─── Kanban DnD Components ───────────────────────────────────────────────────
+
+interface KanbanCardProps {
+  ticket: { id: string; ticket_number: string; subject: string; priority: string; submitted_by_email: string | null; category: string | null; created_at: string };
+  isDragOverlay?: boolean;
+}
+
+function KanbanCard({ ticket, isDragOverlay }: KanbanCardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: ticket.id,
+  });
+
+  const slaHours = (Date.now() - new Date(ticket.created_at).getTime()) / (1000 * 60 * 60);
+  const slaClass = slaHours > 48 ? "border-l-red-500" : slaHours > 24 ? "border-l-amber-500" : "";
+
+  return (
+    <Card
+      ref={isDragOverlay ? undefined : setNodeRef}
+      {...(isDragOverlay ? {} : { ...attributes, ...listeners })}
+      className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-l-4 ${slaClass} ${
+        isDragging ? "opacity-40" : ""
+      } ${isDragOverlay ? "shadow-lg rotate-2" : ""}`}
+    >
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-mono text-xs text-muted-foreground">
+            {ticket.ticket_number}
+          </span>
+          <Badge
+            variant="secondary"
+            className={`text-xs px-1.5 py-0 ${
+              PRIORITY_BADGE_CLASSES[ticket.priority as TicketPriority]
+            }`}
+          >
+            {ticket.priority}
+          </Badge>
+        </div>
+        <p className="text-sm font-medium text-foreground line-clamp-2">
+          {ticket.subject}
+        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground truncate">
+            {ticket.submitted_by_email ?? "Unknown"}
+          </p>
+          <span className="text-xs text-muted-foreground shrink-0">
+            {timeAgo(ticket.created_at)}
+          </span>
+        </div>
+        {ticket.category && (
+          <Badge variant="outline" className="text-xs">
+            {ticket.category}
+          </Badge>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface KanbanColumnProps {
+  status: TicketStatus;
+  tickets: Array<{ id: string; ticket_number: string; subject: string; priority: string; submitted_by_email: string | null; category: string | null; created_at: string; status: string }>;
+  onStatusChange: (ticketId: string, status: TicketStatus) => void;
+  onNavigate: (ticketId: string) => void;
+}
+
+function KanbanColumn({ status, tickets: columnTickets }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  return (
+    <div key={status} className="space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+            style={{ backgroundColor: STATUS_COLORS[status] }}
+          />
+          <h3 className="text-sm font-semibold text-foreground">
+            {STATUS_LABELS[status]}
+          </h3>
+        </div>
+        <Badge variant="secondary" className="tabular-nums text-xs">
+          {columnTickets.length}
+        </Badge>
+      </div>
+
+      <div
+        ref={setNodeRef}
+        className={`space-y-2 min-h-[200px] p-1 rounded-lg transition-colors ${
+          isOver ? "bg-primary/5 ring-2 ring-primary/20" : ""
+        }`}
+      >
+        {columnTickets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 px-4 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
+            <Inbox className="h-6 w-6 mb-1.5 opacity-40" />
+            <p className="text-xs">Drop tickets here</p>
+          </div>
+        ) : (
+          columnTickets.map((ticket) => (
+            <KanbanCard key={ticket.id} ticket={ticket} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SupportDashboard({
@@ -308,7 +425,13 @@ export default function SupportDashboard({
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "all">("all");
   const [bulkStatus, setBulkStatus] = useState<TicketStatus | "">("");
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   const publicLink = `${window.location.origin}/f/${formId}`;
 
@@ -319,6 +442,10 @@ export default function SupportDashboard({
 
     if (statusFilter !== "all") {
       result = result.filter((t) => t.status === statusFilter);
+    }
+
+    if (priorityFilter !== "all") {
+      result = result.filter((t) => t.priority === priorityFilter);
     }
 
     if (searchQuery.trim()) {
@@ -334,7 +461,14 @@ export default function SupportDashboard({
     }
 
     return result;
-  }, [tickets, statusFilter, searchQuery]);
+  }, [tickets, statusFilter, priorityFilter, searchQuery]);
+
+  const filteredByStatus = (status: TicketStatus) =>
+    filteredTickets.filter((t) => t.status === status);
+
+  const activeDragTicket = activeDragId
+    ? tickets.find((t) => t.id === activeDragId) ?? null
+    : null;
 
   // ─── Donut Chart Data ──────────────────────────────────────────────────────
 
@@ -374,6 +508,23 @@ export default function SupportDashboard({
       setSelectedTickets(new Set());
       setBulkStatus("");
     }
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(event.active.id as string);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const ticketId = active.id as string;
+    const newStatus = over.id as TicketStatus;
+    const ticket = tickets.find((t) => t.id === ticketId);
+    if (!ticket || ticket.status === newStatus) return;
+
+    handleStatusChange(ticketId, newStatus);
   }
 
   function toggleTicketSelection(ticketId: string) {
@@ -522,6 +673,52 @@ export default function SupportDashboard({
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Filter Bar — applies to Kanban + Table */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tickets..."
+            className="pl-9 h-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as TicketStatus | "all")}
+          >
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {(Object.entries(STATUS_LABELS) as Array<[TicketStatus, string]>).map(
+                ([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+          <Select
+            value={priorityFilter}
+            onValueChange={(v) => setPriorityFilter(v as TicketPriority | "all")}
+          >
+            <SelectTrigger className="h-9 w-32">
+              <SelectValue placeholder="All priorities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              {(["low", "medium", "high", "urgent"] as TicketPriority[]).map((p) => (
+                <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
@@ -762,116 +959,35 @@ export default function SupportDashboard({
           )}
         </TabsContent>
 
-        {/* ─── Tab 2: Kanban Board ──────────────────────────────────────── */}
+        {/* ─── Tab 2: Kanban Board (DnD) ────────────────────────────────── */}
         <TabsContent value="kanban" className="space-y-6">
           {loading ? (
             <KanbanSkeleton />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {KANBAN_COLUMNS.map((status) => {
-                const columnTickets = ticketsByStatus(status);
-                return (
-                  <div key={status} className="space-y-3">
-                    {/* Column Header */}
-                    <div className="flex items-center justify-between px-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: STATUS_COLORS[status] }}
-                        />
-                        <h3 className="text-sm font-semibold text-foreground">
-                          {STATUS_LABELS[status]}
-                        </h3>
-                      </div>
-                      <Badge variant="secondary" className="tabular-nums text-xs">
-                        {columnTickets.length}
-                      </Badge>
-                    </div>
-
-                    {/* Column Body */}
-                    <div className="space-y-2 min-h-[200px]">
-                      {columnTickets.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8 px-4 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
-                          <Inbox className="h-6 w-6 mb-1.5 opacity-40" />
-                          <p className="text-xs">No tickets</p>
-                        </div>
-                      ) : (
-                        columnTickets.map((ticket) => (
-                          <Card
-                            key={ticket.id}
-                            className="shadow-sm hover:shadow-md transition-shadow"
-                          >
-                            <CardContent className="p-3 space-y-2">
-                              {/* Ticket Number + Priority */}
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-mono text-xs text-muted-foreground">
-                                  {ticket.ticket_number}
-                                </span>
-                                <Badge
-                                  variant="secondary"
-                                  className={`text-xs px-1.5 py-0 ${
-                                    PRIORITY_BADGE_CLASSES[
-                                      ticket.priority as TicketPriority
-                                    ]
-                                  }`}
-                                >
-                                  {ticket.priority}
-                                </Badge>
-                              </div>
-
-                              {/* Subject */}
-                              <p className="text-sm font-medium text-foreground line-clamp-2">
-                                {ticket.subject}
-                              </p>
-
-                              {/* Submitted By */}
-                              <p className="text-xs text-muted-foreground truncate">
-                                {ticket.submitted_by_email ?? "Unknown"}
-                              </p>
-
-                              {/* Time + Status Change */}
-                              <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
-                                <span className="text-xs text-muted-foreground">
-                                  {timeAgo(ticket.created_at)}
-                                </span>
-                                <Select
-                                  value={ticket.status}
-                                  onValueChange={(value) =>
-                                    handleStatusChange(
-                                      ticket.id,
-                                      value as TicketStatus
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger className="h-6 w-24 text-xs px-2 py-0">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(
-                                      Object.entries(STATUS_LABELS) as Array<
-                                        [TicketStatus, string]
-                                      >
-                                    ).map(([value, label]) => (
-                                      <SelectItem
-                                        key={value}
-                                        value={value}
-                                        className="text-xs"
-                                      >
-                                        {label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {KANBAN_COLUMNS.map((status) => (
+                  <KanbanColumn
+                    key={status}
+                    status={status}
+                    tickets={filteredByStatus(status)}
+                    onStatusChange={handleStatusChange}
+                    onNavigate={(ticketId) =>
+                      navigate(`/forms/${formId}/tickets/${ticketId}`)
+                    }
+                  />
+                ))}
+              </div>
+              <DragOverlay>
+                {activeDragTicket && (
+                  <KanbanCard ticket={activeDragTicket} isDragOverlay />
+                )}
+              </DragOverlay>
+            </DndContext>
           )}
         </TabsContent>
 
@@ -881,84 +997,41 @@ export default function SupportDashboard({
             <TableSkeleton />
           ) : (
             <>
-              {/* Toolbar: Search, Filter, Bulk Actions */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-                  {/* Search */}
-                  <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search tickets..."
-                      className="pl-9 h-9"
-                    />
-                  </div>
-
-                  {/* Status Filter */}
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Select
-                      value={statusFilter}
-                      onValueChange={(v) =>
-                        setStatusFilter(v as TicketStatus | "all")
-                      }
-                    >
-                      <SelectTrigger className="h-9 w-36">
-                        <SelectValue placeholder="All statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        {(
-                          Object.entries(STATUS_LABELS) as Array<
-                            [TicketStatus, string]
-                          >
-                        ).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Bulk Actions */}
+              {selectedTickets.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground shrink-0">
+                    {selectedTickets.size} selected
+                  </span>
+                  <Select
+                    value={bulkStatus}
+                    onValueChange={(v) => setBulkStatus(v as TicketStatus)}
+                  >
+                    <SelectTrigger className="h-9 w-36">
+                      <SelectValue placeholder="Change status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(
+                        Object.entries(STATUS_LABELS) as Array<
+                          [TicketStatus, string]
+                        >
+                      ).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    disabled={!bulkStatus}
+                    onClick={handleBulkAction}
+                  >
+                    Apply
+                  </Button>
                 </div>
-
-                {/* Bulk Actions */}
-                {selectedTickets.size > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground shrink-0">
-                      {selectedTickets.size} selected
-                    </span>
-                    <Select
-                      value={bulkStatus}
-                      onValueChange={(v) => setBulkStatus(v as TicketStatus)}
-                    >
-                      <SelectTrigger className="h-9 w-36">
-                        <SelectValue placeholder="Change status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(
-                          Object.entries(STATUS_LABELS) as Array<
-                            [TicketStatus, string]
-                          >
-                        ).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      disabled={!bulkStatus}
-                      onClick={handleBulkAction}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Table */}
               <Card>
