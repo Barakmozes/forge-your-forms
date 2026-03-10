@@ -14,14 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
+      canned_responses: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canned_responses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_alerts: {
+        Row: {
+          alert_type: Database["public"]["Enums"]["feedback_alert_type"]
+          created_at: string
+          form_id: string
+          id: string
+          message: string | null
+          read: boolean
+          response_id: string
+        }
+        Insert: {
+          alert_type: Database["public"]["Enums"]["feedback_alert_type"]
+          created_at?: string
+          form_id: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          response_id: string
+        }
+        Update: {
+          alert_type?: Database["public"]["Enums"]["feedback_alert_type"]
+          created_at?: string
+          form_id?: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_alerts_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_alerts_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_responses: {
+        Row: {
+          category: string | null
+          created_at: string
+          custom_answers: Json | null
+          flagged: boolean
+          follow_up: string | null
+          form_id: string
+          id: string
+          nps_score: number | null
+          respondent_email: string | null
+          respondent_name: string | null
+          sentiment: Database["public"]["Enums"]["feedback_sentiment"] | null
+          submission_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          custom_answers?: Json | null
+          flagged?: boolean
+          follow_up?: string | null
+          form_id: string
+          id?: string
+          nps_score?: number | null
+          respondent_email?: string | null
+          respondent_name?: string | null
+          sentiment?: Database["public"]["Enums"]["feedback_sentiment"] | null
+          submission_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          custom_answers?: Json | null
+          flagged?: boolean
+          follow_up?: string | null
+          form_id?: string
+          id?: string
+          nps_score?: number | null
+          respondent_email?: string | null
+          respondent_name?: string | null
+          sentiment?: Database["public"]["Enums"]["feedback_sentiment"] | null
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forms: {
         Row: {
+          branding: Json | null
           created_at: string
           created_by: string
           description: string | null
-          fields: Json
+          fields: Json | null
           id: string
-          settings: Json
+          mode: Database["public"]["Enums"]["form_mode"]
+          settings: Json | null
           status: Database["public"]["Enums"]["form_status"]
           submission_count: number
           title: string
@@ -29,12 +171,14 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          branding?: Json | null
           created_at?: string
           created_by: string
           description?: string | null
-          fields?: Json
+          fields?: Json | null
           id?: string
-          settings?: Json
+          mode?: Database["public"]["Enums"]["form_mode"]
+          settings?: Json | null
           status?: Database["public"]["Enums"]["form_status"]
           submission_count?: number
           title: string
@@ -42,12 +186,14 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          branding?: Json | null
           created_at?: string
           created_by?: string
           description?: string | null
-          fields?: Json
+          fields?: Json | null
           id?: string
-          settings?: Json
+          mode?: Database["public"]["Enums"]["form_mode"]
+          settings?: Json | null
           status?: Database["public"]["Enums"]["form_status"]
           submission_count?: number
           title?: string
@@ -63,6 +209,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -90,29 +269,289 @@ export type Database = {
       }
       submissions: {
         Row: {
-          data: Json
+          data: Json | null
           form_id: string
           id: string
+          metadata: Json | null
+          status: string | null
           submitted_at: string
           submitted_by_email: string | null
+          submitted_by_name: string | null
         }
         Insert: {
-          data?: Json
+          data?: Json | null
           form_id: string
           id?: string
+          metadata?: Json | null
+          status?: string | null
           submitted_at?: string
           submitted_by_email?: string | null
+          submitted_by_name?: string | null
         }
         Update: {
-          data?: Json
+          data?: Json | null
           form_id?: string
           id?: string
+          metadata?: Json | null
+          status?: string | null
           submitted_at?: string
           submitted_by_email?: string | null
+          submitted_by_name?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          color: string
+          id: string
+          name: string
+          workspace_id: string
+        }
+        Insert: {
+          color?: string
+          id?: string
+          name: string
+          workspace_id: string
+        }
+        Update: {
+          color?: string
+          id?: string
+          name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tags_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_internal: boolean
+          message: string
+          sender_email: string | null
+          sender_name: string | null
+          sender_type: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          message: string
+          sender_email?: string | null
+          sender_name?: string | null
+          sender_type?: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          message?: string
+          sender_email?: string | null
+          sender_name?: string | null
+          sender_type?: Database["public"]["Enums"]["ticket_sender_type"]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_tags: {
+        Row: {
+          tag_id: string
+          ticket_id: string
+        }
+        Insert: {
+          tag_id: string
+          ticket_id: string
+        }
+        Update: {
+          tag_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_tags_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          first_response_at: string | null
+          form_id: string
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          submitted_by_email: string | null
+          submitted_by_name: string | null
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          first_response_at?: string | null
+          form_id: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          submitted_by_email?: string | null
+          submitted_by_name?: string | null
+          ticket_number: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          first_response_at?: string | null
+          form_id?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          submitted_by_email?: string | null
+          submitted_by_name?: string | null
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist_entries: {
+        Row: {
+          created_at: string
+          email: string
+          form_id: string
+          id: string
+          metadata: Json | null
+          name: string | null
+          position: number
+          referral_code: string
+          referral_count: number
+          referred_by: string | null
+          status: Database["public"]["Enums"]["waitlist_entry_status"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          form_id: string
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          position?: number
+          referral_code: string
+          referral_count?: number
+          referred_by?: string | null
+          status?: Database["public"]["Enums"]["waitlist_entry_status"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          form_id?: string
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          position?: number
+          referral_code?: string
+          referral_count?: number
+          referred_by?: string | null
+          status?: Database["public"]["Enums"]["waitlist_entry_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_entries_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist_invites: {
+        Row: {
+          entry_id: string
+          form_id: string
+          id: string
+          invited_at: string
+          message: string | null
+        }
+        Insert: {
+          entry_id: string
+          form_id: string
+          id?: string
+          invited_at?: string
+          message?: string | null
+        }
+        Update: {
+          entry_id?: string
+          form_id?: string
+          id?: string
+          invited_at?: string
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_invites_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "waitlist_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_invites_form_id_fkey"
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
@@ -152,18 +591,21 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          slug: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           owner_id: string
+          slug?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           owner_id?: string
+          slug?: string | null
         }
         Relationships: []
       }
@@ -172,6 +614,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_ticket_number: { Args: { p_form_id: string }; Returns: string }
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: Database["public"]["Enums"]["workspace_role"]
@@ -182,7 +625,14 @@ export type Database = {
       }
     }
     Enums: {
+      feedback_alert_type: "detractor" | "score_drop" | "keyword"
+      feedback_sentiment: "promoter" | "passive" | "detractor"
+      form_mode: "standard" | "waitlist" | "feedback" | "support"
       form_status: "draft" | "active" | "closed"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_sender_type: "agent" | "customer" | "system"
+      ticket_status: "open" | "in_progress" | "waiting" | "resolved" | "closed"
+      waitlist_entry_status: "waiting" | "invited" | "joined" | "removed"
       workspace_role: "owner" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -311,7 +761,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      feedback_alert_type: ["detractor", "score_drop", "keyword"],
+      feedback_sentiment: ["promoter", "passive", "detractor"],
+      form_mode: ["standard", "waitlist", "feedback", "support"],
       form_status: ["draft", "active", "closed"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_sender_type: ["agent", "customer", "system"],
+      ticket_status: ["open", "in_progress", "waiting", "resolved", "closed"],
+      waitlist_entry_status: ["waiting", "invited", "joined", "removed"],
       workspace_role: ["owner", "editor", "viewer"],
     },
   },

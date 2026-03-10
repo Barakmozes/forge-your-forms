@@ -16,7 +16,9 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from "@dnd-kit/utilities";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import FormResponsesTab from "@/components/FormResponsesTab";
+import type { Database } from "@/integrations/supabase/types";
 
+type FormMode = Database["public"]["Enums"]["form_mode"];
 type FieldType = "text" | "textarea" | "number" | "email" | "phone" | "date" | "select" | "multi_select" | "checkbox" | "radio" | "file_upload" | "section_header" | "paragraph_text";
 
 interface FormField {
@@ -77,7 +79,7 @@ const createNewField = (type: FieldType): FormField => ({
   validation: {},
 });
 
-function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: any }) {
+function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: React.ElementType }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${type}`,
     data: { type: 'palette_item', fieldType: type }
@@ -150,6 +152,7 @@ export default function FormBuilder() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("draft");
+  const [mode, setMode] = useState<FormMode>("standard");
   const [fields, setFields] = useState<FormField[]>([]);
   
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
@@ -175,6 +178,7 @@ export default function FormBuilder() {
         setTitle(data.title);
         setDescription(data.description ?? "");
         setStatus(data.status);
+        setMode((data as { mode?: FormMode }).mode ?? "standard");
         setFields(Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : []);
         setLoading(false);
         setTimeout(() => { isInitialLoad.current = false; }, 500);
@@ -186,7 +190,7 @@ export default function FormBuilder() {
     setSaveStatus("Saving...");
     const { error } = await supabase
       .from("forms")
-      .update({ title, description: description || null, status: status as any, fields: fields as any })
+      .update({ title, description: description || null, status: status as Database["public"]["Enums"]["form_status"], fields: fields as unknown as Database["public"]["Tables"]["forms"]["Update"]["fields"] })
       .eq("id", id);
     
     if (error) {

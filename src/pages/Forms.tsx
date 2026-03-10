@@ -7,7 +7,7 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Inbox } from "lucide-react";
+import { Plus, FileText, Inbox, ClipboardList, Users, MessageSquare, Headphones } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,15 +19,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
+
+type FormMode = Database["public"]["Enums"]["form_mode"];
 
 interface Form {
   id: string;
   title: string;
   description: string | null;
   status: string;
+  mode: FormMode;
   submission_count: number;
   created_at: string;
   updated_at: string;
+}
+
+const MODE_CONFIG: Record<FormMode, { label: string; icon: React.ElementType; color: string; badgeClass: string; description: string; available: boolean }> = {
+  standard: { label: "Standard Form", icon: ClipboardList, color: "border-blue-500/50 bg-blue-500/5", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Collect responses with custom fields", available: true },
+  waitlist: { label: "Waitlist", icon: Users, color: "border-purple-500/50 bg-purple-500/5", badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Capture leads with referral tracking", available: true },
+  feedback: { label: "Feedback / NPS", icon: MessageSquare, color: "border-amber-500/50 bg-amber-500/5", badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", description: "Measure satisfaction & NPS scores", available: true },
+  support: { label: "Support Tickets", icon: Headphones, color: "border-green-500/50 bg-green-500/5", badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Track & resolve customer issues", available: true },
+};
+
+function ModeBadge({ mode }: { mode: FormMode }) {
+  const config = MODE_CONFIG[mode];
+  return (
+    <Badge variant="secondary" className={`text-[10px] font-medium ${config.badgeClass}`}>
+      {config.label}
+    </Badge>
+  );
 }
 
 export default function Forms() {
@@ -38,6 +58,7 @@ export default function Forms() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [selectedMode, setSelectedMode] = useState<FormMode>("standard");
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -48,7 +69,7 @@ export default function Forms() {
       setLoading(true);
       const { data } = await supabase
         .from("forms")
-        .select("id, title, description, status, submission_count, created_at, updated_at")
+        .select("id, title, description, status, mode, submission_count, created_at, updated_at")
         .eq("workspace_id", currentWorkspace.id)
         .order("updated_at", { ascending: false });
       setForms(data ?? []);
@@ -83,7 +104,7 @@ export default function Forms() {
     setCreating(true);
     const { data, error } = await supabase
       .from("forms")
-      .insert({ workspace_id: currentWorkspace.id, created_by: user.id, title: newTitle.trim(), description: newDesc.trim() || null })
+      .insert({ workspace_id: currentWorkspace.id, created_by: user.id, title: newTitle.trim(), description: newDesc.trim() || null, mode: selectedMode })
       .select("id")
       .single();
     if (error) {
@@ -93,6 +114,9 @@ export default function Forms() {
     }
     setCreating(false);
     setDialogOpen(false);
+    setSelectedMode("standard");
+    setNewTitle("");
+    setNewDesc("");
   };
 
   const statusColor: Record<string, string> = {
@@ -105,8 +129,8 @@ export default function Forms() {
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-display font-bold">Forms</h1>
-          <p className="text-muted-foreground text-sm mt-1">Build and manage your team's forms</p>
+          <h1 className="text-2xl font-display font-bold">Projects</h1>
+          <p className="text-muted-foreground text-sm mt-1">Forms, waitlists, feedback surveys & support desks</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -114,11 +138,39 @@ export default function Forms() {
               <Plus className="h-4 w-4" /> New Form
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Create a new form</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Mode</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.entries(MODE_CONFIG) as [FormMode, typeof MODE_CONFIG[FormMode]][]).map(([mode, config]) => {
+                    const Icon = config.icon;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        disabled={!config.available}
+                        className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
+                          selectedMode === mode ? config.color + " ring-1 ring-offset-1" : "border-border hover:border-muted-foreground/30"
+                        } ${!config.available ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        onClick={() => config.available && setSelectedMode(mode)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-medium">{config.label}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{config.description}</span>
+                        {!config.available && (
+                          <Badge variant="outline" className="absolute top-2 right-2 text-[9px]">Soon</Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. Onboarding Checklist" />
@@ -159,14 +211,17 @@ export default function Forms() {
             <Card
               key={form.id}
               className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => navigate(`/forms/${form.id}/edit`)}
+              onClick={() => navigate(form.mode === "standard" ? `/forms/${form.id}/edit` : `/forms/${form.id}`)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base font-semibold line-clamp-1">{form.title}</CardTitle>
-                  <Badge variant="secondary" className={`text-xs shrink-0 ${statusColor[form.status] ?? ""}`}>
-                    {form.status}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <ModeBadge mode={form.mode} />
+                    <Badge variant="secondary" className={`text-xs ${statusColor[form.status] ?? ""}`}>
+                      {form.status}
+                    </Badge>
+                  </div>
                 </div>
                 {form.description && <CardDescription className="line-clamp-2 mt-1">{form.description}</CardDescription>}
               </CardHeader>

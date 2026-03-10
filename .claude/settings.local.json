@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(timeout 30 git clone:*)",
+      "Bash(xargs wc:*)",
+      "Bash(gh repo:*)",
+      "Bash(where gh:*)",
+      "Bash(gh:*)",
+      "Bash(git clone:*)",
+      "Bash(cp:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 15 npm run:*)",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(npx supabase:*)",
+      "Bash(PGPASSWORD=\"T5XoiMaSobf8P5yW\" npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

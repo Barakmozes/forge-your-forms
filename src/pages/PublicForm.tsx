@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
 import { FileText, AlertCircle } from "lucide-react";
+import WaitlistLandingPage from "@/components/waitlist/WaitlistLandingPage";
+import FeedbackSurveyPage from "@/components/feedback/FeedbackSurveyPage";
+import SupportSubmitPage from "@/components/support/SupportSubmitPage";
+import type { Database } from "@/integrations/supabase/types";
+
+type FormMode = Database["public"]["Enums"]["form_mode"];
 
 interface FormData {
   id: string;
@@ -10,10 +16,14 @@ interface FormData {
   description: string | null;
   fields: FormField[];
   status: string;
+  mode: FormMode;
+  branding: Record<string, string> | null;
+  settings: Record<string, unknown> | null;
 }
 
 export default function PublicForm() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -22,7 +32,7 @@ export default function PublicForm() {
     if (!id) return;
     supabase
       .from("forms")
-      .select("id, title, description, fields, status")
+      .select("id, title, description, fields, status, mode, branding, settings")
       .eq("id", id)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -32,6 +42,9 @@ export default function PublicForm() {
           setForm({
             ...data,
             fields: Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : [],
+            mode: (data.mode ?? "standard") as FormMode,
+            branding: data.branding as Record<string, string> | null,
+            settings: data.settings as Record<string, unknown> | null,
           });
         }
         setLoading(false);
@@ -45,7 +58,7 @@ export default function PublicForm() {
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm">Loading form...</p>
+          <p className="text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -103,13 +116,50 @@ export default function PublicForm() {
     );
   }
 
+  // Mode-specific rendering
+  if (form.mode === "waitlist") {
+    return (
+      <WaitlistLandingPage
+        formId={form.id}
+        title={form.title}
+        description={form.description}
+        branding={form.branding}
+        settings={form.settings}
+        referralCode={searchParams.get("ref") ?? undefined}
+      />
+    );
+  }
+
+  if (form.mode === "feedback") {
+    return (
+      <FeedbackSurveyPage
+        formId={form.id}
+        title={form.title}
+        description={form.description}
+        branding={form.branding}
+        settings={form.settings}
+        fields={form.fields}
+      />
+    );
+  }
+
+  if (form.mode === "support") {
+    return (
+      <SupportSubmitPage
+        formId={form.id}
+        title={form.title}
+        description={form.description}
+        branding={form.branding}
+        settings={form.settings}
+      />
+    );
+  }
+
+  // Default: standard form
   return (
     <div className="min-h-screen bg-background">
-      {/* Top accent bar */}
       <div className="h-1 bg-primary w-full" />
-
       <div className="max-w-2xl mx-auto px-4 py-12 sm:py-16">
-        {/* Form Header */}
         <div className="mb-10 space-y-3">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -125,11 +175,7 @@ export default function PublicForm() {
             </p>
           )}
         </div>
-
-        {/* Divider */}
         <div className="h-px bg-border mb-10" />
-
-        {/* Form Fields */}
         {form.fields.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-sm">This form has no fields yet.</p>
@@ -141,8 +187,6 @@ export default function PublicForm() {
             isPreview={false}
           />
         )}
-
-        {/* Footer */}
         <div className="mt-12 pt-6 border-t text-center">
           <p className="text-xs text-muted-foreground">
             Powered by <span className="font-medium text-foreground">FormForge</span>
