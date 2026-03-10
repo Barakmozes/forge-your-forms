@@ -16,12 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { useCannedResponses } from "@/hooks/useCannedResponses";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CannedResponses() {
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
   const { responses, loading, create, update, remove } = useCannedResponses(currentWorkspace?.id ?? "");
+  const { toast } = useToast();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export default function CannedResponses() {
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
-      toast.error("Title and content are required");
+      toast({ title: "Error", description: "Title and content are required", variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -59,12 +60,12 @@ export default function CannedResponses() {
         content: content.trim(),
         category: category.trim() || null,
       });
-      if (error) toast.error("Failed to update");
-      else toast.success("Updated");
+      if (error) toast({ title: "Error", description: "Failed to update", variant: "destructive" });
+      else toast({ title: "Updated" });
     } else {
       const { error } = await create(title.trim(), content.trim(), category.trim() || undefined);
-      if (error) toast.error("Failed to create");
-      else toast.success("Created");
+      if (error) toast({ title: "Error", description: "Failed to create", variant: "destructive" });
+      else toast({ title: "Created" });
     }
 
     setSaving(false);
@@ -73,8 +74,8 @@ export default function CannedResponses() {
 
   const handleDelete = async (id: string) => {
     const { error } = await remove(id);
-    if (error) toast.error("Failed to delete");
-    else toast.success("Deleted");
+    if (error) toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
+    else toast({ title: "Deleted" });
   };
 
   return (

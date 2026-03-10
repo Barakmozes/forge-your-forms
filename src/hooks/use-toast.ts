@@ -1,3 +1,10 @@
+/**
+ * Primary toast hook for PROTECTED pages (dashboard, settings, builder, etc.).
+ * Import: import { useToast } from "@/hooks/use-toast";
+ *
+ * For PUBLIC pages (waitlist landing, feedback survey, support submit, ticket tracking),
+ * use: import { toast } from "sonner";
+ */
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";

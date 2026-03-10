@@ -27,7 +27,7 @@ export default function FormPreview() {
     if (!id) return;
     supabase
       .from("forms")
-      .select("id, title, description, fields, status, settings")
+      .select("id, title, description, fields, status, settings, branding")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -39,6 +39,7 @@ export default function FormPreview() {
           ...data,
           fields: Array.isArray(data.fields) ? (data.fields as unknown as FormField[]) : [],
           settings: (data.settings as FormSettings) ?? {},
+          branding: (data.branding as FormBranding) ?? {},
         });
         setLoading(false);
       });
@@ -103,6 +104,7 @@ export default function FormPreview() {
             formId={form.id}
             isPreview={true}
             settings={form.settings}
+            branding={form.branding}
           />
         )}
       </div>

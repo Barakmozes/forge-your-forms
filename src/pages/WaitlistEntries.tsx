@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Download, FileText, Mail, Search, Trash2, Users } from "lucide-react";
 import { useWaitlist } from "@/hooks/useWaitlist";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 const STATUS_COLORS: Record<string, string> = {
   waiting: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -37,6 +37,7 @@ export default function WaitlistEntries() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { entries, loading, totalCount, bulkInvite, deleteEntry, exportCSV, exportEmailsOnly } = useWaitlist(id ?? "");
+  const { toast } = useToast();
 
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -78,9 +79,9 @@ export default function WaitlistEntries() {
       inviteMessage.trim() || undefined
     );
     if (error) {
-      toast.error("Failed to send invites: " + error.message);
+      toast({ title: "Error", description: "Failed to send invites: " + error.message, variant: "destructive" });
     } else {
-      toast.success(`Invited ${selected.size} entries`);
+      toast({ title: "Invited", description: `${selected.size} entries invited` });
       setSelected(new Set());
       setInviteDialogOpen(false);
       setInviteMessage("");
@@ -95,7 +96,7 @@ export default function WaitlistEntries() {
       .slice(0, topN);
 
     if (waitingEntries.length === 0) {
-      toast.info("No waiting entries to invite");
+      toast({ title: "No waiting entries to invite" });
       return;
     }
 
@@ -105,9 +106,9 @@ export default function WaitlistEntries() {
       topNMessage.trim() || undefined
     );
     if (error) {
-      toast.error("Failed to send invites: " + error.message);
+      toast({ title: "Error", description: "Failed to send invites: " + error.message, variant: "destructive" });
     } else {
-      toast.success(`Invited top ${waitingEntries.length} entries`);
+      toast({ title: "Invited", description: `Top ${waitingEntries.length} entries invited` });
       setInviteTopNOpen(false);
       setTopNMessage("");
     }
@@ -117,9 +118,9 @@ export default function WaitlistEntries() {
   const handleDelete = async (entryId: string) => {
     const { error } = await deleteEntry(entryId);
     if (error) {
-      toast.error("Failed to delete: " + error.message);
+      toast({ title: "Error", description: "Failed to delete: " + error.message, variant: "destructive" });
     } else {
-      toast.success("Entry removed");
+      toast({ title: "Entry removed" });
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(entryId);

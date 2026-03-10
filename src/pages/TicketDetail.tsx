@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Send, Clock, User, MessageSquare, Tag, Lock } from "lucide-react";
 import { useTicketMessages } from "@/hooks/useTicketMessages";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
@@ -38,6 +38,7 @@ export default function TicketDetailPage() {
   const { id: formId, ticketId } = useParams<{ id: string; ticketId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,10 +73,10 @@ export default function TicketDetailPage() {
       .eq("id", ticketId);
 
     if (error) {
-      toast.error("Failed to update status");
+      toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
     } else {
       setTicket((prev) => prev ? { ...prev, status } : prev);
-      toast.success(`Status updated to ${status.replace("_", " ")}`);
+      toast({ title: "Status updated", description: `Changed to ${status.replace("_", " ")}` });
     }
   };
 
@@ -87,7 +88,7 @@ export default function TicketDetailPage() {
       .eq("id", ticketId);
 
     if (error) {
-      toast.error("Failed to update priority");
+      toast({ title: "Error", description: "Failed to update priority", variant: "destructive" });
     } else {
       setTicket((prev) => prev ? { ...prev, priority } : prev);
     }
@@ -106,10 +107,10 @@ export default function TicketDetailPage() {
     });
 
     if (error) {
-      toast.error("Failed to send message");
+      toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
     } else {
       setReply("");
-      toast.success(isInternal ? "Internal note added" : "Reply sent");
+      toast({ title: isInternal ? "Internal note added" : "Reply sent" });
     }
     setSending(false);
   };
