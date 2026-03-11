@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activation_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canned_responses: {
         Row: {
           category: string | null
@@ -250,6 +285,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          onboarding_completed: boolean | null
         }
         Insert: {
           avatar_url?: string | null
@@ -257,6 +293,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean | null
         }
         Update: {
           avatar_url?: string | null
@@ -264,6 +301,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
         }
         Relationships: []
       }
@@ -351,47 +389,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "subscriptions_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      usage: {
-        Row: {
-          created_at: string
-          form_count: number
-          id: string
-          member_count: number
-          month: string
-          submission_count: number
-          updated_at: string
-          workspace_id: string
-        }
-        Insert: {
-          created_at?: string
-          form_count?: number
-          id?: string
-          member_count?: number
-          month: string
-          submission_count?: number
-          updated_at?: string
-          workspace_id: string
-        }
-        Update: {
-          created_at?: string
-          form_count?: number
-          id?: string
-          member_count?: number
-          month?: string
-          submission_count?: number
-          updated_at?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "usage_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -706,10 +703,6 @@ export type Database = {
     }
     Functions: {
       generate_ticket_number: { Args: { p_form_id: string }; Returns: string }
-      get_workspace_usage: {
-        Args: { ws_id: string }
-        Returns: { submission_count: number; form_count: number; member_count: number }[]
-      }
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: Database["public"]["Enums"]["workspace_role"]

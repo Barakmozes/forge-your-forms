@@ -9,6 +9,9 @@ import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuthHashError } from "@/hooks/useAuthHashError";
+// === AGENT 8: Onboarding Check ===
+import { useOnboarding } from "@/hooks/useOnboarding";
+// === END AGENT 8 ===
 import "@/i18n";
 
 // === AGENT 4 — Lazy-loaded route components for code splitting ===
@@ -34,6 +37,10 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
 // === END AGENT 6 ===
+
+// === AGENT 8 — Onboarding wizard ===
+const OnboardingWizard = lazy(() => import("./components/onboarding/OnboardingWizard"));
+// === END AGENT 8 ===
 
 function AuthHashErrorHandler() {
   useAuthHashError();
@@ -80,7 +87,13 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 // === AGENT 4 ROUTES — Homepage dispatch: landing (anon) vs dashboard (auth) ===
 function HomepageRoute() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  // === AGENT 8: Onboarding Check ===
+  const { isOnboarded, isLoading: onboardingLoading } = useOnboarding();
+  // === END AGENT 8 ===
+  if (loading || onboardingLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  // === AGENT 8: Redirect to onboarding if not completed ===
+  if (user && !isOnboarded) return <Navigate to="/onboarding" replace />;
+  // === END AGENT 8 ===
   if (user) return <Forms />;
   return <Index />;
 }
@@ -106,6 +119,9 @@ const AppRoutes = () => (
     {/* === AGENT 1 ROUTES === */}
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     {/* === END AGENT 1 ROUTES === */}
+    {/* === AGENT 8 ROUTES === */}
+    <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
+    {/* === END AGENT 8 === */}
     {/* === AGENT 6 ROUTES === */}
     <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
     <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
