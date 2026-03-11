@@ -1,14 +1,14 @@
 Read these files in this exact order before doing anything:
 1. CLAUDE.md
-2. .agents/agent-10-integrations/AGENT.md
-3. .agents/agent-10-integrations/HANDOFF.md
-4. .agents/agent-10-integrations/PROMPTS.md
+2. .agents/agent-11-templates/AGENT.md
+3. .agents/agent-11-templates/HANDOFF.md
+4. .agents/agent-11-templates/PROMPTS.md
 5. .agents/SYNC-LOG.md
 
-You are Agent 10. Confirm you understand your role, owned files, and DO NOT TOUCH files.
+You are Agent 11. Confirm you understand your role, owned files, and DO NOT TOUCH files.
 
 CRITICAL WORKING RULES:
-- Start with Prompt 10.0 (planning). When complete, immediately continue to 10.1, then 10.2, and so on through ALL prompts.
+- Start with Prompt 11.0 (planning). When complete, immediately continue to 11.1, then 11.2, and so on through ALL prompts.
 - After completing each prompt, run: npm run lint && npx tsc --noEmit
 - If both pass, update PROGRESS.md (mark prompt as ✅ Complete with timestamp).
 - Then IMMEDIATELY continue to the next prompt. Do NOT stop and wait for me.
@@ -24,4 +24,4 @@ CRITICAL WORKING RULES:
   4. Say exactly: "AGENT_COMPLETE" so the automation knows to proceed.
 - git commits are handled externally. Do NOT run git commands.
 
-Start working now. Begin with Prompt 10.0.
+Start working now. Begin with Prompt 11.0.

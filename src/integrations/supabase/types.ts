@@ -466,6 +466,60 @@ export type Database = {
           },
         ]
       }
+      templates: {
+        Row: {
+          branding: Json | null
+          category: string
+          created_at: string | null
+          description: string | null
+          fields: Json
+          id: string
+          industry: string | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          mode: string
+          settings: Json | null
+          slug: string
+          thumbnail_url: string | null
+          title: string
+          use_count: number | null
+        }
+        Insert: {
+          branding?: Json | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          mode: string
+          settings?: Json | null
+          slug: string
+          thumbnail_url?: string | null
+          title: string
+          use_count?: number | null
+        }
+        Update: {
+          branding?: Json | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          mode?: string
+          settings?: Json | null
+          slug?: string
+          thumbnail_url?: string | null
+          title?: string
+          use_count?: number | null
+        }
+        Relationships: []
+      }
       ticket_messages: {
         Row: {
           created_at: string

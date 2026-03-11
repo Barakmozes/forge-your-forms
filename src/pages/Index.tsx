@@ -20,7 +20,12 @@ import {
   Star,
   ChevronRight,
   ChevronLeft,
+  LayoutTemplate,
 } from "lucide-react";
+// === AGENT 11: Featured Templates ===
+import { useTemplates } from "@/hooks/useTemplates";
+import TemplateCard from "@/components/templates/TemplateCard";
+// === END AGENT 11 ===
 
 const competitors = [
   { name: "Typeform", price: 29 },
@@ -35,6 +40,9 @@ const totalCompetitor = competitors.reduce((s, c) => s + c.price, 0);
 export default function Index() {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
+  // === AGENT 11: Featured Templates ===
+  const { templates: featuredTemplates } = useTemplates({ featured: true });
+  // === END AGENT 11 ===
 
   const modes = [
     {
@@ -88,6 +96,9 @@ export default function Index() {
             <span>FormForge</span>
           </Link>
           <nav className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
+            <Link to="/templates">
+              <Button variant="ghost" size="sm">Templates</Button>
+            </Link>
             <Link to="/pricing">
               <Button variant="ghost" size="sm">{t("landing.pricing")}</Button>
             </Link>
@@ -271,6 +282,41 @@ export default function Index() {
         </div>
       </section>
 
+      {/* === AGENT 11: Featured Templates === */}
+      {featuredTemplates.length > 0 && (
+        <section className="py-20 sm:py-24">
+          <div className="container">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                  <LayoutTemplate className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                {t("landing.startWithTemplate", { defaultValue: "Start with a Template" })}
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+                {t("landing.templateSubtitle", { defaultValue: "Get up and running in seconds with our most popular templates." })}
+              </p>
+            </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredTemplates.slice(0, 6).map((template) => (
+                <TemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+            <div className="mt-8 text-center">
+              <Link to="/templates">
+                <Button variant="outline" size="lg" className="gap-2">
+                  {t("landing.browseAllTemplates", { defaultValue: "Browse All Templates" })}
+                  {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+      {/* === END AGENT 11 === */}
+
       {/* Final CTA */}
       <section className="py-20 sm:py-24">
         <div className="container">
@@ -307,6 +353,7 @@ export default function Index() {
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <Link to="/pricing" className="hover:text-foreground transition-colors">{t("landing.pricing")}</Link>
+              <Link to="/templates" className="hover:text-foreground transition-colors">Templates</Link>
               <a href="#how-it-works" className="hover:text-foreground transition-colors">{t("landing.features")}</a>
               <Link to="/auth" className="hover:text-foreground transition-colors">{t("landing.signIn")}</Link>
             </nav>

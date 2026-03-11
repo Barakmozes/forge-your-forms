@@ -30,6 +30,10 @@ const CannedResponses = lazy(() => import("./pages/CannedResponses"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+// === AGENT 11: Template pages ===
+const Templates = lazy(() => import("./pages/Templates"));
+const TemplateDetail = lazy(() => import("./pages/TemplateDetail"));
+// === END AGENT 11 ===
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 // === END AGENT 4 ===
 
@@ -130,6 +134,10 @@ const AppRoutes = () => (
     <Route path="/canned-responses" element={<ProtectedRoute><CannedResponses /></ProtectedRoute>} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="/forms/:id/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
+    {/* === AGENT 11 ROUTES === */}
+    <Route path="/templates" element={<Templates />} />
+    <Route path="/templates/:slug" element={<TemplateDetail />} />
+    {/* === END AGENT 11 === */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
