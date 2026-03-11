@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
+import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -281,6 +282,9 @@ export default function FeedbackSurveyPage({
         { formId }
       );
       /* === END AGENT 9 === */
+      /* === AGENT 10: Slack Trigger === */
+      dispatchSlackNotification(formId, WEBHOOK_EVENTS.FEEDBACK_RESPONSE, { nps_score: npsScore, sentiment });
+      /* === END AGENT 10 === */
 
       setSubmitState("success");
       toast.success(t('feedback.thankYou'));

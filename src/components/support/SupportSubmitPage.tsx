@@ -18,6 +18,7 @@ import { Headphones, Send, Check, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
+import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -177,6 +178,9 @@ export default function SupportSubmitPage({
         { formId }
       );
       /* === END AGENT 9 === */
+      /* === AGENT 10: Slack Trigger === */
+      dispatchSlackNotification(formId, WEBHOOK_EVENTS.TICKET_CREATED, { ticket_number: ticketData.ticket_number, subject: subject.trim(), email: email.trim() });
+      /* === END AGENT 10 === */
 
       setSubmittedTicket({
         ticketNumber: ticketData.ticket_number,

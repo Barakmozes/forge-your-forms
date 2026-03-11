@@ -16,6 +16,7 @@ import { evaluateCondition, type FieldCondition } from "@/components/builder/Con
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 import type { FormBranding } from "@/components/builder/BrandingPanel";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
+import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 
 export type FieldType =
   | "text"
@@ -460,6 +461,9 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
       /* === AGENT 9: Webhook Trigger === */
       dispatchWebhook(WEBHOOK_EVENTS.SUBMISSION_CREATED, { form_id: formId, data: resolvedData }, { formId });
       /* === END AGENT 9 === */
+      /* === AGENT 10: Slack Trigger === */
+      dispatchSlackNotification(formId, WEBHOOK_EVENTS.SUBMISSION_CREATED, { form_id: formId, data: resolvedData });
+      /* === END AGENT 10 === */
 
       if (settings?.redirectUrl) {
         window.location.href = settings.redirectUrl;

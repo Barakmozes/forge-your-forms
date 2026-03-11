@@ -10,6 +10,7 @@ import { Users, Mail, Copy, Check, Share2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
+import { dispatchSlackNotification, syncToMailchimp } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack + Mailchimp import === */
 
 interface WaitlistLandingPageProps {
   formId: string;
@@ -168,6 +169,10 @@ export default function WaitlistLandingPage({
         { formId }
       );
       /* === END AGENT 9 === */
+      /* === AGENT 10: Slack Trigger === */
+      dispatchSlackNotification(formId, WEBHOOK_EVENTS.WAITLIST_SIGNUP, { email: inserted.email, name: inserted.name, position: inserted.position });
+      syncToMailchimp(formId, inserted.email, inserted.name ? { FNAME: inserted.name } : undefined);
+      /* === END AGENT 10 === */
     } catch (err: unknown) {
       setSubmitState("idle");
       const message =
