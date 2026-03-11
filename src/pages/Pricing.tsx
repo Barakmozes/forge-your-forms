@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +17,12 @@ import {
   X,
   Hammer,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Data                                                               */
+/*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
 interface Tier {
@@ -32,80 +35,6 @@ interface Tier {
   features: string[];
 }
 
-const tiers: Tier[] = [
-  {
-    name: "Free",
-    monthlyPrice: 0,
-    description: "For individuals getting started.",
-    cta: "Get Started",
-    ctaVariant: "outline",
-    highlighted: false,
-    features: [
-      "3 forms",
-      "100 submissions/mo",
-      "Standard mode only",
-      "1 workspace member",
-      "Community support",
-    ],
-  },
-  {
-    name: "Pro",
-    monthlyPrice: 29,
-    description: "For small teams shipping faster.",
-    cta: "Start Free Trial",
-    ctaVariant: "default",
-    highlighted: false,
-    features: [
-      "Unlimited forms",
-      "5,000 submissions/mo",
-      "All 4 modes",
-      "5 workspace members",
-      "Custom branding",
-      "CSV export",
-      "Email support",
-    ],
-  },
-  {
-    name: "Growth",
-    monthlyPrice: 59,
-    description: "For growing teams that need more.",
-    cta: "Start Free Trial",
-    ctaVariant: "default",
-    highlighted: true,
-    features: [
-      "Unlimited forms",
-      "25,000 submissions/mo",
-      "All 4 modes",
-      "15 workspace members",
-      "Custom branding & domain",
-      "CSV + API export",
-      "Priority support",
-      "Advanced analytics",
-      "SLA tracking",
-    ],
-  },
-  {
-    name: "Business",
-    monthlyPrice: 99,
-    description: "For teams that need everything.",
-    cta: "Contact Sales",
-    ctaVariant: "outline",
-    highlighted: false,
-    features: [
-      "Unlimited forms",
-      "Unlimited submissions",
-      "All 4 modes",
-      "Unlimited members",
-      "White-label branding",
-      "CSV + API + Webhook export",
-      "Dedicated support",
-      "Advanced analytics",
-      "SLA tracking",
-      "SSO & audit log",
-    ],
-  },
-];
-
 interface ComparisonFeature {
   name: string;
   free: boolean | string;
@@ -113,47 +42,6 @@ interface ComparisonFeature {
   growth: boolean | string;
   business: boolean | string;
 }
-
-const comparisonFeatures: ComparisonFeature[] = [
-  { name: "Forms", free: "3", pro: "Unlimited", growth: "Unlimited", business: "Unlimited" },
-  { name: "Submissions / month", free: "100", pro: "5,000", growth: "25,000", business: "Unlimited" },
-  { name: "Standard mode", free: true, pro: true, growth: true, business: true },
-  { name: "Waitlist mode", free: false, pro: true, growth: true, business: true },
-  { name: "Feedback / NPS mode", free: false, pro: true, growth: true, business: true },
-  { name: "Support ticket mode", free: false, pro: true, growth: true, business: true },
-  { name: "Workspace members", free: "1", pro: "5", growth: "15", business: "Unlimited" },
-  { name: "Custom branding", free: false, pro: true, growth: true, business: true },
-  { name: "Custom domain", free: false, pro: false, growth: true, business: true },
-  { name: "CSV export", free: false, pro: true, growth: true, business: true },
-  { name: "API export", free: false, pro: false, growth: true, business: true },
-  { name: "Webhook export", free: false, pro: false, growth: false, business: true },
-  { name: "Advanced analytics", free: false, pro: false, growth: true, business: true },
-  { name: "SLA tracking", free: false, pro: false, growth: true, business: true },
-  { name: "Canned responses", free: false, pro: true, growth: true, business: true },
-  { name: "Referral system", free: false, pro: true, growth: true, business: true },
-  { name: "Real-time updates", free: true, pro: true, growth: true, business: true },
-  { name: "SSO & audit log", free: false, pro: false, growth: false, business: true },
-  { name: "Dedicated support", free: false, pro: false, growth: false, business: true },
-];
-
-const faqs = [
-  {
-    question: "Can I change plans later?",
-    answer: "Yes, you can upgrade or downgrade anytime. When upgrading, you'll be charged the prorated difference. When downgrading, the new rate applies at the next billing cycle.",
-  },
-  {
-    question: "What happens if I hit my submission limit?",
-    answer: "You'll receive a notification at 80% and 100% usage. Once you hit the limit, new submissions are queued until the next billing cycle — no data is lost. You can upgrade anytime to unlock more.",
-  },
-  {
-    question: "Is there a free trial?",
-    answer: "Yes! Pro and Growth plans include a 14-day free trial with full access. No credit card required to start.",
-  },
-  {
-    question: "How do I cancel?",
-    answer: "You can cancel anytime from your workspace settings. Your data is retained for 30 days after cancellation, and you can export everything before then.",
-  },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Components                                                         */
@@ -175,12 +63,131 @@ function CellValue({ value }: { value: boolean | string }) {
 /* ------------------------------------------------------------------ */
 
 export default function Pricing() {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const [annual, setAnnual] = useState(false);
+
+  const tiers: Tier[] = [
+    {
+      name: t('pricing.tierFree'),
+      monthlyPrice: 0,
+      description: t('pricing.tierFreeDesc'),
+      cta: t('pricing.ctaGetStarted'),
+      ctaVariant: "outline",
+      highlighted: false,
+      features: [
+        t('pricing.feat3Forms'),
+        t('pricing.feat100Submissions'),
+        t('pricing.featStandardOnly'),
+        t('pricing.feat1Member'),
+        t('pricing.featCommunitySupport'),
+      ],
+    },
+    {
+      name: t('pricing.tierPro'),
+      monthlyPrice: 29,
+      description: t('pricing.tierProDesc'),
+      cta: t('pricing.ctaStartTrial'),
+      ctaVariant: "default",
+      highlighted: false,
+      features: [
+        t('pricing.featUnlimitedForms'),
+        t('pricing.feat5kSubmissions'),
+        t('pricing.featAll4Modes'),
+        t('pricing.feat5Members'),
+        t('pricing.featCustomBranding'),
+        t('pricing.featCSVExport'),
+        t('pricing.featEmailSupport'),
+      ],
+    },
+    {
+      name: t('pricing.tierGrowth'),
+      monthlyPrice: 59,
+      description: t('pricing.tierGrowthDesc'),
+      cta: t('pricing.ctaStartTrial'),
+      ctaVariant: "default",
+      highlighted: true,
+      features: [
+        t('pricing.featUnlimitedForms'),
+        t('pricing.feat25kSubmissions'),
+        t('pricing.featAll4Modes'),
+        t('pricing.feat15Members'),
+        t('pricing.featCustomBrandingDomain'),
+        t('pricing.featCSVAPIExport'),
+        t('pricing.featPrioritySupport'),
+        t('pricing.featAdvancedAnalytics'),
+        t('pricing.featSLATracking'),
+      ],
+    },
+    {
+      name: t('pricing.tierBusiness'),
+      monthlyPrice: 99,
+      description: t('pricing.tierBusinessDesc'),
+      cta: t('pricing.ctaContactSales'),
+      ctaVariant: "outline",
+      highlighted: false,
+      features: [
+        t('pricing.featUnlimitedForms'),
+        t('pricing.featUnlimitedSubmissions'),
+        t('pricing.featAll4Modes'),
+        t('pricing.featUnlimitedMembers'),
+        t('pricing.featWhiteLabel'),
+        t('pricing.featCSVAPIWebhookExport'),
+        t('pricing.featDedicatedSupport'),
+        t('pricing.featAdvancedAnalytics'),
+        t('pricing.featSLATracking'),
+        t('pricing.featSSOAudit'),
+      ],
+    },
+  ];
+
+  const comparisonFeatures: ComparisonFeature[] = [
+    { name: t('pricing.compForms'), free: "3", pro: t('pricing.unlimited'), growth: t('pricing.unlimited'), business: t('pricing.unlimited') },
+    { name: t('pricing.compSubmissions'), free: "100", pro: "5,000", growth: "25,000", business: t('pricing.unlimited') },
+    { name: t('pricing.compStandardMode'), free: true, pro: true, growth: true, business: true },
+    { name: t('pricing.compWaitlistMode'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compFeedbackMode'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compSupportMode'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compMembers'), free: "1", pro: "5", growth: "15", business: t('pricing.unlimited') },
+    { name: t('pricing.compBranding'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compDomain'), free: false, pro: false, growth: true, business: true },
+    { name: t('pricing.compCSV'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compAPI'), free: false, pro: false, growth: true, business: true },
+    { name: t('pricing.compWebhook'), free: false, pro: false, growth: false, business: true },
+    { name: t('pricing.compAnalytics'), free: false, pro: false, growth: true, business: true },
+    { name: t('pricing.compSLA'), free: false, pro: false, growth: true, business: true },
+    { name: t('pricing.compCanned'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compReferral'), free: false, pro: true, growth: true, business: true },
+    { name: t('pricing.compRealtime'), free: true, pro: true, growth: true, business: true },
+    { name: t('pricing.compSSO'), free: false, pro: false, growth: false, business: true },
+    { name: t('pricing.compDedicated'), free: false, pro: false, growth: false, business: true },
+  ];
+
+  const faqs = [
+    {
+      question: t('pricing.faqChangePlans'),
+      answer: t('pricing.faqChangePlansAnswer'),
+    },
+    {
+      question: t('pricing.faqSubmissionLimit'),
+      answer: t('pricing.faqSubmissionLimitAnswer'),
+    },
+    {
+      question: t('pricing.faqFreeTrial'),
+      answer: t('pricing.faqFreeTrialAnswer'),
+    },
+    {
+      question: t('pricing.faqCancel'),
+      answer: t('pricing.faqCancelAnswer'),
+    },
+  ];
 
   const price = (monthly: number) => {
     if (monthly === 0) return 0;
     return annual ? Math.round(monthly * 0.8) : monthly;
   };
+
+  const CtaArrow = isRTL ? ArrowLeft : ArrowRight;
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,16 +200,16 @@ export default function Pricing() {
             </div>
             <span>FormForge</span>
           </Link>
-          <nav className="ml-auto flex items-center gap-2">
+          <nav className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
             <Link to="/pricing">
-              <Button variant="ghost" size="sm">Pricing</Button>
+              <Button variant="ghost" size="sm">{t('landing.pricing')}</Button>
             </Link>
             <Link to="/auth">
-              <Button variant="ghost" size="sm">Sign in</Button>
+              <Button variant="ghost" size="sm">{t('landing.signIn')}</Button>
             </Link>
             <Link to="/auth">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
-                Get Started Free
+                {t('landing.getStartedFree')}
               </Button>
             </Link>
           </nav>
@@ -213,23 +220,23 @@ export default function Pricing() {
       <section className="py-16 sm:py-20 text-center">
         <div className="container">
           <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Simple, transparent pricing
+            {t('pricing.simpleTransparentPricing')}
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Start free. Upgrade when you're ready. All plans include a 14-day trial.
+            {t('pricing.startFreeUpgrade')}
           </p>
 
           {/* Annual toggle */}
           <div className="mt-8 flex items-center justify-center gap-3">
             <span className={cn("text-sm font-medium", !annual && "text-foreground", annual && "text-muted-foreground")}>
-              Monthly
+              {t('pricing.monthly')}
             </span>
             <Switch checked={annual} onCheckedChange={setAnnual} />
             <span className={cn("text-sm font-medium", annual && "text-foreground", !annual && "text-muted-foreground")}>
-              Annual
+              {t('pricing.annual')}
             </span>
             {annual && (
-              <Badge variant="secondary" className="ml-1 text-xs">Save 20%</Badge>
+              <Badge variant="secondary" className="ltr:ml-1 rtl:mr-1 text-xs">{t('pricing.save20')}</Badge>
             )}
           </div>
         </div>
@@ -251,7 +258,7 @@ export default function Pricing() {
               >
                 {tier.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="gradient-primary text-primary-foreground px-3">Most Popular</Badge>
+                    <Badge className="gradient-primary text-primary-foreground px-3">{t('pricing.mostPopular')}</Badge>
                   </div>
                 )}
                 <CardHeader className="pb-4">
@@ -265,11 +272,11 @@ export default function Pricing() {
                       ${price(tier.monthlyPrice)}
                     </span>
                     <span className="text-muted-foreground text-sm">
-                      {tier.monthlyPrice === 0 ? " forever" : "/mo"}
+                      {tier.monthlyPrice === 0 ? ` ${t('pricing.forever')}` : t('pricing.perMonth')}
                     </span>
                     {annual && tier.monthlyPrice > 0 && (
                       <div className="mt-1 text-xs text-muted-foreground">
-                        ${price(tier.monthlyPrice) * 12}/year (billed annually)
+                        ${price(tier.monthlyPrice) * 12}{t('pricing.perYear')}
                       </div>
                     )}
                   </div>
@@ -293,7 +300,7 @@ export default function Pricing() {
                       )}
                       variant={tier.highlighted ? "default" : tier.ctaVariant}
                     >
-                      {tier.cta} <ArrowRight className="h-4 w-4" />
+                      {tier.cta} <CtaArrow className="h-4 w-4" />
                     </Button>
                   </Link>
                 </CardContent>
@@ -307,19 +314,19 @@ export default function Pricing() {
       <section className="border-t border-border/40 bg-muted/30 py-20">
         <div className="container">
           <h2 className="text-center font-display text-3xl font-bold mb-10">
-            Compare plans feature by feature
+            {t('pricing.comparePlans')}
           </h2>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="sticky top-0 bg-card border-b border-border">
-                  <th className="text-left p-4 font-semibold min-w-[200px]">Feature</th>
-                  <th className="p-4 font-semibold text-center min-w-[100px]">Free</th>
-                  <th className="p-4 font-semibold text-center min-w-[100px]">Pro</th>
+                  <th className="ltr:text-left rtl:text-right p-4 font-semibold min-w-[200px]">{t('pricing.feature')}</th>
+                  <th className="p-4 font-semibold text-center min-w-[100px]">{t('pricing.tierFree')}</th>
+                  <th className="p-4 font-semibold text-center min-w-[100px]">{t('pricing.tierPro')}</th>
                   <th className="p-4 font-semibold text-center min-w-[100px]">
-                    <span className="text-primary">Growth</span>
+                    <span className="text-primary">{t('pricing.tierGrowth')}</span>
                   </th>
-                  <th className="p-4 font-semibold text-center min-w-[100px]">Business</th>
+                  <th className="p-4 font-semibold text-center min-w-[100px]">{t('pricing.tierBusiness')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -342,12 +349,12 @@ export default function Pricing() {
       <section className="py-20">
         <div className="container max-w-3xl">
           <h2 className="text-center font-display text-3xl font-bold mb-10">
-            Frequently asked questions
+            {t('pricing.faq')}
           </h2>
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, i) => (
               <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger className="text-left font-medium">
+                <AccordionTrigger className="ltr:text-left rtl:text-right font-medium">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
@@ -370,12 +377,12 @@ export default function Pricing() {
               <span>FormForge</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-              <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
+              <Link to="/" className="hover:text-foreground transition-colors">{t('pricing.home')}</Link>
+              <Link to="/pricing" className="hover:text-foreground transition-colors">{t('landing.pricing')}</Link>
+              <Link to="/auth" className="hover:text-foreground transition-colors">{t('landing.signIn')}</Link>
             </nav>
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} FormForge. All rights reserved.
+              &copy; {new Date().getFullYear()} FormForge. {t('landing.allRightsReserved')}
             </p>
           </div>
         </div>

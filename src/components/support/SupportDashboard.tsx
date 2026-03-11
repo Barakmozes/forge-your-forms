@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   DndContext,
@@ -121,12 +122,12 @@ const STATUS_BADGE_CLASSES: Record<TicketStatus, string> = {
   closed: "bg-gray-100 text-gray-700 dark:bg-gray-950/50 dark:text-gray-400",
 };
 
-const STATUS_LABELS: Record<TicketStatus, string> = {
-  open: "Open",
-  in_progress: "In Progress",
-  waiting: "Waiting",
-  resolved: "Resolved",
-  closed: "Closed",
+const STATUS_LABEL_KEYS: Record<TicketStatus, string> = {
+  open: "support.open",
+  in_progress: "support.inProgress",
+  waiting: "support.waiting",
+  resolved: "support.resolved",
+  closed: "support.closed",
 };
 
 const KANBAN_COLUMNS: TicketStatus[] = ["open", "in_progress", "waiting", "resolved"];
@@ -243,7 +244,7 @@ function VolumeTooltip({
       {payload.map((entry) => (
         <p key={entry.dataKey} className="text-muted-foreground">
           <span
-            className="inline-block w-2.5 h-2.5 rounded-full mr-1.5"
+            className="inline-block w-2.5 h-2.5 rounded-full ltr:mr-1.5 rtl:ml-1.5"
             style={{ backgroundColor: entry.color }}
           />
           Tickets:{" "}
@@ -361,12 +362,14 @@ function KanbanCard({ ticket, isDragOverlay }: KanbanCardProps) {
 
 interface KanbanColumnProps {
   status: TicketStatus;
+  statusLabel: string;
   tickets: Array<{ id: string; ticket_number: string; subject: string; priority: string; submitted_by_email: string | null; category: string | null; created_at: string; status: string }>;
   onStatusChange: (ticketId: string, status: TicketStatus) => void;
   onNavigate: (ticketId: string) => void;
+  dropHereLabel: string;
 }
 
-function KanbanColumn({ status, tickets: columnTickets }: KanbanColumnProps) {
+function KanbanColumn({ status, statusLabel, tickets: columnTickets, dropHereLabel }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -378,7 +381,7 @@ function KanbanColumn({ status, tickets: columnTickets }: KanbanColumnProps) {
             style={{ backgroundColor: STATUS_COLORS[status] }}
           />
           <h3 className="text-sm font-semibold text-foreground">
-            {STATUS_LABELS[status]}
+            {statusLabel}
           </h3>
         </div>
         <Badge variant="secondary" className="tabular-nums text-xs">
@@ -395,7 +398,7 @@ function KanbanColumn({ status, tickets: columnTickets }: KanbanColumnProps) {
         {columnTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 rounded-lg border border-dashed border-border text-muted-foreground text-sm">
             <Inbox className="h-6 w-6 mb-1.5 opacity-40" />
-            <p className="text-xs">Drop tickets here</p>
+            <p className="text-xs">{dropHereLabel}</p>
           </div>
         ) : (
           columnTickets.map((ticket) => (
@@ -414,6 +417,7 @@ export default function SupportDashboard({
   formTitle,
   formStatus,
 }: SupportDashboardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { tickets, loading, updateTicket, bulkUpdateStatus, ticketsByStatus } =
     useTickets(formId);
@@ -427,7 +431,7 @@ export default function SupportDashboard({
     resolutionTrend,
   } = useSupportAnalytics(tickets);
 
-  const [copyLabel, setCopyLabel] = useState("Copy Submit Link");
+  const [copyLabel, setCopyLabel] = useState<"copy" | "copied">("copy");
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
@@ -485,20 +489,20 @@ export default function SupportDashboard({
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(publicLink);
-      setCopyLabel("Copied!");
-      toast.success("Submit link copied to clipboard");
-      setTimeout(() => setCopyLabel("Copy Submit Link"), 2000);
+      setCopyLabel("copied");
+      toast.success(t('support.submitLinkCopied'));
+      setTimeout(() => setCopyLabel("copy"), 2000);
     } catch {
-      toast.error("Failed to copy link");
+      toast.error(t('support.failedCopyLink'));
     }
   }
 
   async function handleStatusChange(ticketId: string, newStatus: TicketStatus) {
     const { error } = await updateTicket(ticketId, { status: newStatus });
     if (error) {
-      toast.error("Failed to update ticket status");
+      toast.error(t('support.failedUpdateStatus'));
     } else {
-      toast.success(`Ticket moved to ${STATUS_LABELS[newStatus]}`);
+      toast.success(t('support.movedTo', { status: t(STATUS_LABEL_KEYS[newStatus]) }));
     }
   }
 
@@ -508,9 +512,9 @@ export default function SupportDashboard({
     const ids = Array.from(selectedTickets);
     const { error } = await bulkUpdateStatus(ids, bulkStatus);
     if (error) {
-      toast.error("Failed to update tickets");
+      toast.error(t('support.failedUpdateTickets'));
     } else {
-      toast.success(`${ids.length} ticket${ids.length > 1 ? "s" : ""} updated`);
+      toast.success(t('support.ticketsUpdated', { count: ids.length }));
       setSelectedTickets(new Set());
       setBulkStatus("");
     }
@@ -557,41 +561,41 @@ export default function SupportDashboard({
 
   const statCards = [
     {
-      title: "Open",
+      title: t('support.open'),
       value: stats.open.toLocaleString(),
-      subtitle: "Awaiting response",
+      subtitle: t('support.awaitingResponse'),
       icon: Inbox,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
-      title: "Unassigned",
+      title: t('support.unassigned'),
       value: stats.unassigned.toLocaleString(),
-      subtitle: "Need assignment",
+      subtitle: t('support.needAssignment'),
       icon: UserX,
       color: "text-orange-600 dark:text-orange-400",
       bg: "bg-orange-100 dark:bg-orange-900/30",
     },
     {
-      title: "Avg First Response",
+      title: t('support.avgFirstResponse'),
       value: stats.avgFirstResponseHours > 0 ? `${stats.avgFirstResponseHours}h` : "--",
-      subtitle: "Hours to first reply",
+      subtitle: t('support.hoursToFirstReply'),
       icon: Zap,
       color: "text-cyan-600 dark:text-cyan-400",
       bg: "bg-cyan-100 dark:bg-cyan-900/30",
     },
     {
-      title: "Avg Resolution",
+      title: t('support.avgResolution'),
       value: stats.avgResolutionHours > 0 ? `${stats.avgResolutionHours}h` : "--",
-      subtitle: "Hours to resolve",
+      subtitle: t('support.hoursToResolve'),
       icon: Clock,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-100 dark:bg-purple-900/30",
     },
     {
-      title: "Resolved Today",
+      title: t('support.resolvedToday'),
       value: stats.resolvedToday.toLocaleString(),
-      subtitle: "Closed today",
+      subtitle: t('support.closedToday'),
       icon: CalendarCheck,
       color: "text-green-600 dark:text-green-400",
       bg: "bg-green-100 dark:bg-green-900/30",
@@ -610,23 +614,22 @@ export default function SupportDashboard({
           </Badge>
           {!loading && (
             <span className="text-sm text-muted-foreground">
-              {stats.total.toLocaleString()} ticket
-              {stats.total !== 1 ? "s" : ""}
+              {stats.total.toLocaleString()} {stats.total !== 1 ? t('support.tickets') : t('support.ticket')}
             </span>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            <Copy className="mr-1.5 h-4 w-4" />
-            {copyLabel}
+            <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {copyLabel === "copied" ? t('common.copied') : t('support.copySubmitLink')}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(`/forms/${formId}/tickets`)}
           >
-            <ExternalLink className="mr-1.5 h-4 w-4" />
-            View All Tickets
+            <ExternalLink className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {t('support.viewAllTickets')}
           </Button>
         </div>
       </div>
@@ -638,8 +641,9 @@ export default function SupportDashboard({
           <AlertDescription>
             <div className="space-y-3">
               <p className="font-medium text-amber-800 dark:text-amber-300">
-                {slaBreaches.length} ticket{slaBreaches.length > 1 ? "s" : ""} over SLA
-                -- no first response within 24 hours
+                {slaBreaches.length > 1
+                  ? t('support.slaOverAlertPlural', { count: slaBreaches.length })
+                  : t('support.slaOverAlert', { count: slaBreaches.length })}
               </p>
               <div className="space-y-2">
                 {slaBreaches.slice(0, 5).map((ticket) => (
@@ -664,15 +668,15 @@ export default function SupportDashboard({
                       className="shrink-0 h-7 text-xs text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                       onClick={() => navigate(`/forms/${formId}/tickets`)}
                     >
-                      View Ticket
-                      <ArrowRight className="ml-1 h-3 w-3" />
+                      {t('support.viewTicket')}
+                      <ArrowRight className="ltr:ml-1 rtl:mr-1 h-3 w-3" />
                     </Button>
                   </div>
                 ))}
               </div>
               {slaBreaches.length > 5 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  And {slaBreaches.length - 5} more...
+                  {t('support.andMore', { count: slaBreaches.length - 5 })}
                 </p>
               )}
             </div>
@@ -687,7 +691,7 @@ export default function SupportDashboard({
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tickets..."
+            placeholder={t('support.searchTickets')}
             className="pl-9 h-9"
           />
         </div>
@@ -698,13 +702,13 @@ export default function SupportDashboard({
             onValueChange={(v) => setStatusFilter(v as TicketStatus | "all")}
           >
             <SelectTrigger className="h-9 w-36">
-              <SelectValue placeholder="All statuses" />
+              <SelectValue placeholder={t('support.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {(Object.entries(STATUS_LABELS) as Array<[TicketStatus, string]>).map(
-                ([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
+              <SelectItem value="all">{t('support.allStatuses')}</SelectItem>
+              {(Object.entries(STATUS_LABEL_KEYS) as Array<[TicketStatus, string]>).map(
+                ([value, labelKey]) => (
+                  <SelectItem key={value} value={value}>{t(labelKey)}</SelectItem>
                 )
               )}
             </SelectContent>
@@ -714,12 +718,12 @@ export default function SupportDashboard({
             onValueChange={(v) => setPriorityFilter(v as TicketPriority | "all")}
           >
             <SelectTrigger className="h-9 w-32">
-              <SelectValue placeholder="All priorities" />
+              <SelectValue placeholder={t('support.allPriorities')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="all">{t('support.allPriorities')}</SelectItem>
               {(["low", "medium", "high", "urgent"] as TicketPriority[]).map((p) => (
-                <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                <SelectItem key={p} value={p} className="capitalize">{t(`support.${p}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -729,9 +733,9 @@ export default function SupportDashboard({
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-          <TabsTrigger value="tickets">Tickets Table</TabsTrigger>
+          <TabsTrigger value="overview">{t('support.overview')}</TabsTrigger>
+          <TabsTrigger value="kanban">{t('support.kanbanBoard')}</TabsTrigger>
+          <TabsTrigger value="tickets">{t('support.ticketsTable')}</TabsTrigger>
         </TabsList>
 
         {/* ─── Tab 1: Overview ─────────────────────────────────────────── */}
@@ -745,8 +749,8 @@ export default function SupportDashboard({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {statCards.map((card) => (
-                <Card key={card.title}>
+              {statCards.map((card, idx) => (
+                <Card key={idx}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
                       {card.title}
@@ -780,16 +784,16 @@ export default function SupportDashboard({
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">
-                    Ticket Volume
+                    {t('support.ticketVolume')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {volumeByDay.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground text-sm">
                       <Inbox className="h-8 w-8 mb-2 opacity-40" />
-                      <p>No ticket data yet</p>
+                      <p>{t('support.noTicketData')}</p>
                       <p className="text-xs mt-1">
-                        Tickets will appear here as they are submitted.
+                        {t('support.ticketsAppearHint')}
                       </p>
                     </div>
                   ) : (
@@ -836,14 +840,14 @@ export default function SupportDashboard({
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">
-                    Priority Breakdown
+                    {t('support.priorityBreakdown')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {pieData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground text-sm">
                       <Filter className="h-8 w-8 mb-2 opacity-40" />
-                      <p>No priority data yet</p>
+                      <p>{t('support.noPriorityData')}</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-4">
@@ -883,7 +887,7 @@ export default function SupportDashboard({
                               }}
                             />
                             <span className="text-muted-foreground capitalize">
-                              {item.priority}
+                              {t(`support.${item.priority}`)}
                             </span>
                             <span className="font-medium tabular-nums">
                               {item.count}
@@ -910,14 +914,14 @@ export default function SupportDashboard({
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">
-                    Tickets by Category
+                    {t('support.ticketsByCategory')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {categoryBreakdown.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
                       <Filter className="h-8 w-8 mb-2 opacity-40" />
-                      <p>No category data yet</p>
+                      <p>{t('support.noCategoryData')}</p>
                     </div>
                   ) : (
                     <ResponsiveContainer
@@ -969,14 +973,14 @@ export default function SupportDashboard({
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">
-                    Agent Workload
+                    {t('support.agentWorkload')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {agentWorkload.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
                       <UserX className="h-8 w-8 mb-2 opacity-40" />
-                      <p>No active assignments</p>
+                      <p>{t('support.noActiveAssignments')}</p>
                     </div>
                   ) : (
                     <ResponsiveContainer
@@ -1046,14 +1050,14 @@ export default function SupportDashboard({
             <Card>
               <CardHeader>
                 <CardTitle className="text-base font-semibold">
-                  Resolution Trend
+                  {t('support.resolutionTrend')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {resolutionTrend.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground text-sm">
                     <CheckCircle className="h-8 w-8 mb-2 opacity-40" />
-                    <p>No resolution data yet</p>
+                    <p>{t('support.noResolutionData')}</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={250}>
@@ -1119,11 +1123,13 @@ export default function SupportDashboard({
                   <KanbanColumn
                     key={status}
                     status={status}
+                    statusLabel={t(STATUS_LABEL_KEYS[status])}
                     tickets={filteredByStatus(status)}
                     onStatusChange={handleStatusChange}
                     onNavigate={(ticketId) =>
                       navigate(`/forms/${formId}/tickets/${ticketId}`)
                     }
+                    dropHereLabel={t('support.dropTicketsHere')}
                   />
                 ))}
               </div>
@@ -1146,23 +1152,23 @@ export default function SupportDashboard({
               {selectedTickets.size > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground shrink-0">
-                    {selectedTickets.size} selected
+                    {t('support.selected', { count: selectedTickets.size })}
                   </span>
                   <Select
                     value={bulkStatus}
                     onValueChange={(v) => setBulkStatus(v as TicketStatus)}
                   >
                     <SelectTrigger className="h-9 w-36">
-                      <SelectValue placeholder="Change status" />
+                      <SelectValue placeholder={t('support.changeStatus')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(
-                        Object.entries(STATUS_LABELS) as Array<
+                        Object.entries(STATUS_LABEL_KEYS) as Array<
                           [TicketStatus, string]
                         >
-                      ).map(([value, label]) => (
+                      ).map(([value, labelKey]) => (
                         <SelectItem key={value} value={value}>
-                          {label}
+                          {t(labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1173,7 +1179,7 @@ export default function SupportDashboard({
                     disabled={!bulkStatus}
                     onClick={handleBulkAction}
                   >
-                    Apply
+                    {t('support.apply')}
                   </Button>
                 </div>
               )}
@@ -1184,14 +1190,14 @@ export default function SupportDashboard({
                   {filteredTickets.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">
                       <Inbox className="h-8 w-8 mb-2 opacity-40" />
-                      <p>No tickets found</p>
+                      <p>{t('support.noTicketsFound')}</p>
                       {searchQuery || statusFilter !== "all" ? (
                         <p className="text-xs mt-1">
-                          Try adjusting your search or filter.
+                          {t('support.adjustSearchOrFilter')}
                         </p>
                       ) : (
                         <p className="text-xs mt-1">
-                          Tickets will appear here once submitted.
+                          {t('support.ticketsWillAppearOnceSubmitted')}
                         </p>
                       )}
                     </div>
@@ -1210,21 +1216,21 @@ export default function SupportDashboard({
                                 aria-label="Select all tickets"
                               />
                             </TableHead>
-                            <TableHead className="w-28">Ticket #</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead className="w-28">Status</TableHead>
-                            <TableHead className="w-24">Priority</TableHead>
+                            <TableHead className="w-28">{t('support.ticketNumber')}</TableHead>
+                            <TableHead>{t('support.subject')}</TableHead>
+                            <TableHead className="w-28">{t('support.status')}</TableHead>
+                            <TableHead className="w-24">{t('support.priority')}</TableHead>
                             <TableHead className="hidden md:table-cell w-28">
-                              Category
+                              {t('support.category')}
                             </TableHead>
                             <TableHead className="hidden sm:table-cell">
-                              Submitted By
+                              {t('support.submitter')}
                             </TableHead>
                             <TableHead className="hidden lg:table-cell w-32">
-                              Created
+                              {t('support.created')}
                             </TableHead>
                             <TableHead className="hidden lg:table-cell w-28">
-                              Assignee
+                              {t('support.assignedTo')}
                             </TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1258,7 +1264,7 @@ export default function SupportDashboard({
                                     ]
                                   }`}
                                 >
-                                  {STATUS_LABELS[ticket.status as TicketStatus]}
+                                  {t(STATUS_LABEL_KEYS[ticket.status as TicketStatus])}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -1270,7 +1276,7 @@ export default function SupportDashboard({
                                     ]
                                   }`}
                                 >
-                                  {ticket.priority}
+                                  {t(`support.${ticket.priority}`)}
                                 </Badge>
                               </TableCell>
                               <TableCell className="hidden md:table-cell text-sm text-muted-foreground">

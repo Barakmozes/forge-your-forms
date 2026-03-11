@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function WaitlistEntries() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { entries, loading, totalCount, bulkInvite, deleteEntry, exportCSV, exportEmailsOnly } = useWaitlist(id ?? "");
@@ -79,9 +81,9 @@ export default function WaitlistEntries() {
       inviteMessage.trim() || undefined
     );
     if (error) {
-      toast({ title: "Error", description: "Failed to send invites: " + error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: t('waitlist.failedInvite') + ": " + error.message, variant: "destructive" });
     } else {
-      toast({ title: "Invited", description: `${selected.size} entries invited` });
+      toast({ title: t('waitlist.invited'), description: t('waitlist.entriesInvited', { count: selected.size }) });
       setSelected(new Set());
       setInviteDialogOpen(false);
       setInviteMessage("");
@@ -96,7 +98,7 @@ export default function WaitlistEntries() {
       .slice(0, topN);
 
     if (waitingEntries.length === 0) {
-      toast({ title: "No waiting entries to invite" });
+      toast({ title: t('waitlist.noWaitingEntries') });
       return;
     }
 
@@ -106,9 +108,9 @@ export default function WaitlistEntries() {
       topNMessage.trim() || undefined
     );
     if (error) {
-      toast({ title: "Error", description: "Failed to send invites: " + error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: t('waitlist.failedInvite') + ": " + error.message, variant: "destructive" });
     } else {
-      toast({ title: "Invited", description: `Top ${waitingEntries.length} entries invited` });
+      toast({ title: t('waitlist.invited'), description: t('waitlist.topEntriesInvited', { count: waitingEntries.length }) });
       setInviteTopNOpen(false);
       setTopNMessage("");
     }
@@ -118,9 +120,9 @@ export default function WaitlistEntries() {
   const handleDelete = async (entryId: string) => {
     const { error } = await deleteEntry(entryId);
     if (error) {
-      toast({ title: "Error", description: "Failed to delete: " + error.message, variant: "destructive" });
+      toast({ title: t('common.error'), description: t('waitlist.failedDelete') + ": " + error.message, variant: "destructive" });
     } else {
-      toast({ title: "Entry removed" });
+      toast({ title: t('waitlist.entryRemoved') });
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(entryId);
@@ -138,8 +140,8 @@ export default function WaitlistEntries() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-display font-bold">Waitlist Entries</h1>
-          <p className="text-muted-foreground text-sm">{totalCount} total signups</p>
+          <h1 className="text-2xl font-display font-bold">{t('waitlist.entries')}</h1>
+          <p className="text-muted-foreground text-sm">{t('waitlist.totalSignupsCount', { count: totalCount })}</p>
         </div>
       </div>
 
@@ -147,12 +149,12 @@ export default function WaitlistEntries() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by email or name..."
-                className="pl-9"
+                placeholder={t('waitlist.searchByEmailOrName')}
+                className="ltr:pl-9 rtl:pr-9"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -163,7 +165,7 @@ export default function WaitlistEntries() {
                   onClick={() => setInviteDialogOpen(true)}
                 >
                   <Mail className="h-4 w-4" />
-                  Invite ({selected.size})
+                  {t('waitlist.invite')} ({selected.size})
                 </Button>
               )}
               <Button
@@ -173,25 +175,25 @@ export default function WaitlistEntries() {
                 onClick={() => setInviteTopNOpen(true)}
               >
                 <Users className="h-4 w-4" />
-                Invite Top N
+                {t('waitlist.inviteTopN')}
               </Button>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => exportCSV(filtered)}>
-                <Download className="h-4 w-4" /> CSV
+                <Download className="h-4 w-4" /> {t('waitlist.csv')}
               </Button>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => exportEmailsOnly(filtered)}>
-                <FileText className="h-4 w-4" /> Emails
+                <FileText className="h-4 w-4" /> {t('waitlist.emailsExport')}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-8 text-center text-muted-foreground">Loading entries...</div>
+            <div className="p-8 text-center text-muted-foreground">{t('waitlist.loadingEntries')}</div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
               <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground text-sm">
-                {search ? "No entries match your search" : "No signups yet"}
+                {search ? t('waitlist.noEntriesMatch') : t('waitlist.noSignupsYet')}
               </p>
             </div>
           ) : (
@@ -206,11 +208,11 @@ export default function WaitlistEntries() {
                       />
                     </TableHead>
                     <TableHead className="w-16">#</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Referrals</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>{t('common.email')}</TableHead>
+                    <TableHead>{t('common.name')}</TableHead>
+                    <TableHead>{t('waitlist.referrals')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead>{t('waitlist.joined')}</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -238,7 +240,7 @@ export default function WaitlistEntries() {
                           variant="secondary"
                           className={STATUS_COLORS[entry.status] ?? ""}
                         >
-                          {entry.status}
+                          {t(`waitlist.status_${entry.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
@@ -267,15 +269,15 @@ export default function WaitlistEntries() {
       <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite {selected.size} people</DialogTitle>
+            <DialogTitle>{t('waitlist.invitePeople', { count: selected.size })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Message (optional)</Label>
+              <Label>{t('waitlist.messageOptional')}</Label>
               <Textarea
                 value={inviteMessage}
                 onChange={(e) => setInviteMessage(e.target.value)}
-                placeholder="Add a personal message to include with the invite..."
+                placeholder={t('waitlist.addPersonalMessage')}
                 rows={3}
               />
             </div>
@@ -285,7 +287,7 @@ export default function WaitlistEntries() {
               className="w-full gap-2"
             >
               <Mail className="h-4 w-4" />
-              {inviting ? "Sending..." : `Send Invites (${selected.size})`}
+              {inviting ? t('waitlist.sending') : `${t('waitlist.sendInvites')} (${selected.size})`}
             </Button>
           </div>
         </DialogContent>
@@ -295,11 +297,11 @@ export default function WaitlistEntries() {
       <Dialog open={inviteTopNOpen} onOpenChange={setInviteTopNOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Invite Top Entries</DialogTitle>
+            <DialogTitle>{t('waitlist.inviteTopEntries')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Number of entries to invite</Label>
+              <Label>{t('waitlist.numberOfEntries')}</Label>
               <Input
                 type="number"
                 min={1}
@@ -308,15 +310,15 @@ export default function WaitlistEntries() {
                 onChange={(e) => setTopN(Math.max(1, parseInt(e.target.value) || 1))}
               />
               <p className="text-xs text-muted-foreground">
-                {entries.filter((e) => e.status === "waiting").length} waiting entries available
+                {t('waitlist.waitingEntriesAvailable', { count: entries.filter((e) => e.status === "waiting").length })}
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Message (optional)</Label>
+              <Label>{t('waitlist.messageOptional')}</Label>
               <Textarea
                 value={topNMessage}
                 onChange={(e) => setTopNMessage(e.target.value)}
-                placeholder="Add a personal message to include with the invite..."
+                placeholder={t('waitlist.addPersonalMessage')}
                 rows={3}
               />
             </div>
@@ -326,7 +328,7 @@ export default function WaitlistEntries() {
               className="w-full gap-2"
             >
               <Mail className="h-4 w-4" />
-              {inviting ? "Sending..." : `Invite Top ${topN}`}
+              {inviting ? t('waitlist.sending') : t('waitlist.inviteTop', { count: topN })}
             </Button>
           </div>
         </DialogContent>

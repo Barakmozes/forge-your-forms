@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useFeedback } from "@/hooks/useFeedback";
 import { useFeedbackAnalytics, type DateRange } from "@/hooks/useFeedbackAnalytics";
@@ -157,7 +158,7 @@ function NpsTrendTooltip({
       {payload.map((entry) => (
         <p key={entry.dataKey} className="text-muted-foreground">
           <span
-            className="inline-block w-2.5 h-2.5 rounded-full mr-1.5"
+            className="inline-block w-2.5 h-2.5 rounded-full ltr:mr-1.5 rtl:ml-1.5"
             style={{ backgroundColor: entry.color }}
           />
           NPS:{" "}
@@ -184,7 +185,7 @@ function VolumeTooltip({
       {payload.map((entry) => (
         <p key={entry.dataKey} className="text-muted-foreground">
           <span
-            className="inline-block w-2.5 h-2.5 rounded-full mr-1.5"
+            className="inline-block w-2.5 h-2.5 rounded-full ltr:mr-1.5 rtl:ml-1.5"
             style={{ backgroundColor: entry.color }}
           />
           {entry.name}:{" "}
@@ -225,6 +226,7 @@ export default function FeedbackDashboard({
   formTitle,
   formStatus,
 }: FeedbackDashboardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { responses, alerts, loading, toggleFlag, markAlertRead } =
     useFeedback(formId);
@@ -242,7 +244,7 @@ export default function FeedbackDashboard({
     totalResponses,
   } = useFeedbackAnalytics(responses, dateRange);
 
-  const [copyLabel, setCopyLabel] = useState("Copy Survey Link");
+  const [copiedLink, setCopiedLink] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(
     new Set()
   );
@@ -258,20 +260,20 @@ export default function FeedbackDashboard({
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(publicLink);
-      setCopyLabel("Copied!");
-      toast.success("Survey link copied to clipboard");
-      setTimeout(() => setCopyLabel("Copy Survey Link"), 2000);
+      setCopiedLink(true);
+      toast.success(t('feedback.surveyLinkCopied'));
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      toast.error("Failed to copy link");
+      toast.error(t('feedback.failedCopy'));
     }
   }
 
   async function handleToggleFlag(responseId: string, currentFlagged: boolean) {
     const { error } = await toggleFlag(responseId, !currentFlagged);
     if (error) {
-      toast.error("Failed to update flag");
+      toast.error(t('feedback.failedUpdateFlag'));
     } else {
-      toast.success(currentFlagged ? "Flag removed" : "Response flagged");
+      toast.success(currentFlagged ? t('feedback.flagRemoved') : t('feedback.responseFlagged'));
     }
   }
 
@@ -285,9 +287,9 @@ export default function FeedbackDashboard({
   // ─── Donut Chart Data ───────────────────────────────────────────────────────
 
   const donutData = [
-    { name: "Promoters", value: breakdown.promoters, color: COLORS.promoter },
-    { name: "Passives", value: breakdown.passives, color: COLORS.passive },
-    { name: "Detractors", value: breakdown.detractors, color: COLORS.detractor },
+    { name: t('feedback.promoters'), value: breakdown.promoters, color: COLORS.promoter },
+    { name: t('feedback.passives'), value: breakdown.passives, color: COLORS.passive },
+    { name: t('feedback.detractors'), value: breakdown.detractors, color: COLORS.detractor },
   ];
 
   // ─── Render ─────────────────────────────────────────────────────────────────
@@ -318,7 +320,7 @@ export default function FeedbackDashboard({
                   className="shrink-0 h-7 text-xs"
                   onClick={() => handleDismissAlert(alert.id)}
                 >
-                  Dismiss
+                  {t('feedback.dismiss')}
                 </Button>
               </AlertDescription>
             </Alert>
@@ -336,8 +338,7 @@ export default function FeedbackDashboard({
           </Badge>
           {!loading && (
             <span className="text-sm text-muted-foreground">
-              {totalResponses.toLocaleString()} response
-              {totalResponses !== 1 ? "s" : ""}
+              {totalResponses.toLocaleString()} {totalResponses !== 1 ? t('feedback.responses') : t('feedback.response')}
             </span>
           )}
         </div>
@@ -356,8 +357,8 @@ export default function FeedbackDashboard({
             ))}
           </div>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            <Copy className="mr-1.5 h-4 w-4" />
-            {copyLabel}
+            <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {copiedLink ? t('feedback.copied') : t('feedback.copySurveyLink')}
           </Button>
         </div>
       </div>
@@ -375,7 +376,7 @@ export default function FeedbackDashboard({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                NPS Score
+                {t('feedback.npsScore')}
               </CardTitle>
               <div className={`rounded-md p-2 ${getNpsBgColor(npsScore)}`}>
                 <BarChart2 className={`h-4 w-4 ${getNpsColor(npsScore)}`} />
@@ -406,7 +407,7 @@ export default function FeedbackDashboard({
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {npsDelta !== null ? "vs previous period" : "Range: -100 to +100"}
+                {npsDelta !== null ? t('feedback.vsPreviousPeriod') : t('feedback.npsRange')}
               </p>
             </CardContent>
           </Card>
@@ -415,7 +416,7 @@ export default function FeedbackDashboard({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Sentiment Breakdown
+                {t('feedback.sentimentBreakdown')}
               </CardTitle>
               <div className="rounded-md p-2 bg-blue-100 dark:bg-blue-900/30">
                 <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -424,7 +425,7 @@ export default function FeedbackDashboard({
             <CardContent>
               {breakdown.total === 0 ? (
                 <div className="flex items-center justify-center h-[140px] text-muted-foreground text-sm">
-                  No responses yet
+                  {t('feedback.noResponsesYet')}
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
@@ -470,8 +471,8 @@ export default function FeedbackDashboard({
                         className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: COLORS.promoter }}
                       />
-                      <span className="text-muted-foreground truncate">Promoters</span>
-                      <span className="font-medium tabular-nums ml-auto">
+                      <span className="text-muted-foreground truncate">{t('feedback.promoters')}</span>
+                      <span className="font-medium tabular-nums ltr:ml-auto rtl:mr-auto">
                         {breakdown.promoters}
                       </span>
                       <span className="text-muted-foreground text-xs tabular-nums w-10 text-right">
@@ -483,8 +484,8 @@ export default function FeedbackDashboard({
                         className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: COLORS.passive }}
                       />
-                      <span className="text-muted-foreground truncate">Passives</span>
-                      <span className="font-medium tabular-nums ml-auto">
+                      <span className="text-muted-foreground truncate">{t('feedback.passives')}</span>
+                      <span className="font-medium tabular-nums ltr:ml-auto rtl:mr-auto">
                         {breakdown.passives}
                       </span>
                       <span className="text-muted-foreground text-xs tabular-nums w-10 text-right">
@@ -496,8 +497,8 @@ export default function FeedbackDashboard({
                         className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: COLORS.detractor }}
                       />
-                      <span className="text-muted-foreground truncate">Detractors</span>
-                      <span className="font-medium tabular-nums ml-auto">
+                      <span className="text-muted-foreground truncate">{t('feedback.detractors')}</span>
+                      <span className="font-medium tabular-nums ltr:ml-auto rtl:mr-auto">
                         {breakdown.detractors}
                       </span>
                       <span className="text-muted-foreground text-xs tabular-nums w-10 text-right">
@@ -514,7 +515,7 @@ export default function FeedbackDashboard({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Responses
+                {t('feedback.totalResponses')}
               </CardTitle>
               <div className="rounded-md p-2 bg-purple-100 dark:bg-purple-900/30">
                 <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -544,7 +545,7 @@ export default function FeedbackDashboard({
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                All time
+                {t('feedback.allTime')}
               </p>
             </CardContent>
           </Card>
@@ -558,13 +559,13 @@ export default function FeedbackDashboard({
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">
-              NPS Trend Over Time
+              {t('feedback.npsTrendOverTime')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {weeklyTrend.length === 0 ? (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                No trend data yet. Responses will appear here over time.
+                {t('feedback.noTrendData')}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -622,13 +623,13 @@ export default function FeedbackDashboard({
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">
-              Response Volume by Sentiment
+              {t('feedback.responseVolumeBySentiment')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {volumeBySentiment.length === 0 ? (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                No volume data yet. Share your survey to start collecting responses.
+                {t('feedback.noVolumeData')}
               </div>
             ) : (
               <>
@@ -660,21 +661,21 @@ export default function FeedbackDashboard({
                     <Tooltip content={<VolumeTooltip />} />
                     <Bar
                       dataKey="promoter"
-                      name="Promoters"
+                      name={t('feedback.promoters')}
                       stackId="sentiment"
                       fill={COLORS.promoter}
                       radius={[0, 0, 0, 0]}
                     />
                     <Bar
                       dataKey="passive"
-                      name="Passives"
+                      name={t('feedback.passives')}
                       stackId="sentiment"
                       fill={COLORS.passive}
                       radius={[0, 0, 0, 0]}
                     />
                     <Bar
                       dataKey="detractor"
-                      name="Detractors"
+                      name={t('feedback.detractors')}
                       stackId="sentiment"
                       fill={COLORS.detractor}
                       radius={[4, 4, 0, 0]}
@@ -688,21 +689,21 @@ export default function FeedbackDashboard({
                       className="inline-block h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: COLORS.promoter }}
                     />
-                    <span className="text-muted-foreground">Promoters</span>
+                    <span className="text-muted-foreground">{t('feedback.promoters')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
                       className="inline-block h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: COLORS.passive }}
                     />
-                    <span className="text-muted-foreground">Passives</span>
+                    <span className="text-muted-foreground">{t('feedback.passives')}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
                       className="inline-block h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: COLORS.detractor }}
                     />
-                    <span className="text-muted-foreground">Detractors</span>
+                    <span className="text-muted-foreground">{t('feedback.detractors')}</span>
                   </div>
                 </div>
               </>
@@ -724,38 +725,38 @@ export default function FeedbackDashboard({
             <CardHeader className="flex flex-row items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               <CardTitle className="text-base font-semibold">
-                At-Risk Clients
+                {t('feedback.atRiskClients')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {atRiskClients.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
                   <Users className="h-8 w-8 mb-2 opacity-40" />
-                  <p>No at-risk clients</p>
+                  <p>{t('feedback.noAtRiskClients')}</p>
                   <p className="text-xs mt-1">
-                    Detractor responses will appear here for follow-up.
+                    {t('feedback.atRiskHint')}
                   </p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead className="w-16 text-center">Score</TableHead>
+                      <TableHead>{t('common.email')}</TableHead>
+                      <TableHead className="w-16 text-center">{t('feedback.score')}</TableHead>
                       <TableHead className="hidden md:table-cell">
-                        Follow-up
+                        {t('feedback.followUp')}
                       </TableHead>
                       <TableHead className="hidden sm:table-cell">
-                        Date
+                        {t('feedback.date')}
                       </TableHead>
-                      <TableHead className="w-16 text-center">Flag</TableHead>
+                      <TableHead className="w-16 text-center">{t('feedback.flag')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {atRiskClients.slice(0, 10).map((client) => (
                       <TableRow key={client.id}>
                         <TableCell className="max-w-[160px] truncate text-sm">
-                          {client.respondent_email ?? "Anonymous"}
+                          {client.respondent_email ?? t('feedback.anonymous')}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="destructive" className="tabular-nums">
@@ -777,7 +778,7 @@ export default function FeedbackDashboard({
                               handleToggleFlag(client.id, client.flagged)
                             }
                             title={
-                              client.flagged ? "Remove flag" : "Flag for follow-up"
+                              client.flagged ? t('feedback.removeFlag') : t('feedback.flagForFollowUp')
                             }
                           >
                             <Flag
@@ -802,16 +803,16 @@ export default function FeedbackDashboard({
             <CardHeader className="flex flex-row items-center gap-2">
               <BarChart2 className="h-5 w-5 text-blue-500" />
               <CardTitle className="text-base font-semibold">
-                NPS by Category
+                {t('feedback.npsByCategory')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {categoryBreakdown.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
                   <BarChart2 className="h-8 w-8 mb-2 opacity-40" />
-                  <p>No category data</p>
+                  <p>{t('feedback.noCategoryData')}</p>
                   <p className="text-xs mt-1">
-                    Categories will appear once responses include them.
+                    {t('feedback.categoryDataHint')}
                   </p>
                 </div>
               ) : (

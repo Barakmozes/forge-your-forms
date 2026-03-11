@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ interface FormSettingsPanelProps {
 }
 
 export default function FormSettingsPanel({ settings, onChange }: FormSettingsPanelProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [local, setLocal] = useState<FormSettings>(settings);
 
@@ -44,44 +46,45 @@ export default function FormSettingsPanel({ settings, onChange }: FormSettingsPa
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 gap-2">
-          <Settings2 className="h-4 w-4" /> Settings
+          <Settings2 className="h-4 w-4" /> {t("builder.settings")}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="mb-6">
-          <SheetTitle className="font-display">Form Settings</SheetTitle>
+          <SheetTitle className="font-display">{t("builder.formSettings")}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-6">
           {/* Submission Settings */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Submission
+              {t("builder.submission")}
             </h3>
 
             <div className="space-y-2">
-              <Label>Thank You Message</Label>
+              <Label>{t("builder.thankYouMessage")}</Label>
               <Textarea
                 value={local.thankYouMessage ?? ""}
                 onChange={(e) => update({ thankYouMessage: e.target.value || undefined })}
-                placeholder="Thank you — your response has been recorded successfully."
+                placeholder={t("builder.thankYouPlaceholder")}
                 rows={3}
               />
               <p className="text-xs text-muted-foreground">
-                Shown after a successful submission. Leave blank for default.
+                {t("builder.thankYouHint")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Redirect URL</Label>
+              <Label>{t("builder.redirectUrl")}</Label>
               <Input
                 type="url"
                 value={local.redirectUrl ?? ""}
                 onChange={(e) => update({ redirectUrl: e.target.value || undefined })}
                 placeholder="https://example.com/thank-you"
+                dir="ltr"
               />
               <p className="text-xs text-muted-foreground">
-                Redirect users here after submission instead of showing a message.
+                {t("builder.redirectHint")}
               </p>
             </div>
 
@@ -90,10 +93,10 @@ export default function FormSettingsPanel({ settings, onChange }: FormSettingsPa
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="cursor-pointer" htmlFor="limit-email-toggle">
-                  Limit one per email
+                  {t("builder.limitOnePerEmail")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Prevent duplicate submissions from the same email.
+                  {t("builder.limitOneHint")}
                 </p>
               </div>
               <Switch
@@ -106,7 +109,7 @@ export default function FormSettingsPanel({ settings, onChange }: FormSettingsPa
             <Separator />
 
             <div className="space-y-2">
-              <Label>Close after N submissions</Label>
+              <Label>{t("builder.closeAfterCount")}</Label>
               <Input
                 type="number"
                 min={0}
@@ -118,10 +121,10 @@ export default function FormSettingsPanel({ settings, onChange }: FormSettingsPa
                       : null,
                   })
                 }
-                placeholder="Unlimited"
+                placeholder={t("builder.unlimited")}
               />
               <p className="text-xs text-muted-foreground">
-                Automatically close the form after this many responses. Leave blank for unlimited.
+                {t("builder.closeAfterHint")}
               </p>
             </div>
           </div>

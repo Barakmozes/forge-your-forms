@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import AppLayout from "@/components/AppLayout";
@@ -19,6 +20,7 @@ import { useCannedResponses } from "@/hooks/useCannedResponses";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CannedResponses() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
   const { responses, loading, create, update, remove } = useCannedResponses(currentWorkspace?.id ?? "");
@@ -49,7 +51,7 @@ export default function CannedResponses() {
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
-      toast({ title: "Error", description: "Title and content are required", variant: "destructive" });
+      toast({ title: t('common.error'), description: "Title and content are required", variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -60,12 +62,12 @@ export default function CannedResponses() {
         content: content.trim(),
         category: category.trim() || null,
       });
-      if (error) toast({ title: "Error", description: "Failed to update", variant: "destructive" });
-      else toast({ title: "Updated" });
+      if (error) toast({ title: t('common.error'), description: "Failed to update", variant: "destructive" });
+      else toast({ title: t('common.update') });
     } else {
       const { error } = await create(title.trim(), content.trim(), category.trim() || undefined);
-      if (error) toast({ title: "Error", description: "Failed to create", variant: "destructive" });
-      else toast({ title: "Created" });
+      if (error) toast({ title: t('common.error'), description: "Failed to create", variant: "destructive" });
+      else toast({ title: t('common.create') });
     }
 
     setSaving(false);
@@ -74,8 +76,8 @@ export default function CannedResponses() {
 
   const handleDelete = async (id: string) => {
     const { error } = await remove(id);
-    if (error) toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
-    else toast({ title: "Deleted" });
+    if (error) toast({ title: t('common.error'), description: "Failed to delete", variant: "destructive" });
+    else toast({ title: t('common.delete') });
   };
 
   return (
@@ -85,26 +87,26 @@ export default function CannedResponses() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-display font-bold">Canned Responses</h1>
-          <p className="text-muted-foreground text-sm">Pre-written replies for quick ticket responses</p>
+          <h1 className="text-2xl font-display font-bold">{t('support.cannedResponses')}</h1>
+          <p className="text-muted-foreground text-sm">{t('support.preWrittenReplies')}</p>
         </div>
         <Button className="gap-2" onClick={openCreate}>
-          <Plus className="h-4 w-4" /> New Response
+          <Plus className="h-4 w-4" /> {t('support.newResponse')}
         </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-muted-foreground">Loading...</div>
+        <div className="text-center py-20 text-muted-foreground">{t('common.loading')}</div>
       ) : responses.length === 0 ? (
         <Card className="py-12">
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
-            <h3 className="font-semibold">No canned responses yet</h3>
+            <h3 className="font-semibold">{t('support.noCannedResponses')}</h3>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Create pre-written replies to speed up your ticket responses. Use {"{{customer_name}}"} for personalization.
+              {t('support.createPreWritten')} {t('support.personalizationHint', { placeholder: '{{customer_name}}' })}
             </p>
             <Button onClick={openCreate} className="gap-2 mt-2">
-              <Plus className="h-4 w-4" /> Create First Response
+              <Plus className="h-4 w-4" /> {t('support.createFirstResponse')}
             </Button>
           </CardContent>
         </Card>
@@ -139,19 +141,19 @@ export default function CannedResponses() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit" : "Create"} Canned Response</DialogTitle>
+            <DialogTitle>{editingId ? t('support.editCannedResponse') : t('support.createCannedResponse')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Title</Label>
+              <Label>{t('support.titleLabel')}</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Welcome Reply" />
             </div>
             <div className="space-y-2">
-              <Label>Category (optional)</Label>
-              <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. General, Billing, Technical" />
+              <Label>{t('support.categoryOptional')}</Label>
+              <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('support.categoryPlaceholder')} />
             </div>
             <div className="space-y-2">
-              <Label>Content</Label>
+              <Label>{t('support.content')}</Label>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -159,11 +161,11 @@ export default function CannedResponses() {
                 rows={6}
               />
               <p className="text-xs text-muted-foreground">
-                Use {"{{customer_name}}"} to auto-fill the customer's name.
+                {t('support.autoFillHint', { placeholder: '{{customer_name}}' })}
               </p>
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving ? "Saving..." : editingId ? "Update" : "Create"}
+              {saving ? t('common.saving') : editingId ? t('common.update') : t('common.create')}
             </Button>
           </div>
         </DialogContent>

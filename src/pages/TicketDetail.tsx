@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,6 +66,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function TicketDetailPage() {
+  const { t } = useTranslation();
   const { id: formId, ticketId } = useParams<{
     id: string;
     ticketId: string;
@@ -159,16 +161,16 @@ export default function TicketDetailPage() {
 
     if (error) {
       toast({
-        title: "Error",
-        description: `Failed to update ${field}`,
+        title: t('common.error'),
+        description: t('support.failedUpdate', { field }),
         variant: "destructive",
       });
     } else {
       setTicket((prev) => (prev ? { ...prev, [field]: value } : prev));
       if (field === "status") {
         toast({
-          title: "Status updated",
-          description: `Changed to ${(value ?? "").replace("_", " ")}`,
+          title: t('support.statusUpdated'),
+          description: t('support.changedTo', { status: (value ?? "").replace("_", " ") }),
         });
       }
     }
@@ -188,13 +190,13 @@ export default function TicketDetailPage() {
 
     if (error) {
       toast({
-        title: "Error",
-        description: "Failed to send message",
+        title: t('common.error'),
+        description: t('support.failedSendMessage'),
         variant: "destructive",
       });
     } else {
       setReply("");
-      toast({ title: isInternal ? "Internal note added" : "Reply sent" });
+      toast({ title: isInternal ? t('support.internalNoteAdded') : t('support.replySent') });
     }
     setSending(false);
   };
@@ -232,7 +234,7 @@ export default function TicketDetailPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-20 text-muted-foreground">
-          Loading ticket...
+          {t('support.loadingTicket')}
         </div>
       </AppLayout>
     );
@@ -285,7 +287,7 @@ export default function TicketDetailPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" /> Conversation
+                <MessageSquare className="h-4 w-4" /> {t('support.conversation')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -319,15 +321,15 @@ export default function TicketDetailPage() {
                             {isCustomer
                               ? msg.sender_name ??
                                 msg.sender_email ??
-                                "Customer"
-                              : msg.sender_name ?? "Agent"}
+                                t('support.customer')
+                              : msg.sender_name ?? t('support.agent')}
                           </span>
                           {isInternalNote && (
                             <Badge
                               variant="outline"
                               className="text-[9px] gap-1 text-yellow-600"
                             >
-                              <Lock className="h-2.5 w-2.5" /> Internal
+                              <Lock className="h-2.5 w-2.5" /> {t('support.internal')}
                             </Badge>
                           )}
                         </div>
@@ -343,7 +345,7 @@ export default function TicketDetailPage() {
 
               {messages.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                  No messages yet
+                  {t('support.noMessagesYet')}
                 </div>
               )}
             </CardContent>
@@ -357,8 +359,8 @@ export default function TicketDetailPage() {
                 onChange={(e) => setReply(e.target.value)}
                 placeholder={
                   isInternal
-                    ? "Add an internal note..."
-                    : "Type your reply to the customer..."
+                    ? t('support.addInternalNote')
+                    : t('support.typeReplyToCustomer')
                 }
                 rows={4}
               />
@@ -374,7 +376,7 @@ export default function TicketDetailPage() {
                     onClick={() => setIsInternal(!isInternal)}
                   >
                     <Lock className="h-3 w-3" />
-                    {isInternal ? "Internal Note" : "Public Reply"}
+                    {isInternal ? t('support.internalNote') : t('support.publicReply')}
                   </Button>
 
                   {/* Canned Responses Dropdown */}
@@ -383,7 +385,7 @@ export default function TicketDetailPage() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" size="sm" className="gap-1 text-xs">
                           <FileText className="h-3 w-3" />
-                          Canned Response
+                          {t('support.cannedResponse')}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-72 p-2" align="start">
@@ -412,10 +414,10 @@ export default function TicketDetailPage() {
                 >
                   <Send className="h-4 w-4" />
                   {sending
-                    ? "Sending..."
+                    ? t('support.sending')
                     : isInternal
-                      ? "Add Note"
-                      : "Send Reply"}
+                      ? t('support.addNote')
+                      : t('support.sendReply')}
                 </Button>
               </div>
             </CardContent>
@@ -427,11 +429,11 @@ export default function TicketDetailPage() {
           {/* Details */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Details</CardTitle>
+              <CardTitle className="text-base">{t('support.details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Label className="text-xs text-muted-foreground">{t('support.status')}</Label>
                 <Select
                   value={ticket.status}
                   onValueChange={(v) => updateField("status", v)}
@@ -440,18 +442,18 @@ export default function TicketDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="waiting">Waiting</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="open">{t('support.open')}</SelectItem>
+                    <SelectItem value="in_progress">{t('support.inProgress')}</SelectItem>
+                    <SelectItem value="waiting">{t('support.waiting')}</SelectItem>
+                    <SelectItem value="resolved">{t('support.resolved')}</SelectItem>
+                    <SelectItem value="closed">{t('support.closed')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  Priority
+                  {t('support.priority')}
                 </Label>
                 <Select
                   value={ticket.priority}
@@ -461,22 +463,22 @@ export default function TicketDetailPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="low">{t('support.low')}</SelectItem>
+                    <SelectItem value="medium">{t('support.medium')}</SelectItem>
+                    <SelectItem value="high">{t('support.high')}</SelectItem>
+                    <SelectItem value="urgent">{t('support.urgent')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  Category
+                  {t('support.category')}
                 </Label>
                 <Input
                   className="h-8 text-sm"
                   value={ticket.category ?? ""}
-                  placeholder="Enter category"
+                  placeholder={t('support.enterCategory')}
                   onChange={(e) => {
                     const val = e.target.value;
                     setTicket((prev) =>
@@ -491,7 +493,7 @@ export default function TicketDetailPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">
-                  Assigned To
+                  {t('support.assignedTo')}
                 </Label>
                 <Select
                   value={ticket.assigned_to ?? "unassigned"}
@@ -503,10 +505,10 @@ export default function TicketDetailPage() {
                   }
                 >
                   <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Unassigned" />
+                    <SelectValue placeholder={t('support.unassigned')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">{t('support.unassigned')}</SelectItem>
                     {workspaceMembers.map((m) => (
                       <SelectItem key={m.user_id} value={m.user_id}>
                         {m.email}
@@ -521,17 +523,17 @@ export default function TicketDetailPage() {
           {/* Submitter */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Submitter</CardTitle>
+              <CardTitle className="text-base">{t('support.submitter')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">
-                    {ticket.submitted_by_name ?? "Anonymous"}
+                    {ticket.submitted_by_name ?? t('feedback.anonymous')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {ticket.submitted_by_email ?? "No email"}
+                    {ticket.submitted_by_email ?? t('support.noEmail')}
                   </p>
                 </div>
               </div>
@@ -542,7 +544,7 @@ export default function TicketDetailPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Tag className="h-4 w-4" /> Tags
+                <Tag className="h-4 w-4" /> {t('support.tags')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -566,7 +568,7 @@ export default function TicketDetailPage() {
                       />
                       {tag.name}
                       <button
-                        className="ml-0.5 hover:text-destructive"
+                        className="ltr:ml-0.5 rtl:mr-0.5 hover:text-destructive"
                         onClick={() => handleRemoveTag(tag.id)}
                       >
                         <X className="h-2.5 w-2.5" />
@@ -579,7 +581,7 @@ export default function TicketDetailPage() {
               <div className="relative">
                 <Input
                   className="h-8 text-sm"
-                  placeholder="Search tags to add..."
+                  placeholder={t('support.searchTagsToAdd')}
                   value={tagSearch}
                   onChange={(e) => setTagSearch(e.target.value)}
                 />
@@ -601,7 +603,7 @@ export default function TicketDetailPage() {
                           }}
                         />
                         {tag.name}
-                        <Plus className="h-3 w-3 ml-auto text-muted-foreground" />
+                        <Plus className="h-3 w-3 ltr:ml-auto rtl:mr-auto text-muted-foreground" />
                       </button>
                     ))}
                   </div>
@@ -613,20 +615,20 @@ export default function TicketDetailPage() {
           {/* Timeline */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Timeline</CardTitle>
+              <CardTitle className="text-base">{t('support.timeline')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 <span>
-                  Created: {new Date(ticket.created_at).toLocaleString()}
+                  {t('support.created')}: {new Date(ticket.created_at).toLocaleString()}
                 </span>
               </div>
               {ticket.first_response_at && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MessageSquare className="h-3.5 w-3.5" />
                   <span>
-                    First response:{" "}
+                    {t('support.firstResponse')}:{" "}
                     {new Date(ticket.first_response_at).toLocaleString()}
                   </span>
                 </div>
@@ -635,7 +637,7 @@ export default function TicketDetailPage() {
                 <div className="flex items-center gap-2 text-green-600">
                   <Clock className="h-3.5 w-3.5" />
                   <span>
-                    Resolved:{" "}
+                    {t('support.resolved')}:{" "}
                     {new Date(ticket.resolved_at).toLocaleString()}
                   </span>
                 </div>
@@ -644,7 +646,7 @@ export default function TicketDetailPage() {
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   <span>
-                    Updated:{" "}
+                    {t('support.updated')}:{" "}
                     {new Date(ticket.updated_at).toLocaleString()}
                   </span>
                 </div>

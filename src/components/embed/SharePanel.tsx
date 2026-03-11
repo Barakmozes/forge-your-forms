@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ interface SharePanelProps {
 }
 
 export default function SharePanel({ formId, formTitle }: SharePanelProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
@@ -41,10 +43,10 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(label);
-      toast({ title: "Copied!", description: `${label} copied to clipboard.` });
+      toast({ title: t("common.copied"), description: `${label} copied to clipboard.` });
       setTimeout(() => setCopied(null), 2000);
     } catch {
-      toast({ title: "Error", description: "Failed to copy.", variant: "destructive" });
+      toast({ title: t("common.error"), description: "Failed to copy.", variant: "destructive" });
     }
   };
 
@@ -52,31 +54,31 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 gap-2">
-          <Share2 className="h-4 w-4" /> Share
+          <Share2 className="h-4 w-4" /> {t("builder.share")}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="mb-6">
-          <SheetTitle className="font-display">Share Form</SheetTitle>
+          <SheetTitle className="font-display">{t("builder.shareForm")}</SheetTitle>
         </SheetHeader>
 
         <Tabs defaultValue="link">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="link" className="gap-1.5 text-xs">
-              <ExternalLink className="h-3.5 w-3.5" /> Link
+              <ExternalLink className="h-3.5 w-3.5" /> {t("builder.link")}
             </TabsTrigger>
             <TabsTrigger value="embed" className="gap-1.5 text-xs">
-              <Code className="h-3.5 w-3.5" /> Embed
+              <Code className="h-3.5 w-3.5" /> {t("builder.embed")}
             </TabsTrigger>
             <TabsTrigger value="qr" className="gap-1.5 text-xs">
-              <QrCode className="h-3.5 w-3.5" /> QR Code
+              <QrCode className="h-3.5 w-3.5" /> {t("builder.qrCode")}
             </TabsTrigger>
           </TabsList>
 
           {/* Link Tab */}
           <TabsContent value="link" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Public Link</Label>
+              <Label>{t("builder.publicLink")}</Label>
               <div className="flex gap-2">
                 <Input value={publicUrl} readOnly className="font-mono text-xs" />
                 <Button
@@ -93,7 +95,7 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Share this link to let anyone submit a response.
+                {t("builder.shareLinkHint")}
               </p>
             </div>
 
@@ -102,14 +104,14 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
               className="w-full gap-2"
               onClick={() => window.open(publicUrl, "_blank")}
             >
-              <ExternalLink className="h-4 w-4" /> Open in New Tab
+              <ExternalLink className="h-4 w-4" /> {t("builder.openInNewTab")}
             </Button>
           </TabsContent>
 
           {/* Embed Tab */}
           <TabsContent value="embed" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Embed Code</Label>
+              <Label>{t("builder.embedCode")}</Label>
               <Textarea
                 value={embedCode}
                 readOnly
@@ -126,10 +128,10 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
               ) : (
                 <Copy className="h-4 w-4" />
               )}
-              Copy Embed Code
+              {t("builder.copyEmbedCode")}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Paste this code into your website's HTML to embed the form.
+              {t("builder.embedHint")}
             </p>
           </TabsContent>
 
@@ -146,7 +148,7 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
                 />
               </div>
               <p className="text-sm text-muted-foreground text-center">
-                Scan this QR code to open the form on a mobile device.
+                {t("builder.qrScanHint")}
               </p>
               <Button
                 variant="outline"
@@ -158,7 +160,7 @@ export default function SharePanel({ formId, formTitle }: SharePanelProps) {
                   a.click();
                 }}
               >
-                <QrCode className="h-4 w-4" /> Download QR Code
+                <QrCode className="h-4 w-4" /> {t("builder.downloadQRCode")}
               </Button>
             </div>
           </TabsContent>

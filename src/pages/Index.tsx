@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +10,7 @@ import {
   MessageSquare,
   Headphones,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   Zap,
   Shield,
@@ -16,47 +19,8 @@ import {
   Hammer,
   Star,
   ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
-
-const modes = [
-  {
-    icon: FileText,
-    title: "Forms",
-    description: "Drag-and-drop form builder with conditional logic and real-time submissions.",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
-  },
-  {
-    icon: Users,
-    title: "Waitlists",
-    description: "Viral waitlist pages with referral tracking, leaderboards, and invite management.",
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-50 dark:bg-blue-950/40",
-  },
-  {
-    icon: MessageSquare,
-    title: "Feedback & NPS",
-    description: "NPS surveys with sentiment analysis, trend charts, and detractor alerts.",
-    color: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
-  },
-  {
-    icon: Headphones,
-    title: "Support Tickets",
-    description: "Ticket system with SLA tracking, canned responses, tags, and customer portal.",
-    color: "text-purple-600 dark:text-purple-400",
-    bg: "bg-purple-50 dark:bg-purple-950/40",
-  },
-];
-
-const features = [
-  { icon: Zap, title: "Real-time Updates", description: "Live data with Supabase Realtime — no polling, no refresh." },
-  { icon: Shield, title: "Secure by Default", description: "Row-level security, workspace isolation, and encrypted auth." },
-  { icon: BarChart3, title: "Built-in Analytics", description: "NPS trends, referral leaderboards, SLA dashboards — out of the box." },
-  { icon: Globe, title: "Public Pages", description: "Shareable forms, surveys, and waitlists with custom branding." },
-  { icon: FileText, title: "Drag & Drop Builder", description: "Visual form editor with 10+ field types and live preview." },
-  { icon: Users, title: "Team Workspaces", description: "Invite your team with owner, editor, and viewer roles." },
-];
 
 const competitors = [
   { name: "Typeform", price: 29 },
@@ -69,6 +33,49 @@ const competitors = [
 const totalCompetitor = competitors.reduce((s, c) => s + c.price, 0);
 
 export default function Index() {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
+
+  const modes = [
+    {
+      icon: FileText,
+      title: t("landing.modeForms"),
+      description: t("landing.modeFormsDesc"),
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    },
+    {
+      icon: Users,
+      title: t("landing.modeWaitlists"),
+      description: t("landing.modeWaitlistsDesc"),
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-950/40",
+    },
+    {
+      icon: MessageSquare,
+      title: t("landing.modeFeedback"),
+      description: t("landing.modeFeedbackDesc"),
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+    },
+    {
+      icon: Headphones,
+      title: t("landing.modeSupport"),
+      description: t("landing.modeSupportDesc"),
+      color: "text-purple-600 dark:text-purple-400",
+      bg: "bg-purple-50 dark:bg-purple-950/40",
+    },
+  ];
+
+  const features = [
+    { icon: Zap, title: t("landing.featureRealtime"), description: t("landing.featureRealtimeDesc") },
+    { icon: Shield, title: t("landing.featureSecure"), description: t("landing.featureSecureDesc") },
+    { icon: BarChart3, title: t("landing.featureAnalytics"), description: t("landing.featureAnalyticsDesc") },
+    { icon: Globe, title: t("landing.featurePublicPages"), description: t("landing.featurePublicPagesDesc") },
+    { icon: FileText, title: t("landing.featureDragDrop"), description: t("landing.featureDragDropDesc") },
+    { icon: Users, title: t("landing.featureTeam"), description: t("landing.featureTeamDesc") },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
@@ -80,16 +87,16 @@ export default function Index() {
             </div>
             <span>FormForge</span>
           </Link>
-          <nav className="ml-auto flex items-center gap-2">
+          <nav className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
             <Link to="/pricing">
-              <Button variant="ghost" size="sm">Pricing</Button>
+              <Button variant="ghost" size="sm">{t("landing.pricing")}</Button>
             </Link>
             <Link to="/auth">
-              <Button variant="ghost" size="sm">Sign in</Button>
+              <Button variant="ghost" size="sm">{t("landing.signIn")}</Button>
             </Link>
             <Link to="/auth">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
-                Get Started Free
+                {t("landing.getStartedFree")}
               </Button>
             </Link>
           </nav>
@@ -101,30 +108,29 @@ export default function Index() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_-20%,hsl(155_60%_40%/0.12),transparent)]" />
         <div className="container text-center">
           <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
-            4 tools in 1 platform
+            {t("landing.badge4Tools")}
           </Badge>
           <h1 className="mx-auto max-w-4xl font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Forms, Waitlists, Feedback & Support{" "}
-            <span className="text-primary">in One Platform</span>
+            {t("landing.heroTitle")}{" "}
+            <span className="text-primary">{t("landing.heroTitleHighlight")}</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Stop juggling 4 different tools. FormForge replaces your form builder, waitlist manager,
-            NPS survey tool, and help desk — all for a fraction of the cost.
+            {t("landing.heroSubtitle")}
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link to="/auth">
               <Button size="lg" className="gradient-primary text-primary-foreground shadow-colored gap-2 px-8 text-base">
-                Start Free <ArrowRight className="h-4 w-4" />
+                {t("landing.startFree")} {isRTL ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
               </Button>
             </Link>
             <a href="#how-it-works">
               <Button variant="outline" size="lg" className="gap-2 px-8 text-base">
-                See How It Works
+                {t("landing.seeHowItWorks")}
               </Button>
             </a>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Free forever for small teams. No credit card required.
+            {t("landing.freeForever")}
           </p>
         </div>
       </section>
@@ -134,11 +140,10 @@ export default function Index() {
         <div className="container">
           <div className="text-center">
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              One platform, four superpowers
+              {t("landing.onePlatformFourSuperpowers")}
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              Each mode transforms FormForge into a specialized tool — with its own public pages,
-              dashboards, and analytics.
+              {t("landing.onePlatformSubtitle")}
             </p>
           </div>
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -165,10 +170,10 @@ export default function Index() {
           <div className="mx-auto max-w-4xl">
             <div className="text-center">
               <h2 className="font-display text-3xl font-bold sm:text-4xl">
-                Replace 5 tools. Save <span className="text-primary">${totalCompetitor - 29}/mo</span>
+                Replace 5 tools. Save <span className="text-primary">${totalCompetitor - 29}{t("landing.perMonth")}</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-                See what you're paying for separate tools — and what you'd pay with FormForge.
+                {t("landing.replaceToolsSubtitle")}
               </p>
             </div>
 
@@ -176,17 +181,17 @@ export default function Index() {
               {/* Competitors */}
               <Card className="border-destructive/20 bg-destructive/5">
                 <CardContent className="p-6">
-                  <h3 className="font-display text-lg font-semibold text-destructive">Without FormForge</h3>
+                  <h3 className="font-display text-lg font-semibold text-destructive">{t("landing.withoutFormForge")}</h3>
                   <div className="mt-4 space-y-3">
                     {competitors.map((c) => (
                       <div key={c.name} className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">{c.name}</span>
-                        <span className="font-medium">${c.price}/mo</span>
+                        <span className="font-medium">${c.price}{t("landing.perMonth")}</span>
                       </div>
                     ))}
                     <div className="border-t pt-3 flex items-center justify-between">
-                      <span className="font-semibold">Total</span>
-                      <span className="text-lg font-bold text-destructive line-through">${totalCompetitor}/mo</span>
+                      <span className="font-semibold">{t("landing.total")}</span>
+                      <span className="text-lg font-bold text-destructive line-through">${totalCompetitor}{t("landing.perMonth")}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -195,23 +200,23 @@ export default function Index() {
               {/* FormForge */}
               <Card className="border-primary/30 bg-primary/5 shadow-colored">
                 <CardContent className="p-6">
-                  <h3 className="font-display text-lg font-semibold text-primary">With FormForge Pro</h3>
+                  <h3 className="font-display text-lg font-semibold text-primary">{t("landing.withFormForgePro")}</h3>
                   <div className="mt-4 space-y-3">
                     {modes.map((m) => (
                       <div key={m.title} className="flex items-center gap-2 text-sm">
                         <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-muted-foreground">{m.title}</span>
-                        <span className="ml-auto text-xs text-primary font-medium">Included</span>
+                        <span className="ltr:ml-auto rtl:mr-auto text-xs text-primary font-medium">{t("landing.included")}</span>
                       </div>
                     ))}
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                      <span className="text-muted-foreground">Analytics & Dashboards</span>
-                      <span className="ml-auto text-xs text-primary font-medium">Included</span>
+                      <span className="text-muted-foreground">{t("landing.analyticsDashboards")}</span>
+                      <span className="ltr:ml-auto rtl:mr-auto text-xs text-primary font-medium">{t("landing.included")}</span>
                     </div>
                     <div className="border-t pt-3 flex items-center justify-between">
-                      <span className="font-semibold">Total</span>
-                      <span className="text-lg font-bold text-primary">$29/mo</span>
+                      <span className="font-semibold">{t("landing.total")}</span>
+                      <span className="text-lg font-bold text-primary">$29{t("landing.perMonth")}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -219,7 +224,7 @@ export default function Index() {
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-2">
-              <div className="flex -space-x-2">
+              <div className="flex ltr:-space-x-2 rtl:-space-x-2 rtl:space-x-reverse">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
                     {String.fromCharCode(64 + i)}
@@ -232,7 +237,7 @@ export default function Index() {
                     <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <span className="ml-1">Loved by 500+ teams</span>
+                <span className="ltr:ml-1 rtl:mr-1">{t("landing.lovedByTeams", { count: 500 })}</span>
               </div>
             </div>
           </div>
@@ -244,10 +249,10 @@ export default function Index() {
         <div className="container">
           <div className="text-center">
             <h2 className="font-display text-3xl font-bold sm:text-4xl">
-              Everything you need, nothing you don't
+              {t("landing.everythingYouNeed")}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-              Built for teams who want powerful tools without the bloat.
+              {t("landing.everythingSubtitle")}
             </p>
           </div>
           <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -273,15 +278,15 @@ export default function Index() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(155_80%_60%/0.3),transparent_50%)]" />
             <div className="relative">
               <h2 className="font-display text-3xl font-bold text-primary-foreground sm:text-4xl">
-                Ready to simplify your stack?
+                {t("landing.readyToSimplify")}
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-primary-foreground/80">
-                Join 500+ teams who replaced their patchwork of tools with FormForge. Start free — no credit card needed.
+                {t("landing.readySubtitle", { count: 500 })}
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link to="/auth">
                   <Button size="lg" variant="secondary" className="gap-2 px-8 text-base font-semibold">
-                    Get Started Free <ChevronRight className="h-4 w-4" />
+                    {t("landing.getStartedFree")} {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </Button>
                 </Link>
               </div>
@@ -301,12 +306,12 @@ export default function Index() {
               <span>FormForge</span>
             </div>
             <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-              <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              <a href="#how-it-works" className="hover:text-foreground transition-colors">Features</a>
-              <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
+              <Link to="/pricing" className="hover:text-foreground transition-colors">{t("landing.pricing")}</Link>
+              <a href="#how-it-works" className="hover:text-foreground transition-colors">{t("landing.features")}</a>
+              <Link to="/auth" className="hover:text-foreground transition-colors">{t("landing.signIn")}</Link>
             </nav>
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} FormForge. All rights reserved.
+              &copy; {new Date().getFullYear()} FormForge. {t("landing.allRightsReserved")}
             </p>
           </div>
         </div>

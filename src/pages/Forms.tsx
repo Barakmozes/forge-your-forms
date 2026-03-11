@@ -169,7 +169,7 @@ export default function Forms() {
                     key={mode}
                     type="button"
                     disabled={!config.available}
-                    className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
+                    className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 ltr:text-left rtl:text-right transition-all ${
                       selectedMode === mode ? config.color + " ring-1 ring-offset-1" : "border-border hover:border-muted-foreground/30"
                     } ${!config.available ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                     onClick={() => config.available && setSelectedMode(mode)}

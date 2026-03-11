@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +38,10 @@ interface SubmittedTicket {
 // ─── Priority Config ─────────────────────────────────────────────────────────
 
 const PRIORITIES = [
-  { value: "low", label: "Low", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400" },
-  { value: "medium", label: "Medium", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400" },
-  { value: "high", label: "High", color: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400" },
-  { value: "urgent", label: "Urgent", color: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" },
+  { value: "low", labelKey: "support.low", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400" },
+  { value: "medium", labelKey: "support.medium", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400" },
+  { value: "high", labelKey: "support.high", color: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400" },
+  { value: "urgent", labelKey: "support.urgent", color: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" },
 ] as const;
 
 type PriorityValue = (typeof PRIORITIES)[number]["value"];
@@ -54,6 +55,7 @@ export default function SupportSubmitPage({
   branding,
   settings,
 }: SupportSubmitPageProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -86,39 +88,39 @@ export default function SupportSubmitPage({
 
   function validate(): boolean {
     if (!name.trim()) {
-      toast.error("Please enter your name.");
+      toast.error(t('support.pleaseEnterName'));
       document.getElementById("field-name")?.focus();
       return false;
     }
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      toast.error("Please enter your email address.");
+      toast.error(t('support.pleaseEnterEmail'));
       document.getElementById("field-email")?.focus();
       return false;
     }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(trimmedEmail)) {
-      toast.error("Please enter a valid email address.");
+      toast.error(t('support.pleaseEnterValidEmail'));
       document.getElementById("field-email")?.focus();
       return false;
     }
 
     if (!subject.trim()) {
-      toast.error("Please enter a subject for your ticket.");
+      toast.error(t('support.pleaseEnterSubject'));
       document.getElementById("field-subject")?.focus();
       return false;
     }
 
     if (!ticketDescription.trim()) {
-      toast.error("Please describe your issue.");
+      toast.error(t('support.pleaseDescribeIssue'));
       document.getElementById("field-description")?.focus();
       return false;
     }
 
     if (ticketDescription.trim().length < 20) {
-      toast.error("Description must be at least 20 characters long.");
+      toast.error(t('support.descriptionTooShort'));
       document.getElementById("field-description")?.focus();
       return false;
     }
@@ -172,13 +174,13 @@ export default function SupportSubmitPage({
         email: email.trim(),
       });
       setSubmitState("success");
-      toast.success("Your support ticket has been submitted!");
+      toast.success(t('support.ticketSubmittedToast'));
     } catch (err: unknown) {
       setSubmitState("idle");
       const message =
         err instanceof Error
           ? err.message
-          : "Something went wrong. Please try again.";
+          : t('common.unexpectedError');
       toast.error(message);
     }
   }
@@ -191,10 +193,10 @@ export default function SupportSubmitPage({
     try {
       await navigator.clipboard.writeText(submittedTicket.ticketNumber);
       setCopied(true);
-      toast.success("Ticket number copied to clipboard!");
+      toast.success(t('support.ticketNumberCopied'));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Failed to copy. Please copy it manually.");
+      toast.error(t('support.failedCopy'));
     }
   }
 
@@ -235,11 +237,10 @@ export default function SupportSubmitPage({
           {/* Success Message */}
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Ticket Submitted!
+              {t('support.ticketSubmitted')}
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-              We have received your support request and will get back to you as
-              soon as possible.
+              {t('support.weReceivedYourRequest')}
             </p>
           </div>
 
@@ -249,7 +250,7 @@ export default function SupportSubmitPage({
               {/* Ticket Number */}
               <div className="text-center space-y-2">
                 <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Your Ticket Number
+                  {t('support.yourTicketNumber')}
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <span className="text-2xl sm:text-3xl font-mono font-bold text-foreground tracking-wide">
@@ -276,11 +277,7 @@ export default function SupportSubmitPage({
 
               {/* Confirmation Email Notice */}
               <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                A confirmation has been sent to{" "}
-                <span className="font-medium text-foreground">
-                  {submittedTicket.email}
-                </span>
-                . Keep your ticket number for reference.
+                {t('support.confirmationSent', { email: submittedTicket.email })}
               </p>
 
               {/* Track Ticket Link */}
@@ -296,7 +293,7 @@ export default function SupportSubmitPage({
                 )}
                 style={primaryColor ? ctaBtnStyle : {}}
               >
-                Track Your Ticket
+                {t('support.trackYourTicket')}
                 <ExternalLink className="h-4 w-4" />
               </a>
             </CardContent>
@@ -304,7 +301,7 @@ export default function SupportSubmitPage({
 
           {/* Footer branding */}
           <p className="text-xs text-muted-foreground/60">
-            Powered by FormForge
+            {t('common.poweredBy')}
           </p>
         </div>
       </div>
@@ -373,15 +370,15 @@ export default function SupportSubmitPage({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="field-name" className="text-sm font-medium text-foreground">
-                    Name
-                    <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                    {t('support.name')}
+                    <span className="text-destructive ltr:ml-1 rtl:mr-1" aria-hidden="true">*</span>
                   </Label>
                   <Input
                     id="field-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t('support.yourFullName')}
                     className="h-11 text-base"
                     required
                   />
@@ -389,12 +386,13 @@ export default function SupportSubmitPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="field-email" className="text-sm font-medium text-foreground">
-                    Email
-                    <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                    {t('support.email')}
+                    <span className="text-destructive ltr:ml-1 rtl:mr-1" aria-hidden="true">*</span>
                   </Label>
                   <Input
                     id="field-email"
                     type="email"
+                    dir="ltr"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -407,15 +405,15 @@ export default function SupportSubmitPage({
               {/* ── Subject ──────────────────────────────────────────── */}
               <div className="space-y-2">
                 <Label htmlFor="field-subject" className="text-sm font-medium text-foreground">
-                  Subject
-                  <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                  {t('support.subject')}
+                  <span className="text-destructive ltr:ml-1 rtl:mr-1" aria-hidden="true">*</span>
                 </Label>
                 <Input
                   id="field-subject"
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Brief summary of your issue"
+                  placeholder={t('support.briefSummary')}
                   className="h-11 text-base"
                   required
                 />
@@ -431,11 +429,11 @@ export default function SupportSubmitPage({
                 {hasCategories && (
                   <div className="space-y-2">
                     <Label htmlFor="field-category" className="text-sm font-medium text-foreground">
-                      Category
+                      {t('support.category')}
                     </Label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger id="field-category" className="h-11 text-base">
-                        <SelectValue placeholder="Select a category..." />
+                        <SelectValue placeholder={t('support.selectCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((cat) => (
@@ -450,11 +448,11 @@ export default function SupportSubmitPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="field-priority" className="text-sm font-medium text-foreground">
-                    Priority
+                    {t('support.priority')}
                   </Label>
                   <Select value={priority} onValueChange={(v) => setPriority(v as PriorityValue)}>
                     <SelectTrigger id="field-priority" className="h-11 text-base">
-                      <SelectValue placeholder="Select priority..." />
+                      <SelectValue placeholder={t('support.selectPriority')} />
                     </SelectTrigger>
                     <SelectContent>
                       {PRIORITIES.map((p) => (
@@ -464,7 +462,7 @@ export default function SupportSubmitPage({
                               variant="secondary"
                               className={cn("text-xs px-2 py-0", p.color)}
                             >
-                              {p.label}
+                              {t(p.labelKey)}
                             </Badge>
                           </div>
                         </SelectItem>
@@ -477,20 +475,20 @@ export default function SupportSubmitPage({
               {/* ── Description ──────────────────────────────────────── */}
               <div className="space-y-2">
                 <Label htmlFor="field-description" className="text-sm font-medium text-foreground">
-                  Description
-                  <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                  {t('support.description')}
+                  <span className="text-destructive ltr:ml-1 rtl:mr-1" aria-hidden="true">*</span>
                 </Label>
                 <Textarea
                   id="field-description"
                   value={ticketDescription}
                   onChange={(e) => setTicketDescription(e.target.value)}
-                  placeholder="Please describe your issue in detail. Include any steps to reproduce, error messages, or relevant context..."
+                  placeholder={t('support.describeIssue')}
                   className="min-h-[160px] text-base resize-none"
                   required
                 />
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    Minimum 20 characters
+                    {t('support.min20Chars')}
                   </p>
                   <p
                     className={cn(
@@ -520,11 +518,11 @@ export default function SupportSubmitPage({
                 {submitState === "submitting" ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Submitting...
+                    {t('support.submitting')}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    Submit Ticket
+                    {t('support.submitTicket')}
                     <Send className="h-4 w-4" />
                   </span>
                 )}
@@ -535,7 +533,7 @@ export default function SupportSubmitPage({
 
         {/* Footer branding */}
         <p className="text-center text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
-          Powered by FormForge
+          {t('common.poweredBy')}
         </p>
       </div>
     </div>

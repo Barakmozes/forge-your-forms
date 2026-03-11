@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -180,6 +181,8 @@ export default function FormBuilder() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { isRTL } = useLanguage();
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -333,7 +336,7 @@ export default function FormBuilder() {
       <header className="h-14 border-b bg-background flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-4 w-4" />
+            <BackArrow className="h-4 w-4" />
           </Button>
           <div className="w-64">
             <Input 

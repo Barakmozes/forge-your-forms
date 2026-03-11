@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function TicketTrackingPage({ formId, initialTicket, initialEmail }: TicketTrackingPageProps) {
+  const { t } = useTranslation();
   const [ticketNumber, setTicketNumber] = useState(initialTicket ?? "");
   const [email, setEmail] = useState(initialEmail ?? "");
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -40,7 +42,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
 
   const lookupTicket = async () => {
     if (!ticketNumber.trim() || !email.trim()) {
-      toast.error("Please enter both ticket number and email");
+      toast.error(t('support.enterBothFields'));
       return;
     }
 
@@ -90,7 +92,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
       });
 
     if (error) {
-      toast.error("Failed to send reply");
+      toast.error(t('support.failedSendReply'));
     } else {
       setMessages((prev) => [
         ...prev,
@@ -106,7 +108,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
         },
       ]);
       setReply("");
-      toast.success("Reply sent");
+      toast.success(t('support.replySent'));
     }
     setSending(false);
   };
@@ -120,8 +122,8 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
             <Headphones className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Track Your Ticket</h1>
-            <p className="text-sm text-muted-foreground">Enter your ticket number and email to check status</p>
+            <h1 className="text-2xl font-bold">{t('support.trackYourTicket')}</h1>
+            <p className="text-sm text-muted-foreground">{t('support.enterTicketAndEmail')}</p>
           </div>
         </div>
 
@@ -130,7 +132,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Ticket Number</Label>
+                  <Label>{t('support.ticketNumber')}</Label>
                   <Input
                     value={ticketNumber}
                     onChange={(e) => setTicketNumber(e.target.value)}
@@ -138,9 +140,10 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email Address</Label>
+                  <Label>{t('support.emailAddress')}</Label>
                   <Input
                     type="email"
+                    dir="ltr"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
@@ -149,11 +152,11 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
               </div>
               <Button onClick={lookupTicket} disabled={loading} className="w-full gap-2">
                 <Search className="h-4 w-4" />
-                {loading ? "Looking up..." : "Find Ticket"}
+                {loading ? t('support.lookingUp') : t('support.findTicket')}
               </Button>
               {found === false && (
                 <p className="text-sm text-destructive text-center">
-                  No ticket found. Please check your ticket number and email.
+                  {t('support.noTicketFound')}
                 </p>
               )}
             </CardContent>
@@ -177,13 +180,13 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
                     <h2 className="text-lg font-semibold">{ticket.subject}</h2>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => { setTicket(null); setFound(null); }}>
-                    Back
+                    {t('support.back')}
                   </Button>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    Submitted {new Date(ticket.created_at).toLocaleDateString()}
+                    {t('support.submitted')} {new Date(ticket.created_at).toLocaleDateString()}
                   </div>
                   {ticket.category && (
                     <Badge variant="outline" className="text-xs">{ticket.category}</Badge>
@@ -197,7 +200,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-4">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium">Conversation</h3>
+                  <h3 className="font-medium">{t('support.conversation')}</h3>
                 </div>
 
                 <div className="space-y-4">
@@ -207,13 +210,13 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
                       className={cn(
                         "p-3 rounded-lg text-sm",
                         msg.sender_type === "customer"
-                          ? "bg-muted ml-8"
-                          : "bg-primary/5 border border-primary/20 mr-8"
+                          ? "bg-muted ltr:ml-8 rtl:mr-8"
+                          : "bg-primary/5 border border-primary/20 ltr:mr-8 rtl:ml-8"
                       )}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-xs">
-                          {msg.sender_type === "customer" ? "You" : msg.sender_name ?? "Support Agent"}
+                          {msg.sender_type === "customer" ? t('support.you') : msg.sender_name ?? t('support.supportAgent')}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(msg.created_at).toLocaleString()}
@@ -230,12 +233,12 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
                     <Textarea
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
-                      placeholder="Type your reply..."
+                      placeholder={t('support.typeYourReply')}
                       rows={3}
                     />
                     <Button onClick={sendReply} disabled={sending || !reply.trim()} className="gap-2">
                       <Send className="h-4 w-4" />
-                      {sending ? "Sending..." : "Send Reply"}
+                      {sending ? t('support.sending') : t('support.sendReply')}
                     </Button>
                   </div>
                 )}
@@ -246,7 +249,7 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
 
         <div className="mt-12 pt-6 border-t text-center">
           <p className="text-xs text-muted-foreground">
-            Powered by <span className="font-medium text-foreground">FormForge</span>
+            {t('common.poweredBy')}
           </p>
         </div>
       </div>

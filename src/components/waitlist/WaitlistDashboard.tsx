@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useWaitlistAnalytics } from "@/hooks/useWaitlistAnalytics";
 import {
@@ -105,58 +106,59 @@ export default function WaitlistDashboard({
   formTitle,
   formStatus,
 }: WaitlistDashboardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { stats, dailySignups, leaderboard, sourceBreakdown, loading } =
     useWaitlistAnalytics(formId);
-  const [copyLabel, setCopyLabel] = useState("Copy Public Link");
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const publicLink = `${window.location.origin}/f/${formId}`;
 
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(publicLink);
-      setCopyLabel("Copied!");
-      toast.success("Public link copied to clipboard");
-      setTimeout(() => setCopyLabel("Copy Public Link"), 2000);
+      setCopiedLink(true);
+      toast.success(t('waitlist.linkCopied'));
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      toast.error("Failed to copy link");
+      toast.error(t('waitlist.failedCopy'));
     }
   }
 
   const pieData = [
-    { name: "Direct", value: sourceBreakdown.direct },
-    { name: "Referral", value: sourceBreakdown.referral },
+    { name: t('waitlist.direct'), value: sourceBreakdown.direct },
+    { name: t('waitlist.referral'), value: sourceBreakdown.referral },
   ];
 
   const statCards = [
     {
-      title: "Total Signups",
+      title: t('waitlist.totalSignups'),
       value: stats.total.toLocaleString(),
-      subtitle: "All time",
+      subtitle: t('waitlist.allTime'),
       icon: Users,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
-      title: "Today",
+      title: t('waitlist.today'),
       value: stats.today.toLocaleString(),
-      subtitle: "New signups today",
+      subtitle: t('waitlist.newSignupsToday'),
       icon: TrendingUp,
       color: "text-green-600 dark:text-green-400",
       bg: "bg-green-100 dark:bg-green-900/30",
     },
     {
-      title: "This Week",
+      title: t('waitlist.thisWeek'),
       value: stats.thisWeek.toLocaleString(),
-      subtitle: "Last 7 days",
+      subtitle: t('waitlist.last7Days'),
       icon: Calendar,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-100 dark:bg-purple-900/30",
     },
     {
-      title: "Referral Rate",
+      title: t('waitlist.referralRate'),
       value: `${stats.referralRate.toFixed(1)}%`,
-      subtitle: "Of all signups",
+      subtitle: t('waitlist.ofAllSignups'),
       icon: Share2,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-100 dark:bg-amber-900/30",
@@ -178,20 +180,20 @@ export default function WaitlistDashboard({
             size="sm"
             onClick={() => navigate(`/forms/${formId}/entries`)}
           >
-            <List className="mr-1.5 h-4 w-4" />
-            View Entries
+            <List className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {t('waitlist.viewEntries')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            <Copy className="mr-1.5 h-4 w-4" />
-            {copyLabel}
+            <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {copiedLink ? t('waitlist.copied') : t('waitlist.copyPublicLink')}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(`/forms/${formId}/edit`)}
           >
-            <ExternalLink className="mr-1.5 h-4 w-4" />
-            Edit Settings
+            <ExternalLink className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
+            {t('waitlist.editSettings')}
           </Button>
         </div>
       </div>
@@ -233,13 +235,13 @@ export default function WaitlistDashboard({
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">
-              Signup Growth
+              {t('waitlist.signupGrowth')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {dailySignups.length === 0 ? (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                No signup data yet. Share your waitlist link to get started.
+                {t('waitlist.noSignupData')}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -324,8 +326,8 @@ export default function WaitlistDashboard({
                                 style={{ backgroundColor: entry.color }}
                               />
                               {entry.dataKey === "cumulative"
-                                ? "Total"
-                                : "Daily"}
+                                ? t('waitlist.total')
+                                : t('waitlist.daily')}
                               :{" "}
                               <span className="font-medium text-foreground">
                                 {(entry.value as number).toLocaleString()}
@@ -342,7 +344,7 @@ export default function WaitlistDashboard({
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     fill="url(#cumulativeFill)"
-                    name="Total"
+                    name={t('waitlist.total')}
                   />
                   <Area
                     type="monotone"
@@ -351,7 +353,7 @@ export default function WaitlistDashboard({
                     strokeWidth={1.5}
                     strokeDasharray="4 4"
                     fill="url(#dailyFill)"
-                    name="Daily"
+                    name={t('waitlist.daily')}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -373,16 +375,16 @@ export default function WaitlistDashboard({
             <CardHeader className="flex flex-row items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
               <CardTitle className="text-base font-semibold">
-                Referral Leaderboard
+                {t('waitlist.referralLeaderboard')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {leaderboard.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
                   <Share2 className="h-8 w-8 mb-2 opacity-40" />
-                  <p>No referrals yet</p>
+                  <p>{t('waitlist.noReferralsYet')}</p>
                   <p className="text-xs mt-1">
-                    Referral data will appear here once users start sharing.
+                    {t('waitlist.referralDataHint')}
                   </p>
                 </div>
               ) : (
@@ -390,9 +392,9 @@ export default function WaitlistDashboard({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="text-right">Referrals</TableHead>
+                      <TableHead>{t('common.email')}</TableHead>
+                      <TableHead>{t('common.name')}</TableHead>
+                      <TableHead className="text-right">{t('waitlist.referrals')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -434,14 +436,14 @@ export default function WaitlistDashboard({
           <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold">
-                Source Breakdown
+                {t('waitlist.sourceBreakdown')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {sourceBreakdown.direct === 0 && sourceBreakdown.referral === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-sm">
                   <Users className="h-8 w-8 mb-2 opacity-40" />
-                  <p>No signups yet</p>
+                  <p>{t('waitlist.noSignupsYet')}</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
@@ -490,7 +492,7 @@ export default function WaitlistDashboard({
                         className="inline-block h-3 w-3 rounded-full"
                         style={{ backgroundColor: PIE_COLORS[0] }}
                       />
-                      <span className="text-muted-foreground">Direct</span>
+                      <span className="text-muted-foreground">{t('waitlist.direct')}</span>
                       <span className="font-medium tabular-nums">
                         {sourceBreakdown.direct.toLocaleString()}
                       </span>
@@ -500,7 +502,7 @@ export default function WaitlistDashboard({
                         className="inline-block h-3 w-3 rounded-full"
                         style={{ backgroundColor: PIE_COLORS[1] }}
                       />
-                      <span className="text-muted-foreground">Referral</span>
+                      <span className="text-muted-foreground">{t('waitlist.referral')}</span>
                       <span className="font-medium tabular-nums">
                         {sourceBreakdown.referral.toLocaleString()}
                       </span>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,13 +22,15 @@ export default function ConditionalLogic({
   onChange,
   availableFields,
 }: ConditionalLogicProps) {
+  const { t } = useTranslation();
+
   if (availableFields.length === 0) return null;
 
   if (!condition) {
     return (
       <div className="space-y-2">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Conditional Logic
+          {t("builder.conditionalLogic")}
         </Label>
         <Button
           variant="outline"
@@ -41,7 +44,7 @@ export default function ConditionalLogic({
             })
           }
         >
-          + Add "Show if" condition
+          {t("builder.addShowIf")}
         </Button>
       </div>
     );
@@ -51,7 +54,7 @@ export default function ConditionalLogic({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Show if
+          {t("builder.showIf")}
         </Label>
         <Button
           variant="ghost"
@@ -68,7 +71,7 @@ export default function ConditionalLogic({
         onValueChange={(v) => onChange({ ...condition, fieldId: v })}
       >
         <SelectTrigger className="h-8 text-xs">
-          <SelectValue placeholder="Select field" />
+          <SelectValue placeholder={t("builder.selectField")} />
         </SelectTrigger>
         <SelectContent>
           {availableFields.map((f) => (
@@ -89,16 +92,16 @@ export default function ConditionalLogic({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="is" className="text-xs">is</SelectItem>
-          <SelectItem value="is_not" className="text-xs">is not</SelectItem>
-          <SelectItem value="contains" className="text-xs">contains</SelectItem>
+          <SelectItem value="is" className="text-xs">{t("builder.operatorIs")}</SelectItem>
+          <SelectItem value="is_not" className="text-xs">{t("builder.operatorIsNot")}</SelectItem>
+          <SelectItem value="contains" className="text-xs">{t("builder.operatorContains")}</SelectItem>
         </SelectContent>
       </Select>
 
       <Input
         value={condition.value}
         onChange={(e) => onChange({ ...condition, value: e.target.value })}
-        placeholder="Value"
+        placeholder={t("builder.conditionValue")}
         className="h-8 text-xs"
       />
     </div>

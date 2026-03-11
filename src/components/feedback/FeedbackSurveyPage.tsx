@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,16 +88,6 @@ function getNpsButtonClasses(score: number, isSelected: boolean): string {
   return baseColors[category];
 }
 
-function getNpsCategoryLabel(score: number): string {
-  const category = getNpsCategory(score);
-  const labels: Record<string, string> = {
-    detractor: "Detractor",
-    passive: "Passive",
-    promoter: "Promoter",
-  };
-  return labels[category];
-}
-
 function getNpsCategoryBadgeVariant(
   score: number
 ): "destructive" | "secondary" | "default" {
@@ -150,6 +141,7 @@ function CustomFieldInput({
       return (
         <Input
           type="email"
+          dir="ltr"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder || "you@example.com"}
@@ -192,6 +184,7 @@ export default function FeedbackSurveyPage({
   settings,
   fields,
 }: FeedbackSurveyPageProps) {
+  const { t } = useTranslation();
   const [npsScore, setNpsScore] = useState<number | null>(null);
   const [followUp, setFollowUp] = useState("");
   const [category, setCategory] = useState("");
@@ -231,7 +224,7 @@ export default function FeedbackSurveyPage({
     e.preventDefault();
 
     if (npsScore === null) {
-      toast.error("Please select a score before submitting.");
+      toast.error(t('feedback.pleaseSelectScore'));
       document
         .getElementById("nps-section")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -241,7 +234,7 @@ export default function FeedbackSurveyPage({
     // Validate required custom fields
     for (const field of fields) {
       if (field.required && !customAnswers[field.id]?.trim()) {
-        toast.error(`Please fill in "${field.label}".`);
+        toast.error(t('feedback.pleaseFillIn', { field: field.label }));
         document
           .getElementById(`custom-field-${field.id}`)
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -280,13 +273,13 @@ export default function FeedbackSurveyPage({
       if (error) throw error;
 
       setSubmitState("success");
-      toast.success("Thank you for your feedback!");
+      toast.success(t('feedback.thankYou'));
     } catch (err: unknown) {
       setSubmitState("idle");
       const message =
         err instanceof Error
           ? err.message
-          : "Something went wrong. Please try again.";
+          : t('common.unexpectedError');
       toast.error(message);
     }
   }
@@ -294,7 +287,8 @@ export default function FeedbackSurveyPage({
   // ─── Thank You Screen ───────────────────────────────────────────────────────
 
   if (submitState === "success" && npsScore !== null) {
-    const categoryLabel = getNpsCategoryLabel(npsScore);
+    const category = getNpsCategory(npsScore);
+    const categoryLabel = category === "detractor" ? t('feedback.detractor') : category === "passive" ? t('feedback.passive') : t('feedback.promoter');
     const badgeVariant = getNpsCategoryBadgeVariant(npsScore);
 
     return (
@@ -320,10 +314,10 @@ export default function FeedbackSurveyPage({
           {/* Success Message */}
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Thank you for your feedback!
+              {t('feedback.thankYou')}
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Your response has been recorded and helps us improve.
+              {t('feedback.responseRecorded')}
             </p>
           </div>
 
@@ -331,7 +325,7 @@ export default function FeedbackSurveyPage({
           <Card className="w-full max-w-xs border-border/50 shadow-lg backdrop-blur-sm bg-card/95 dark:bg-card/90">
             <CardContent className="p-6 text-center space-y-3">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Your Score
+                {t('feedback.yourScore')}
               </p>
               <div className="flex items-center justify-center gap-3">
                 <span className="text-5xl font-bold text-foreground tabular-nums">
@@ -347,7 +341,7 @@ export default function FeedbackSurveyPage({
 
           {/* Footer branding */}
           <p className="text-xs text-muted-foreground/60">
-            Powered by FormForge
+            {t('common.poweredBy')}
           </p>
         </div>
       </div>
@@ -414,7 +408,7 @@ export default function FeedbackSurveyPage({
                 <div className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-primary" />
                   <Label className="text-base sm:text-lg font-semibold text-foreground">
-                    How likely are you to recommend us?
+                    {t('feedback.howLikelyRecommend')}
                   </Label>
                 </div>
 
@@ -444,10 +438,10 @@ export default function FeedbackSurveyPage({
                   {/* Scale labels */}
                   <div className="flex justify-between px-1">
                     <span className="text-xs sm:text-sm text-muted-foreground">
-                      Not likely
+                      {t('feedback.notLikely')}
                     </span>
                     <span className="text-xs sm:text-sm text-muted-foreground">
-                      Very likely
+                      {t('feedback.veryLikely')}
                     </span>
                   </div>
                 </div>
@@ -459,7 +453,7 @@ export default function FeedbackSurveyPage({
                       variant={getNpsCategoryBadgeVariant(npsScore)}
                       className="text-xs px-2.5 py-0.5"
                     >
-                      {getNpsCategoryLabel(npsScore)} ({npsScore}/10)
+                      {getNpsCategory(npsScore) === "detractor" ? t('feedback.detractor') : getNpsCategory(npsScore) === "passive" ? t('feedback.passive') : t('feedback.promoter')} ({npsScore}/10)
                     </Badge>
                   </div>
                 )}
@@ -474,14 +468,14 @@ export default function FeedbackSurveyPage({
                       htmlFor="follow-up"
                       className="text-sm font-medium text-foreground"
                     >
-                      What is the main reason for your score?
+                      {t('feedback.mainReason')}
                     </Label>
                   </div>
                   <Textarea
                     id="follow-up"
                     value={followUp}
                     onChange={(e) => setFollowUp(e.target.value)}
-                    placeholder="Tell us more about your experience..."
+                    placeholder={t('feedback.tellUsMore')}
                     className="min-h-[120px] text-base resize-none"
                   />
                 </div>
@@ -494,11 +488,11 @@ export default function FeedbackSurveyPage({
                     htmlFor="category"
                     className="text-sm font-medium text-foreground"
                   >
-                    Category
+                    {t('feedback.category')}
                   </Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="h-11 text-base">
-                      <SelectValue placeholder="Select a category..." />
+                      <SelectValue placeholder={t('feedback.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (
@@ -528,7 +522,7 @@ export default function FeedbackSurveyPage({
                         {field.label}
                         {field.required && (
                           <span
-                            className="text-destructive ml-1"
+                            className="text-destructive ltr:ml-1 rtl:mr-1"
                             aria-hidden="true"
                           >
                             *
@@ -563,7 +557,7 @@ export default function FeedbackSurveyPage({
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-card px-3 text-muted-foreground">
-                        Optional
+                        {t('feedback.optional')}
                       </span>
                     </div>
                   </div>
@@ -574,14 +568,14 @@ export default function FeedbackSurveyPage({
                         htmlFor="respondent-name"
                         className="text-sm text-muted-foreground"
                       >
-                        Name
+                        {t('feedback.name')}
                       </Label>
                       <Input
                         id="respondent-name"
                         type="text"
                         value={respondentName}
                         onChange={(e) => setRespondentName(e.target.value)}
-                        placeholder="Your name"
+                        placeholder={t('feedback.yourName')}
                         className="h-10 text-sm"
                       />
                     </div>
@@ -590,11 +584,12 @@ export default function FeedbackSurveyPage({
                         htmlFor="respondent-email"
                         className="text-sm text-muted-foreground"
                       >
-                        Email
+                        {t('feedback.email')}
                       </Label>
                       <Input
                         id="respondent-email"
                         type="email"
+                        dir="ltr"
                         value={respondentEmail}
                         onChange={(e) => setRespondentEmail(e.target.value)}
                         placeholder="you@example.com"
@@ -621,11 +616,11 @@ export default function FeedbackSurveyPage({
                 {submitState === "submitting" ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Submitting...
+                    {t('feedback.submitting')}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    Submit Feedback
+                    {t('feedback.submitFeedback')}
                     <Send className="h-4 w-4" />
                   </span>
                 )}
@@ -636,7 +631,7 @@ export default function FeedbackSurveyPage({
 
         {/* Footer branding */}
         <p className="text-center text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
-          Powered by FormForge
+          {t('common.poweredBy')}
         </p>
       </div>
     </div>

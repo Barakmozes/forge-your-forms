@@ -98,7 +98,7 @@ function FileUploadField({ field, value, onChange, error }: FieldProps) {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onChange(null); }}
-              className="ml-1 rounded-full hover:bg-destructive/10 p-1"
+              className="ltr:ml-1 rtl:mr-1 rounded-full hover:bg-destructive/10 p-1"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
@@ -511,7 +511,7 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
               <Label className="text-sm font-medium text-foreground">
                 {field.label}
                 {field.required && (
-                  <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                  <span className="text-destructive ltr:ml-1 rtl:mr-1" aria-hidden="true">*</span>
                 )}
               </Label>
             )}

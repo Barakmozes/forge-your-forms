@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,16 +35,17 @@ interface BrandingPanelProps {
 const FONT_OPTIONS = [
   { value: "Inter", label: "Inter" },
   { value: "Plus Jakarta Sans", label: "Plus Jakarta Sans" },
-  { value: "system-ui", label: "System Default" },
+  { value: "system-ui", labelKey: "builder.systemDefault" },
 ];
 
 const RADIUS_OPTIONS = [
-  { value: "0px", label: "Sharp" },
-  { value: "8px", label: "Rounded" },
-  { value: "9999px", label: "Pill" },
+  { value: "0px", labelKey: "builder.sharp" },
+  { value: "8px", labelKey: "builder.rounded" },
+  { value: "9999px", labelKey: "builder.pill" },
 ];
 
 export default function BrandingPanel({ branding, onChange, formId }: BrandingPanelProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [local, setLocal] = useState<FormBranding>(branding);
   const [uploading, setUploading] = useState(false);
@@ -62,7 +64,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
   const handleLogoUpload = async (file: File) => {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Error", description: "Logo must be under 2 MB.", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("builder.logoTooLarge"), variant: "destructive" });
       return;
     }
 
@@ -78,8 +80,8 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
       const { data } = supabase.storage.from("branding").getPublicUrl(path);
       update({ logoUrl: data.publicUrl });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Upload failed";
-      toast({ title: "Error", description: message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : t("common.error");
+      toast({ title: t("common.error"), description: message, variant: "destructive" });
     }
     setUploading(false);
   };
@@ -92,23 +94,23 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 gap-2">
-          <Paintbrush className="h-4 w-4" /> Branding
+          <Paintbrush className="h-4 w-4" /> {t("builder.brandingTitle")}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="mb-6">
-          <SheetTitle className="font-display">Branding</SheetTitle>
+          <SheetTitle className="font-display">{t("builder.brandingTitle")}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-6">
           {/* Colors */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Colors
+              {t("builder.colors")}
             </h3>
 
             <div className="space-y-2">
-              <Label>Primary Color</Label>
+              <Label>{t("builder.primaryColor")}</Label>
               <div className="flex gap-2 items-center">
                 <input
                   type="color"
@@ -126,7 +128,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
             </div>
 
             <div className="space-y-2">
-              <Label>Background Color</Label>
+              <Label>{t("builder.backgroundColor")}</Label>
               <div className="flex gap-2 items-center">
                 <input
                   type="color"
@@ -148,7 +150,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
 
           {/* Logo */}
           <div className="space-y-2">
-            <Label>Logo</Label>
+            <Label>{t("builder.logo")}</Label>
             {local.logoUrl ? (
               <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                 <img
@@ -157,7 +159,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
                   className="h-10 w-10 rounded object-contain"
                 />
                 <span className="text-xs text-muted-foreground flex-1 truncate">
-                  Logo uploaded
+                  {t("builder.logoUploaded")}
                 </span>
                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={removeLogo}>
                   <X className="h-4 w-4 text-destructive" />
@@ -167,9 +169,9 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
               <label className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed hover:border-primary/50 cursor-pointer transition-colors">
                 <UploadCloud className="h-6 w-6 text-muted-foreground/50" />
                 <span className="text-sm text-muted-foreground">
-                  {uploading ? "Uploading..." : "Click to upload logo"}
+                  {uploading ? t("settings.uploading") : t("builder.clickToUploadLogo")}
                 </span>
-                <span className="text-xs text-muted-foreground">Max 2 MB</span>
+                <span className="text-xs text-muted-foreground">{t("builder.max2MB")}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -188,7 +190,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
 
           {/* Font */}
           <div className="space-y-2">
-            <Label>Font</Label>
+            <Label>{t("builder.font")}</Label>
             <Select
               value={local.font ?? "Inter"}
               onValueChange={(v) => update({ font: v })}
@@ -199,7 +201,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
               <SelectContent>
                 {FONT_OPTIONS.map((f) => (
                   <SelectItem key={f.value} value={f.value}>
-                    <span style={{ fontFamily: f.value }}>{f.label}</span>
+                    <span style={{ fontFamily: f.value }}>{"labelKey" in f ? t(f.labelKey) : f.label}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -208,7 +210,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
 
           {/* Corner Radius */}
           <div className="space-y-2">
-            <Label>Corner Radius</Label>
+            <Label>{t("builder.cornerRadius")}</Label>
             <Select
               value={local.borderRadius ?? "8px"}
               onValueChange={(v) => update({ borderRadius: v })}
@@ -219,7 +221,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
               <SelectContent>
                 {RADIUS_OPTIONS.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
-                    {r.label}
+                    {t(r.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -232,10 +234,10 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="cursor-pointer" htmlFor="powered-by-toggle">
-                Show "Powered by FormForge"
+                {t("builder.showPoweredBy")}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Display branding badge on the public form.
+                {t("builder.poweredByHint")}
               </p>
             </div>
             <Switch
@@ -249,7 +251,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
           <Separator />
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Preview
+              {t("builder.previewSection")}
             </h3>
             <div
               className="rounded-lg border p-6 transition-all"
@@ -272,11 +274,11 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
                   borderRadius: local.borderRadius ?? "8px",
                 }}
               >
-                Submit
+                {t("common.submit")}
               </div>
               {(local.showPoweredBy ?? true) && (
                 <p className="text-[10px] text-gray-400 text-center mt-3">
-                  Powered by FormForge
+                  {t("common.poweredBy")}
                 </p>
               )}
             </div>

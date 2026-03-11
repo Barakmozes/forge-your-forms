@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Inbox, Search, Download, Eye, ArrowLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Inbox, Search, Download, Eye, ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 
 interface FormField {
@@ -50,6 +51,7 @@ export default function Submissions() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const { isRTL } = useLanguage();
   const [selectedSub, setSelectedSub] = useState<ReturnType<typeof useSubmissions>["submissions"][number] | null>(null);
 
   // Load forms with their fields (for column headers + form selector)
@@ -195,7 +197,7 @@ export default function Submissions() {
         <div className="flex items-center gap-3">
           {preFilterFormId && (
             <Button variant="ghost" size="icon" onClick={() => navigate(`/forms/${preFilterFormId}/edit`)}>
-              <ArrowLeft className="h-4 w-4" />
+              {isRTL ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
             </Button>
           )}
           <div>
@@ -233,12 +235,12 @@ export default function Submissions() {
       {/* Filters */}
       <div className="flex gap-2 mb-4 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t("submissions.searchResponses")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9"
+            className="ltr:pl-9 rtl:pr-9 h-9"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -288,12 +290,12 @@ export default function Submissions() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {selectedFormId === "all" && <TableHead className="whitespace-nowrap">Form</TableHead>}
+                    {selectedFormId === "all" && <TableHead className="whitespace-nowrap">{t("submissions.form")}</TableHead>}
                     {displayFields.map((f) => (
                       <TableHead key={f.id} className="whitespace-nowrap min-w-[140px]">{f.label}</TableHead>
                     ))}
-                    <TableHead className="whitespace-nowrap">Submitted By</TableHead>
-                    <TableHead className="whitespace-nowrap">Submitted At</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("submissions.submittedBy")}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t("submissions.submittedAt")}</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -347,7 +349,7 @@ export default function Submissions() {
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Showing {pagination.range.from + 1}–{Math.min(pagination.range.to + 1, filtered.length)} of {filtered.length}
+                {t("submissions.showing")} {pagination.range.from + 1}–{Math.min(pagination.range.to + 1, filtered.length)} {t("common.of")} {filtered.length}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -359,7 +361,7 @@ export default function Submissions() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {pagination.page} of {pagination.totalPages}
+                  {t("submissions.page")} {pagination.page} {t("common.of")} {pagination.totalPages}
                 </span>
                 <Button
                   variant="outline"
@@ -383,7 +385,7 @@ export default function Submissions() {
             return (
               <>
                 <SheetHeader className="mb-6">
-                  <SheetTitle className="font-display">Submission Details</SheetTitle>
+                  <SheetTitle className="font-display">{t("submissions.submissionDetails")}</SheetTitle>
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-1">
                     <span>{format(parseISO(selectedSub.submitted_at), "EEEE, MMMM d, yyyy · h:mm a")}</span>
                     {selectedSub.submitted_by_email && <span>{selectedSub.submitted_by_email}</span>}
@@ -411,10 +413,10 @@ export default function Submissions() {
                             rel="noopener noreferrer"
                             className="text-sm text-primary underline underline-offset-4 break-all"
                           >
-                            View uploaded file
+                            {t("submissions.viewUploadedFile")}
                           </a>
                         ) : display === "—" ? (
-                          <p className="text-sm text-muted-foreground/50">Not answered</p>
+                          <p className="text-sm text-muted-foreground/50">{t("submissions.notAnswered")}</p>
                         ) : (
                           <p className="text-sm leading-relaxed break-words">{display}</p>
                         )}
