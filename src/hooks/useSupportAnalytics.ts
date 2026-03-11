@@ -9,6 +9,16 @@ export function useSupportAnalytics(tickets: Ticket[]) {
     const open = tickets.filter((t) => t.status === "open").length;
     const inProgress = tickets.filter((t) => t.status === "in_progress").length;
     const resolved = tickets.filter((t) => t.status === "resolved" || t.status === "closed").length;
+    const unassigned = tickets.filter(
+      (t) => !t.assigned_to && t.status !== "resolved" && t.status !== "closed"
+    ).length;
+
+    // Resolved today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const resolvedToday = tickets.filter(
+      (t) => t.resolved_at && new Date(t.resolved_at) >= todayStart
+    ).length;
 
     // Average resolution time (in hours) for resolved tickets
     const resolvedTickets = tickets.filter((t) => t.resolved_at);
@@ -16,13 +26,34 @@ export function useSupportAnalytics(tickets: Ticket[]) {
     if (resolvedTickets.length > 0) {
       const totalHours = resolvedTickets.reduce((sum, t) => {
         const created = new Date(t.created_at).getTime();
-        const resolved = new Date(t.resolved_at!).getTime();
-        return sum + (resolved - created) / (1000 * 60 * 60);
+        const resolvedAt = new Date(t.resolved_at!).getTime();
+        return sum + (resolvedAt - created) / (1000 * 60 * 60);
       }, 0);
       avgResolutionHours = Math.round(totalHours / resolvedTickets.length);
     }
 
-    return { total: tickets.length, open, inProgress, resolved, avgResolutionHours };
+    // Average first response time (in hours)
+    const respondedTickets = tickets.filter((t) => t.first_response_at);
+    let avgFirstResponseHours = 0;
+    if (respondedTickets.length > 0) {
+      const totalHours = respondedTickets.reduce((sum, t) => {
+        const created = new Date(t.created_at).getTime();
+        const responded = new Date(t.first_response_at!).getTime();
+        return sum + (responded - created) / (1000 * 60 * 60);
+      }, 0);
+      avgFirstResponseHours = Math.round(totalHours / respondedTickets.length);
+    }
+
+    return {
+      total: tickets.length,
+      open,
+      inProgress,
+      resolved,
+      unassigned,
+      resolvedToday,
+      avgResolutionHours,
+      avgFirstResponseHours,
+    };
   }, [tickets]);
 
   const volumeByDay = useMemo(() => {
@@ -74,5 +105,27 @@ export function useSupportAnalytics(tickets: Ticket[]) {
     });
   }, [tickets]);
 
-  return { stats, volumeByDay, priorityBreakdown, agentWorkload, categoryBreakdown, slaBreaches };
+  // Resolution metrics trend — resolved count per day for last 30 days
+  const resolutionTrend = useMemo(() => {
+    const dayMap = new Map<string, number>();
+    for (const t of tickets) {
+      if (!t.resolved_at) continue;
+      const date = new Date(t.resolved_at).toISOString().split("T")[0];
+      dayMap.set(date, (dayMap.get(date) ?? 0) + 1);
+    }
+    return [...dayMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-30)
+      .map(([date, count]) => ({ date, count }));
+  }, [tickets]);
+
+  return {
+    stats,
+    volumeByDay,
+    priorityBreakdown,
+    agentWorkload,
+    categoryBreakdown,
+    slaBreaches,
+    resolutionTrend,
+  };
 }

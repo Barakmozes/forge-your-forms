@@ -19,6 +19,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -70,6 +72,9 @@ import {
   Filter,
   Inbox,
   ArrowRight,
+  UserX,
+  Zap,
+  CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -419,6 +424,7 @@ export default function SupportDashboard({
     agentWorkload,
     categoryBreakdown,
     slaBreaches,
+    resolutionTrend,
   } = useSupportAnalytics(tickets);
 
   const [copyLabel, setCopyLabel] = useState("Copy Submit Link");
@@ -551,14 +557,6 @@ export default function SupportDashboard({
 
   const statCards = [
     {
-      title: "Total Tickets",
-      value: stats.total.toLocaleString(),
-      subtitle: "All time",
-      icon: Headphones,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-100 dark:bg-blue-900/30",
-    },
-    {
       title: "Open",
       value: stats.open.toLocaleString(),
       subtitle: "Awaiting response",
@@ -567,28 +565,36 @@ export default function SupportDashboard({
       bg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
-      title: "In Progress",
-      value: stats.inProgress.toLocaleString(),
-      subtitle: "Being worked on",
-      icon: TrendingUp,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-100 dark:bg-amber-900/30",
+      title: "Unassigned",
+      value: stats.unassigned.toLocaleString(),
+      subtitle: "Need assignment",
+      icon: UserX,
+      color: "text-orange-600 dark:text-orange-400",
+      bg: "bg-orange-100 dark:bg-orange-900/30",
     },
     {
-      title: "Resolved",
-      value: stats.resolved.toLocaleString(),
-      subtitle: "Resolved & closed",
-      icon: CheckCircle,
-      color: "text-green-600 dark:text-green-400",
-      bg: "bg-green-100 dark:bg-green-900/30",
+      title: "Avg First Response",
+      value: stats.avgFirstResponseHours > 0 ? `${stats.avgFirstResponseHours}h` : "--",
+      subtitle: "Hours to first reply",
+      icon: Zap,
+      color: "text-cyan-600 dark:text-cyan-400",
+      bg: "bg-cyan-100 dark:bg-cyan-900/30",
     },
     {
       title: "Avg Resolution",
       value: stats.avgResolutionHours > 0 ? `${stats.avgResolutionHours}h` : "--",
-      subtitle: "Average hours to resolve",
+      subtitle: "Hours to resolve",
       icon: Clock,
       color: "text-purple-600 dark:text-purple-400",
       bg: "bg-purple-100 dark:bg-purple-900/30",
+    },
+    {
+      title: "Resolved Today",
+      value: stats.resolvedToday.toLocaleString(),
+      subtitle: "Closed today",
+      icon: CalendarCheck,
+      color: "text-green-600 dark:text-green-400",
+      bg: "bg-green-100 dark:bg-green-900/30",
     },
   ];
 
@@ -892,66 +898,205 @@ export default function SupportDashboard({
             </div>
           )}
 
-          {/* Category Breakdown */}
+          {/* Category + Agent Workload Row */}
+          {loading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ChartSkeleton />
+              <ChartSkeleton />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Category Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold">
+                    Tickets by Category
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {categoryBreakdown.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                      <Filter className="h-8 w-8 mb-2 opacity-40" />
+                      <p>No category data yet</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer
+                      width="100%"
+                      height={Math.max(200, categoryBreakdown.length * 48)}
+                    >
+                      <BarChart
+                        data={categoryBreakdown}
+                        layout="vertical"
+                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          className="stroke-border/50"
+                          horizontal={false}
+                        />
+                        <XAxis
+                          type="number"
+                          tick={{ fontSize: 12 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="category"
+                          tick={{ fontSize: 12 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          tickLine={false}
+                          axisLine={false}
+                          width={120}
+                        />
+                        <Tooltip content={<CategoryTooltip />} />
+                        <Bar
+                          dataKey="count"
+                          name="Tickets"
+                          fill="hsl(var(--primary))"
+                          radius={[0, 4, 4, 0]}
+                          maxBarSize={28}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Agent Workload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold">
+                    Agent Workload
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {agentWorkload.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
+                      <UserX className="h-8 w-8 mb-2 opacity-40" />
+                      <p>No active assignments</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer
+                      width="100%"
+                      height={Math.max(200, agentWorkload.length * 48)}
+                    >
+                      <BarChart
+                        data={agentWorkload}
+                        layout="vertical"
+                        margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          className="stroke-border/50"
+                          horizontal={false}
+                        />
+                        <XAxis
+                          type="number"
+                          tick={{ fontSize: 12 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="agent"
+                          tick={{ fontSize: 11 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          tickLine={false}
+                          axisLine={false}
+                          width={140}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const item = payload[0];
+                            return (
+                              <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-sm">
+                                <p className="font-medium truncate max-w-[200px]">{item.payload.agent}</p>
+                                <p className="text-muted-foreground">
+                                  Active tickets: <span className="font-medium text-foreground">{item.value}</span>
+                                </p>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Bar
+                          dataKey="count"
+                          name="Tickets"
+                          fill="#8b5cf6"
+                          radius={[0, 4, 4, 0]}
+                          maxBarSize={28}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Resolution Metrics Trend */}
           {loading ? (
             <ChartSkeleton />
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base font-semibold">
-                  Tickets by Category
+                  Resolution Trend
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {categoryBreakdown.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm">
-                    <Filter className="h-8 w-8 mb-2 opacity-40" />
-                    <p>No category data yet</p>
-                    <p className="text-xs mt-1">
-                      Categories will appear once tickets include them.
-                    </p>
+                {resolutionTrend.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground text-sm">
+                    <CheckCircle className="h-8 w-8 mb-2 opacity-40" />
+                    <p>No resolution data yet</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer
-                    width="100%"
-                    height={Math.max(200, categoryBreakdown.length * 48)}
-                  >
-                    <BarChart
-                      data={categoryBreakdown}
-                      layout="vertical"
-                      margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-border/50"
-                        horizontal={false}
-                      />
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={resolutionTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                       <XAxis
-                        type="number"
+                        dataKey="date"
+                        tickFormatter={formatDate}
                         tick={{ fontSize: 12 }}
                         stroke="hsl(var(--muted-foreground))"
                         tickLine={false}
                         axisLine={false}
-                        allowDecimals={false}
                       />
                       <YAxis
-                        type="category"
-                        dataKey="category"
                         tick={{ fontSize: 12 }}
                         stroke="hsl(var(--muted-foreground))"
                         tickLine={false}
                         axisLine={false}
-                        width={120}
+                        width={30}
+                        allowDecimals={false}
                       />
-                      <Tooltip content={<CategoryTooltip />} />
-                      <Bar
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          return (
+                            <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-sm">
+                              <p className="font-medium mb-1">{formatDate(label ?? "")}</p>
+                              <p className="text-muted-foreground">
+                                Resolved: <span className="font-medium text-foreground">{payload[0].value}</span>
+                              </p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Line
+                        type="monotone"
                         dataKey="count"
-                        name="Tickets"
-                        fill="hsl(var(--primary))"
-                        radius={[0, 4, 4, 0]}
-                        maxBarSize={28}
+                        stroke="#22c55e"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: "#22c55e" }}
+                        activeDot={{ r: 5 }}
                       />
-                    </BarChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>

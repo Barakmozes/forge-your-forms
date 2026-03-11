@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,21 +7,24 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Auth from "./pages/Auth";
-import Index from "./pages/Index";
-import Forms from "./pages/Forms";
-import FormBuilder from "./pages/FormBuilder";
-import FormPreview from "./pages/FormPreview";
-import FormDashboard from "./pages/FormDashboard";
-import PublicForm from "./pages/PublicForm";
-import Submissions from "./pages/Submissions";
-import WaitlistEntries from "./pages/WaitlistEntries";
-import TicketDetailPage from "./pages/TicketDetail";
-import TicketTracking from "./pages/TicketTracking";
-import CannedResponses from "./pages/CannedResponses";
-import Pricing from "./pages/Pricing";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
+
+// === AGENT 4 — Lazy-loaded route components for code splitting ===
+const Auth = lazy(() => import("./pages/Auth"));
+const Index = lazy(() => import("./pages/Index"));
+const Forms = lazy(() => import("./pages/Forms"));
+const FormBuilder = lazy(() => import("./pages/FormBuilder"));
+const FormPreview = lazy(() => import("./pages/FormPreview"));
+const FormDashboard = lazy(() => import("./pages/FormDashboard"));
+const PublicForm = lazy(() => import("./pages/PublicForm"));
+const Submissions = lazy(() => import("./pages/Submissions"));
+const WaitlistEntries = lazy(() => import("./pages/WaitlistEntries"));
+const TicketDetailPage = lazy(() => import("./pages/TicketDetail"));
+const TicketTracking = lazy(() => import("./pages/TicketTracking"));
+const CannedResponses = lazy(() => import("./pages/CannedResponses"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Settings = lazy(() => import("./pages/Settings"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+// === END AGENT 4 ===
 
 const queryClient = new QueryClient();
 
@@ -83,7 +87,11 @@ const App = () => (
           <WorkspaceProvider>
             {/* === AGENT 1: ErrorBoundary wraps all routes === */}
             <ErrorBoundary>
-              <AppRoutes />
+              {/* === AGENT 4 — Suspense for lazy-loaded routes === */}
+              <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>}>
+                <AppRoutes />
+              </Suspense>
+              {/* === END AGENT 4 === */}
             </ErrorBoundary>
             {/* === END AGENT 1 === */}
           </WorkspaceProvider>

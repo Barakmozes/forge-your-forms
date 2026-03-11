@@ -18,7 +18,25 @@ export function useTickets(formId: string) {
       .eq("form_id", formId)
       .order("created_at", { ascending: false });
 
-    setTickets(data ?? []);
+    const fetched = data ?? [];
+
+    // Auto-close: resolved tickets older than 7 days → closed
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const toClose = fetched.filter(
+      (t) =>
+        t.status === "resolved" &&
+        t.resolved_at &&
+        new Date(t.resolved_at).getTime() < sevenDaysAgo
+    );
+    if (toClose.length > 0) {
+      const ids = toClose.map((t) => t.id);
+      await supabase.from("tickets").update({ status: "closed" }).in("id", ids);
+      for (const t of fetched) {
+        if (ids.includes(t.id)) t.status = "closed";
+      }
+    }
+
+    setTickets(fetched);
     setLoading(false);
   }, [formId]);
 

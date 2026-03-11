@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Hammer, ChevronDown, FileText, Inbox, LogOut, User, Settings } from "lucide-react";
+import NotificationPanel from "@/components/NotificationPanel";
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -71,6 +72,10 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* === AGENT 3: Notifications === */}
+          <NotificationPanel />
+          {/* === END AGENT 3 === */}
 
           {/* === AGENT 1: Settings link === */}
           <Link to="/settings">
