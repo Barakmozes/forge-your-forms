@@ -17,6 +17,7 @@ import {
 import { Headphones, Send, Check, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -168,6 +169,14 @@ export default function SupportSubmitPage({
         });
 
       if (messageError) throw messageError;
+
+      /* === AGENT 9: Webhook Trigger === */
+      dispatchWebhook(
+        WEBHOOK_EVENTS.TICKET_CREATED,
+        { form_id: formId, ticket_id: ticketData.id, ticket_number: ticketData.ticket_number, subject: subject.trim() },
+        { formId }
+      );
+      /* === END AGENT 9 === */
 
       setSubmittedTicket({
         ticketNumber: ticketData.ticket_number,

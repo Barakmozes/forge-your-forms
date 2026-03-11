@@ -14,13 +14,20 @@ import BillingPortal from "@/components/billing/BillingPortal";
 // === AGENT 7: Usage Dashboard ===
 import UsageDashboard from "@/components/upgrade/UsageDashboard";
 // === END AGENT 7 ===
+// === AGENT 9: Webhooks Tab ===
+import WebhookManager from "@/components/webhooks/WebhookManager";
+// === END AGENT 9 ===
+// === AGENT 9: API Tab ===
+import ApiKeyManager from "@/components/api/ApiKeyManager";
+import ApiDocs from "@/components/api/ApiDocs";
+// === END AGENT 9 ===
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Building2, Users, User, CreditCard } from "lucide-react";
+import { Building2, Users, User, CreditCard, Webhook, Code } from "lucide-react";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -202,6 +209,16 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {/* === END AGENT 6 === */}
+            {/* === AGENT 9: Webhooks Tab === */}
+            <TabsTrigger value="webhooks" className="gap-2">
+              <Webhook className="h-4 w-4" /> {t("webhooks.title")}
+            </TabsTrigger>
+            {/* === END AGENT 9 === */}
+            {/* === AGENT 9: API Tab === */}
+            <TabsTrigger value="api" className="gap-2">
+              <Code className="h-4 w-4" /> {t("api.title")}
+            </TabsTrigger>
+            {/* === END AGENT 9 === */}
           </TabsList>
 
           {/* Workspace Tab */}
@@ -261,6 +278,19 @@ export default function Settings() {
             </TabsContent>
           )}
           {/* === END AGENT 6 === */}
+
+          {/* === AGENT 9: Webhooks Tab === */}
+          <TabsContent value="webhooks">
+            <WebhookManager />
+          </TabsContent>
+          {/* === END AGENT 9 === */}
+
+          {/* === AGENT 9: API Tab === */}
+          <TabsContent value="api" className="space-y-6">
+            <ApiKeyManager />
+            <ApiDocs />
+          </TabsContent>
+          {/* === END AGENT 9 === */}
 
           {/* Profile Tab */}
           <TabsContent value="profile">

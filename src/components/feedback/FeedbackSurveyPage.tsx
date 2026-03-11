@@ -18,6 +18,7 @@ import { MessageSquare, Send, Check, Star } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
+import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -271,6 +272,15 @@ export default function FeedbackSurveyPage({
         .insert(payload);
 
       if (error) throw error;
+
+      /* === AGENT 9: Webhook Trigger === */
+      const sentiment = npsScore >= 9 ? "promoter" : npsScore >= 7 ? "passive" : "detractor";
+      dispatchWebhook(
+        sentiment === "detractor" ? WEBHOOK_EVENTS.FEEDBACK_RESPONSE : WEBHOOK_EVENTS.FEEDBACK_RESPONSE,
+        { form_id: formId, nps_score: npsScore, sentiment },
+        { formId }
+      );
+      /* === END AGENT 9 === */
 
       setSubmitState("success");
       toast.success(t('feedback.thankYou'));

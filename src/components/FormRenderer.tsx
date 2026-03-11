@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { evaluateCondition, type FieldCondition } from "@/components/builder/ConditionalLogic";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 import type { FormBranding } from "@/components/builder/BrandingPanel";
+import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 
 export type FieldType =
   | "text"
@@ -455,6 +456,10 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
         .insert([{ form_id: formId, data: resolvedData as import("@/integrations/supabase/types").Json }]);
 
       if (error) throw error;
+
+      /* === AGENT 9: Webhook Trigger === */
+      dispatchWebhook(WEBHOOK_EVENTS.SUBMISSION_CREATED, { form_id: formId, data: resolvedData }, { formId });
+      /* === END AGENT 9 === */
 
       if (settings?.redirectUrl) {
         window.location.href = settings.redirectUrl;

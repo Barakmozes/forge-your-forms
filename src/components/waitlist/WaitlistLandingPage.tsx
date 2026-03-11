@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Mail, Copy, Check, Share2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 
 interface WaitlistLandingPageProps {
   formId: string;
@@ -159,6 +160,14 @@ export default function WaitlistLandingPage({
       setSubmitState("success");
       setTotalSignups((prev) => (prev !== null ? prev + 1 : 1));
       toast.success(t('waitlist.youAreOnList'));
+
+      /* === AGENT 9: Webhook Trigger === */
+      dispatchWebhook(
+        WEBHOOK_EVENTS.WAITLIST_SIGNUP,
+        { form_id: formId, entry_id: inserted.id, email: inserted.email, position: inserted.position },
+        { formId }
+      );
+      /* === END AGENT 9 === */
     } catch (err: unknown) {
       setSubmitState("idle");
       const message =
