@@ -27,6 +27,7 @@ const CannedResponses = lazy(() => import("./pages/CannedResponses"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 // === END AGENT 4 ===
 
 function AuthHashErrorHandler() {
@@ -83,6 +84,7 @@ function HomepageRoute() {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+    <Route path="/auth/reset-password" element={<ResetPassword />} />
     {/* === AGENT 4 ROUTES — "/" shows landing or dashboard based on auth === */}
     <Route path="/" element={<HomepageRoute />} />
     {/* === END AGENT 4 ROUTES === */}

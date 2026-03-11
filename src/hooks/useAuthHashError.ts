@@ -38,7 +38,8 @@ export function useAuthHashError() {
     // Clear hash to prevent re-triggering
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
 
-    navigate("/auth?expired=1", { replace: true });
+    const isResetFlow = window.location.pathname.includes("reset-password");
+    navigate(isResetFlow ? "/auth?resetExpired=1" : "/auth?expired=1", { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
