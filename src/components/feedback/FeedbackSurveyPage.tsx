@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { Json } from "@/integrations/supabase/types";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
+import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -285,6 +286,9 @@ export default function FeedbackSurveyPage({
       /* === AGENT 10: Slack Trigger === */
       dispatchSlackNotification(formId, WEBHOOK_EVENTS.FEEDBACK_RESPONSE, { nps_score: npsScore, sentiment });
       /* === END AGENT 10 === */
+      /* === AGENT 15: Workflow Trigger === */
+      dispatchWorkflowTrigger(formId, sentiment === "detractor" ? "detractor_alert" : "form_submitted", { form_id: formId, nps_score: npsScore, sentiment, respondent_email: respondentEmail.trim(), category });
+      /* === END AGENT 15 === */
 
       setSubmitState("success");
       toast.success(t('feedback.thankYou'));

@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
+import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -181,6 +182,9 @@ export default function SupportSubmitPage({
       /* === AGENT 10: Slack Trigger === */
       dispatchSlackNotification(formId, WEBHOOK_EVENTS.TICKET_CREATED, { ticket_number: ticketData.ticket_number, subject: subject.trim(), email: email.trim() });
       /* === END AGENT 10 === */
+      /* === AGENT 15: Workflow Trigger === */
+      dispatchWorkflowTrigger(formId, "ticket_created", { form_id: formId, ticket_id: ticketData.id, ticket_number: ticketData.ticket_number, subject: subject.trim(), email: email.trim(), category, priority });
+      /* === END AGENT 15 === */
 
       setSubmittedTicket({
         ticketNumber: ticketData.ticket_number,

@@ -41,6 +41,11 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AtRiskDashboard = lazy(() => import("./components/predictions/AtRiskDashboard"));
 // === END AGENT 13 ===
 
+// === AGENT 15: Workflow pages ===
+const Workflows = lazy(() => import("./pages/Workflows"));
+const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder"));
+// === END AGENT 15 ===
+
 // === AGENT 6 — Billing pages ===
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
@@ -145,6 +150,11 @@ const AppRoutes = () => (
     {/* === AGENT 13: At-Risk Dashboard === */}
     <Route path="/at-risk" element={<ProtectedRoute><AtRiskDashboard /></ProtectedRoute>} />
     {/* === END AGENT 13 === */}
+    {/* === AGENT 15 ROUTES === */}
+    <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
+    <Route path="/workflows/new" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
+    <Route path="/workflows/:id/edit" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
+    {/* === END AGENT 15 === */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

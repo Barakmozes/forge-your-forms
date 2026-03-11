@@ -17,6 +17,7 @@ import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 import type { FormBranding } from "@/components/builder/BrandingPanel";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
+import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
 
 export type FieldType =
   | "text"
@@ -464,6 +465,9 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
       /* === AGENT 10: Slack Trigger === */
       dispatchSlackNotification(formId, WEBHOOK_EVENTS.SUBMISSION_CREATED, { form_id: formId, data: resolvedData });
       /* === END AGENT 10 === */
+      /* === AGENT 15: Workflow Trigger === */
+      dispatchWorkflowTrigger(formId, "form_submitted", { form_id: formId, data: resolvedData });
+      /* === END AGENT 15 === */
 
       if (settings?.redirectUrl) {
         window.location.href = settings.redirectUrl;

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification, syncToMailchimp } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack + Mailchimp import === */
+import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
 
 interface WaitlistLandingPageProps {
   formId: string;
@@ -173,6 +174,9 @@ export default function WaitlistLandingPage({
       dispatchSlackNotification(formId, WEBHOOK_EVENTS.WAITLIST_SIGNUP, { email: inserted.email, name: inserted.name, position: inserted.position });
       syncToMailchimp(formId, inserted.email, inserted.name ? { FNAME: inserted.name } : undefined);
       /* === END AGENT 10 === */
+      /* === AGENT 15: Workflow Trigger === */
+      dispatchWorkflowTrigger(formId, "waitlist_milestone", { form_id: formId, entry_id: inserted.id, email: inserted.email, position: inserted.position });
+      /* === END AGENT 15 === */
     } catch (err: unknown) {
       setSubmitState("idle");
       const message =

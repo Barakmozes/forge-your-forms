@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings, LayoutTemplate } from "lucide-react";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings, LayoutTemplate, Zap } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
 import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 6: Plan Badge ===
@@ -40,6 +40,9 @@ export default function Navbar() {
     // === AGENT 11: Templates Link ===
     { to: "/templates", label: "Templates", icon: LayoutTemplate },
     // === END AGENT 11 ===
+    // === AGENT 15: Workflows Link ===
+    { to: "/workflows", label: "Workflows", icon: Zap },
+    // === END AGENT 15 ===
   ];
 
   return (
