@@ -159,7 +159,7 @@ export default function MailchimpIntegration({ config, saving, onSave }: Mailchi
           {/* Fetch Lists Button */}
           {isValidApiKey && (
             <Button variant="outline" size="sm" onClick={fetchLists} disabled={fetchingLists}>
-              {fetchingLists && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {fetchingLists && <Loader2 className="h-4 w-4 animate-spin me-2" />}
               {t("integrations.mailchimpFetchLists")}
             </Button>
           )}

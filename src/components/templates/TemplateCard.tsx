@@ -1,5 +1,6 @@
 // === AGENT 11: Template Card Component ===
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, FileText, MessageSquare, Headphones } from "lucide-react";
@@ -24,6 +25,7 @@ interface TemplateCardProps {
 }
 
 export default function TemplateCard({ template }: TemplateCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const ModeIcon = MODE_ICONS[template.mode] || FileText;
 
@@ -57,7 +59,7 @@ export default function TemplateCard({ template }: TemplateCardProps) {
           </Badge>
           {template.use_count > 0 && (
             <span className="text-[10px] text-muted-foreground tabular-nums">
-              {template.use_count} {template.use_count === 1 ? "use" : "uses"}
+              {template.use_count} {template.use_count === 1 ? t("templates.use") : t("templates.uses")}
             </span>
           )}
         </div>

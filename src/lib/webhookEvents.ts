@@ -14,12 +14,12 @@ export const WEBHOOK_EVENTS = {
 export type WebhookEventType = (typeof WEBHOOK_EVENTS)[keyof typeof WEBHOOK_EVENTS];
 
 export const WEBHOOK_EVENT_LABELS: Record<WebhookEventType, string> = {
-  [WEBHOOK_EVENTS.SUBMISSION_CREATED]: "Form Submission Created",
-  [WEBHOOK_EVENTS.WAITLIST_SIGNUP]: "Waitlist Entry Created",
-  [WEBHOOK_EVENTS.FEEDBACK_RESPONSE]: "Feedback Response Created",
-  [WEBHOOK_EVENTS.TICKET_CREATED]: "Support Ticket Created",
-  [WEBHOOK_EVENTS.TICKET_RESOLVED]: "Support Ticket Resolved",
-  [WEBHOOK_EVENTS.FORM_CREATED]: "Form Created",
+  [WEBHOOK_EVENTS.SUBMISSION_CREATED]: "webhooks.eventSubmission",
+  [WEBHOOK_EVENTS.WAITLIST_SIGNUP]: "webhooks.eventWaitlist",
+  [WEBHOOK_EVENTS.FEEDBACK_RESPONSE]: "webhooks.eventFeedback",
+  [WEBHOOK_EVENTS.TICKET_CREATED]: "webhooks.eventTicket",
+  [WEBHOOK_EVENTS.TICKET_RESOLVED]: "webhooks.eventTicketResolved",
+  [WEBHOOK_EVENTS.FORM_CREATED]: "webhooks.eventFormCreated",
 };
 
 export const ALL_WEBHOOK_EVENTS = Object.values(WEBHOOK_EVENTS);

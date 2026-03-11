@@ -1,21 +1,34 @@
 // === AGENT 11: Template Browser Component ===
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTemplates } from "@/hooks/useTemplates";
 import TemplateCard from "@/components/templates/TemplateCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 
-const CATEGORIES = ["All", "SaaS", "Marketing", "Feedback", "Support", "HR", "Events", "Healthcare", "Education"];
-const MODES = [
-  { value: "all", label: "All Modes" },
-  { value: "standard", label: "Standard" },
-  { value: "waitlist", label: "Waitlist" },
-  { value: "feedback", label: "Feedback" },
-  { value: "support", label: "Support" },
+const CATEGORY_KEYS = [
+  { value: "All", key: "templates.categoryAll" },
+  { value: "SaaS", key: "templates.categorySaaS" },
+  { value: "Marketing", key: "templates.categoryMarketing" },
+  { value: "Feedback", key: "templates.categoryFeedback" },
+  { value: "Support", key: "templates.categorySupport" },
+  { value: "HR", key: "templates.categoryHR" },
+  { value: "Events", key: "templates.categoryEvents" },
+  { value: "Healthcare", key: "templates.categoryHealthcare" },
+  { value: "Education", key: "templates.categoryEducation" },
+];
+
+const MODE_KEYS = [
+  { value: "all", key: "templates.allModes" },
+  { value: "standard", key: "templates.modeStandard" },
+  { value: "waitlist", key: "templates.modeWaitlist" },
+  { value: "feedback", key: "templates.modeFeedback" },
+  { value: "support", key: "templates.modeSupport" },
 ];
 
 export default function TemplateBrowser() {
+  const { t } = useTranslation();
   const [category, setCategory] = useState("All");
   const [mode, setMode] = useState("all");
   const [search, setSearch] = useState("");
@@ -34,7 +47,7 @@ export default function TemplateBrowser() {
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search templates..."
+            placeholder={t("templates.searchPlaceholder")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -42,28 +55,28 @@ export default function TemplateBrowser() {
           />
         </div>
         <Button variant="secondary" onClick={handleSearch}>
-          Search
+          {t("templates.search")}
         </Button>
       </div>
 
       {/* Category filter */}
       <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
+        {CATEGORY_KEYS.map((cat) => (
           <Button
-            key={cat}
-            variant={category === cat ? "default" : "outline"}
+            key={cat.value}
+            variant={category === cat.value ? "default" : "outline"}
             size="sm"
-            onClick={() => setCategory(cat)}
+            onClick={() => setCategory(cat.value)}
             className="text-xs"
           >
-            {cat}
+            {t(cat.key)}
           </Button>
         ))}
       </div>
 
       {/* Mode filter */}
       <div className="flex flex-wrap gap-2">
-        {MODES.map((m) => (
+        {MODE_KEYS.map((m) => (
           <Button
             key={m.value}
             variant={mode === m.value ? "secondary" : "ghost"}
@@ -71,7 +84,7 @@ export default function TemplateBrowser() {
             onClick={() => setMode(m.value)}
             className="text-xs"
           >
-            {m.label}
+            {t(m.key)}
           </Button>
         ))}
       </div>
@@ -85,12 +98,12 @@ export default function TemplateBrowser() {
         </div>
       ) : templates.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-muted-foreground">No templates found matching your criteria.</p>
+          <p className="text-muted-foreground">{t("templates.noTemplatesFound")}</p>
           <Button
             variant="link"
             onClick={() => { setCategory("All"); setMode("all"); setSearch(""); setSearchInput(""); }}
           >
-            Clear filters
+            {t("templates.clearFilters")}
           </Button>
         </div>
       ) : (

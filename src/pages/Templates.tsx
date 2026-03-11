@@ -1,23 +1,26 @@
 // === AGENT 11: Templates Gallery Page ===
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Hammer, LayoutTemplate } from "lucide-react";
 import TemplateBrowser from "@/components/templates/TemplateBrowser";
 
 export default function Templates() {
+  const { t } = useTranslation();
+
   // SEO: Page title and meta description
   useEffect(() => {
-    document.title = "Free Form Templates — FormForge";
+    document.title = `${t("templates.freeFormTemplates")} — FormForge`;
     let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!meta) {
       meta = document.createElement("meta");
       meta.name = "description";
       document.head.appendChild(meta);
     }
-    meta.content = "Browse 20+ free form templates for contact forms, waitlists, NPS surveys, bug reports, job applications, and more. Get started in seconds with FormForge.";
+    meta.content = t("templates.freeFormTemplatesMeta");
     return () => { document.title = "FormForge"; };
-  }, []);
+  }, [t]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,11 +35,11 @@ export default function Templates() {
           </Link>
           <nav className="ms-auto flex items-center gap-2">
             <Link to="/auth">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="ghost" size="sm">{t("templates.signIn")}</Button>
             </Link>
             <Link to="/auth">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
-                Get Started Free
+                {t("templates.getStartedFree")}
               </Button>
             </Link>
           </nav>
@@ -52,10 +55,10 @@ export default function Templates() {
             </div>
           </div>
           <h1 className="font-display text-3xl font-bold sm:text-4xl">
-            Free Form Templates
+            {t("templates.freeFormTemplates")}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Get started quickly with professionally designed templates for forms, waitlists, surveys, and support.
+            {t("templates.freeFormTemplatesDesc")}
           </p>
         </div>
       </section>
@@ -68,7 +71,7 @@ export default function Templates() {
       {/* Footer */}
       <footer className="border-t border-border/40 bg-muted/30 py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} FormForge. All rights reserved.
+          &copy; {new Date().getFullYear()} FormForge. {t("templates.allRightsReserved")}
         </div>
       </footer>
     </div>

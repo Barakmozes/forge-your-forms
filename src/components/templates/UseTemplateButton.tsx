@@ -1,5 +1,6 @@
 // === AGENT 11: Use Template Button ===
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCloneTemplate, type Template } from "@/hooks/useTemplates";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ interface UseTemplateButtonProps {
 }
 
 export default function UseTemplateButton({ template, slug }: UseTemplateButtonProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { cloneTemplate, cloning } = useCloneTemplate();
   const navigate = useNavigate();
@@ -33,14 +35,14 @@ export default function UseTemplateButton({ template, slug }: UseTemplateButtonP
       {!user ? (
         <>
           <LogIn className="h-4 w-4" />
-          Sign In to Use Template
+          {t("templates.signInToUse")}
         </>
       ) : cloning ? (
-        "Cloning..."
+        t("templates.cloning")
       ) : (
         <>
           <Copy className="h-4 w-4" />
-          Use This Template
+          {t("templates.useThisTemplate")}
         </>
       )}
     </Button>

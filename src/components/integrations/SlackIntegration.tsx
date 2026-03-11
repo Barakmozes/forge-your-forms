@@ -164,7 +164,7 @@ export default function SlackIntegration({ formId, config, saving, onSave }: Sla
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                <span className="ml-1">{t("integrations.test")}</span>
+                <span className="ms-1">{t("integrations.test")}</span>
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{t("integrations.slackWebhookHelp")}</p>

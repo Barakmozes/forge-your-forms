@@ -1,6 +1,7 @@
 // === AGENT 11: Template Detail Page ===
 import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useTemplate } from "@/hooks/useTemplates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ const MODE_COLORS: Record<string, string> = {
 };
 
 export default function TemplateDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { template, loading, relatedTemplates } = useTemplate(slug || "");
@@ -54,7 +56,7 @@ export default function TemplateDetail() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Loading...
+        {t("templates.loading")}
       </div>
     );
   }
@@ -62,9 +64,9 @@ export default function TemplateDetail() {
   if (!template) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Template not found.</p>
+        <p className="text-muted-foreground">{t("templates.notFound")}</p>
         <Button variant="outline" onClick={() => navigate("/templates")}>
-          Browse Templates
+          {t("templates.browseTemplates")}
         </Button>
       </div>
     );
@@ -87,12 +89,12 @@ export default function TemplateDetail() {
             <Link to="/templates">
               <Button variant="ghost" size="sm" className="gap-1.5">
                 <LayoutTemplate className="h-4 w-4" />
-                All Templates
+                {t("templates.allTemplates")}
               </Button>
             </Link>
             <Link to="/auth">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
-                Get Started Free
+                {t("templates.getStartedFree")}
               </Button>
             </Link>
           </nav>
@@ -103,7 +105,7 @@ export default function TemplateDetail() {
       <div className="container py-4">
         <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => navigate("/templates")}>
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Templates
+          {t("templates.backToTemplates")}
         </Button>
       </div>
 
@@ -142,7 +144,9 @@ export default function TemplateDetail() {
               </p>
               {template.use_count > 0 && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  Used by {template.use_count} {template.use_count === 1 ? "team" : "teams"}
+                  {template.use_count === 1
+                    ? t("templates.usedByTeam", { count: template.use_count })
+                    : t("templates.usedByTeams", { count: template.use_count })}
                 </p>
               )}
             </div>
@@ -152,7 +156,7 @@ export default function TemplateDetail() {
             {/* Preview */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Form Preview</CardTitle>
+                <CardTitle className="text-lg">{t("templates.formPreview")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <TemplatePreview
@@ -166,7 +170,7 @@ export default function TemplateDetail() {
             {template.settings && Object.keys(template.settings).length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Template Settings</CardTitle>
+                  <CardTitle className="text-lg">{t("templates.templateSettings")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -192,7 +196,7 @@ export default function TemplateDetail() {
               <CardContent className="p-6 space-y-4">
                 <UseTemplateButton template={template} slug={slug || ""} />
                 <p className="text-xs text-center text-muted-foreground">
-                  Free to use. Creates a draft form in your workspace.
+                  {t("templates.freeToUse")}
                 </p>
               </CardContent>
             </Card>
@@ -203,10 +207,10 @@ export default function TemplateDetail() {
         {relatedTemplates.length > 0 && (
           <div className="mt-16">
             <Separator className="mb-8" />
-            <h2 className="font-display text-xl font-bold mb-6">Related Templates</h2>
+            <h2 className="font-display text-xl font-bold mb-6">{t("templates.relatedTemplates")}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {relatedTemplates.map((t) => (
-                <TemplateCard key={t.id} template={t} />
+              {relatedTemplates.map((tmpl) => (
+                <TemplateCard key={tmpl.id} template={tmpl} />
               ))}
             </div>
           </div>
@@ -216,7 +220,7 @@ export default function TemplateDetail() {
       {/* Footer */}
       <footer className="border-t border-border/40 bg-muted/30 py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} FormForge. All rights reserved.
+          &copy; {new Date().getFullYear()} FormForge. {t("templates.allRightsReserved")}
         </div>
       </footer>
     </div>

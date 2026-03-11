@@ -98,7 +98,7 @@ export default function DeliveryLog({ webhookId }: DeliveryLogProps) {
                         )}
                       </TableCell>
                       <TableCell className="font-medium text-sm">
-                        {WEBHOOK_EVENT_LABELS[delivery.event_type as WebhookEventType] ?? delivery.event_type}
+                        {t(WEBHOOK_EVENT_LABELS[delivery.event_type as WebhookEventType] ?? delivery.event_type)}
                       </TableCell>
                       <TableCell>
                         <Badge

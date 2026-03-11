@@ -131,7 +131,7 @@ export default function IntegrationManager() {
           <SelectContent>
             {forms.map((form) => (
               <SelectItem key={form.id} value={form.id}>
-                {form.title} <span className="text-muted-foreground ml-1">({form.mode})</span>
+                {form.title} <span className="text-muted-foreground ms-1">({form.mode})</span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -165,11 +165,11 @@ export default function IntegrationManager() {
                     <p className="text-xs text-muted-foreground truncate">{card.desc}</p>
                   </div>
                   {card.connected ? (
-                    <Badge variant="outline" className="shrink-0 text-green-600 border-green-300 ml-auto">
+                    <Badge variant="outline" className="shrink-0 text-green-600 border-green-300 ms-auto">
                       {t("integrations.on")}
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="shrink-0 text-muted-foreground ml-auto">
+                    <Badge variant="outline" className="shrink-0 text-muted-foreground ms-auto">
                       {t("integrations.off")}
                     </Badge>
                   )}

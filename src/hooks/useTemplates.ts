@@ -1,5 +1,6 @@
 // === AGENT 11: Template hooks ===
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -112,6 +113,7 @@ export function useTemplate(slug: string) {
 }
 
 export function useCloneTemplate() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
@@ -154,14 +156,14 @@ export function useCloneTemplate() {
           .then(() => {});
       });
 
-      toast({ title: "Template cloned!", description: `"${template.title}" has been added to your workspace as a draft.` });
+      toast({ title: t("templates.cloned"), description: t("templates.clonedDesc", { title: template.title }) });
 
       if (newForm) {
         navigate(`/forms/${newForm.id}/edit`);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to clone template";
-      toast({ title: "Error", description: message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : t("templates.cloneFailed");
+      toast({ title: t("common.error"), description: message, variant: "destructive" });
     }
     setCloning(false);
   };

@@ -143,7 +143,7 @@ export default function WebhookForm({ webhook, onSubmit, onCancel, loading }: We
                     checked={events.includes(event)}
                     onCheckedChange={() => toggleEvent(event)}
                   />
-                  <span className="text-sm">{WEBHOOK_EVENT_LABELS[event as WebhookEventType]}</span>
+                  <span className="text-sm">{t(WEBHOOK_EVENT_LABELS[event as WebhookEventType])}</span>
                 </label>
               ))}
             </div>
@@ -199,7 +199,7 @@ export default function WebhookForm({ webhook, onSubmit, onCancel, loading }: We
             <div className="flex flex-wrap gap-1">
               {events.map((event) => (
                 <Badge key={event} variant="secondary" className="text-xs">
-                  {WEBHOOK_EVENT_LABELS[event as WebhookEventType]}
+                  {t(WEBHOOK_EVENT_LABELS[event as WebhookEventType])}
                 </Badge>
               ))}
             </div>

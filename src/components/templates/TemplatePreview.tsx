@@ -1,10 +1,10 @@
 // === AGENT 11: Template Preview Component ===
 // Renders form fields in a read-only preview mode
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,18 +25,20 @@ interface TemplatePreviewProps {
 }
 
 export default function TemplatePreview({ fields, mode }: TemplatePreviewProps) {
+  const { t } = useTranslation();
+
   if (fields.length === 0) {
-    const modeLabels: Record<string, string> = {
-      waitlist: "This waitlist template uses the built-in waitlist signup page with email collection and optional referral tracking.",
-      feedback: "This feedback template uses the built-in NPS survey page with score selection, categories, and follow-up questions.",
-      support: "This support template uses the built-in ticket submission page with subject, description, category, and priority fields.",
+    const modeDescKeys: Record<string, string> = {
+      waitlist: "templates.waitlistPreviewDesc",
+      feedback: "templates.feedbackPreviewDesc",
+      support: "templates.supportPreviewDesc",
     };
 
     return (
       <Card className="border-dashed">
         <CardContent className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            {modeLabels[mode] || "This template has no custom fields."}
+            {t(modeDescKeys[mode] || "templates.noCustomFields")}
           </p>
         </CardContent>
       </Card>
@@ -64,6 +66,7 @@ export default function TemplatePreview({ fields, mode }: TemplatePreviewProps) 
                   placeholder={field.placeholder || ""}
                   disabled
                   className="bg-muted/30"
+                  dir={field.type === "email" || field.type === "phone" ? "ltr" : undefined}
                 />
               )}
 
@@ -79,7 +82,7 @@ export default function TemplatePreview({ fields, mode }: TemplatePreviewProps) 
               {field.type === "select" && field.options && (
                 <Select disabled>
                   <SelectTrigger className="bg-muted/30">
-                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                    <SelectValue placeholder={t("templates.selectPlaceholder", { label: field.label.toLowerCase() })} />
                   </SelectTrigger>
                   <SelectContent>
                     {field.options.map((opt) => (
@@ -113,7 +116,7 @@ export default function TemplatePreview({ fields, mode }: TemplatePreviewProps) 
 
               {field.type === "file_upload" && (
                 <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-4">
-                  <p className="text-xs text-muted-foreground">File upload field</p>
+                  <p className="text-xs text-muted-foreground">{t("templates.fileUploadField")}</p>
                 </div>
               )}
 
