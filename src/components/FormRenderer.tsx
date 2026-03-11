@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -105,9 +107,9 @@ function FileUploadField({ field, value, onChange, error }: FieldProps) {
           <div className="space-y-2">
             <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-primary">Click to upload</span> or drag & drop
+              <span className="font-medium text-primary">{i18n.t("forms.clickToUpload")}</span> {i18n.t("forms.orDragDrop")}
             </p>
-            <p className="text-xs text-muted-foreground">Any file up to 20 MB</p>
+            <p className="text-xs text-muted-foreground">{i18n.t("forms.anyFileUpTo")}</p>
           </div>
         )}
       </div>
@@ -330,13 +332,13 @@ export function validateFields(
       (Array.isArray(value) && value.length === 0);
 
     if (field.required && isEmpty) {
-      errors[field.id] = "This field is required.";
+      errors[field.id] = i18n.t("forms.validationRequired");
       continue;
     }
 
     if (!isEmpty && field.type === "email" && typeof value === "string") {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        errors[field.id] = "Please enter a valid email address.";
+        errors[field.id] = i18n.t("forms.validationEmail");
       }
     }
 
@@ -344,7 +346,7 @@ export function validateFields(
       const pattern = field.validation.phonePattern || "^[+]?[\\d\\s()-]{7,20}$";
       try {
         if (!new RegExp(pattern).test(value)) {
-          errors[field.id] = "Please enter a valid phone number.";
+          errors[field.id] = i18n.t("forms.validationPhone");
         }
       } catch {
         // Invalid regex — skip validation
@@ -354,26 +356,26 @@ export function validateFields(
     if (!isEmpty && field.type === "number" && typeof value === "string") {
       const num = parseFloat(value);
       if (field.validation.min !== undefined && num < field.validation.min)
-        errors[field.id] = `Minimum value is ${field.validation.min}.`;
+        errors[field.id] = i18n.t("forms.validationMinValue", { min: field.validation.min });
       if (field.validation.max !== undefined && num > field.validation.max)
-        errors[field.id] = `Maximum value is ${field.validation.max}.`;
+        errors[field.id] = i18n.t("forms.validationMaxValue", { max: field.validation.max });
     }
 
     if (!isEmpty && ["text", "textarea"].includes(field.type) && typeof value === "string") {
       if (field.validation.minLength && value.length < field.validation.minLength)
-        errors[field.id] = `Minimum ${field.validation.minLength} characters required.`;
+        errors[field.id] = i18n.t("forms.validationMinLength", { min: field.validation.minLength });
       if (field.validation.maxLength && value.length > field.validation.maxLength)
-        errors[field.id] = `Maximum ${field.validation.maxLength} characters allowed.`;
+        errors[field.id] = i18n.t("forms.validationMaxLength", { max: field.validation.maxLength });
     }
 
     if (!isEmpty && field.type === "file_upload" && value instanceof File) {
       if (field.validation.maxFileSize && value.size > field.validation.maxFileSize * 1024 * 1024) {
-        errors[field.id] = `File must be smaller than ${field.validation.maxFileSize} MB.`;
+        errors[field.id] = i18n.t("forms.validationFileSize", { size: field.validation.maxFileSize });
       }
       if (field.validation.allowedFileTypes && field.validation.allowedFileTypes.length > 0) {
         const ext = value.name.split(".").pop()?.toLowerCase() ?? "";
         if (!field.validation.allowedFileTypes.includes(ext)) {
-          errors[field.id] = `Allowed file types: ${field.validation.allowedFileTypes.join(", ")}`;
+          errors[field.id] = i18n.t("forms.validationFileTypes", { types: field.validation.allowedFileTypes.join(", ") });
         }
       }
     }
@@ -407,6 +409,7 @@ interface FormRendererProps {
 }
 
 export function FormRenderer({ fields, formId, isPreview = false, settings, branding, onSubmitSuccess }: FormRendererProps) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -473,9 +476,9 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <CheckCircle2 className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-semibold text-foreground">Response submitted!</h2>
+        <h2 className="text-2xl font-semibold text-foreground">{t("forms.responseSubmitted")}</h2>
         <p className="text-muted-foreground max-w-sm">
-          {settings?.thankYouMessage || "Thank you — your response has been recorded successfully."}
+          {settings?.thankYouMessage || t("forms.defaultThankYou")}
         </p>
       </div>
     );
@@ -549,10 +552,10 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Submitting...
+              {t("forms.submitting")}
             </>
           ) : (
-            "Submit"
+            t("common.submit")
           )}
         </Button>
       )}
@@ -563,7 +566,7 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
           disabled
           className="w-full h-12 text-base font-semibold mt-4 opacity-60"
         >
-          Submit (Preview)
+          {t("forms.submitPreview")}
         </Button>
       )}
     </form>

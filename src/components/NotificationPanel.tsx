@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +41,8 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function NotificationPanel() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const { user } = useAuth();
   const {
     notifications,
@@ -85,7 +89,7 @@ export default function NotificationPanel() {
       <PopoverContent className="w-80 p-0" align="end">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h3 className="text-sm font-semibold">Notifications</h3>
+          <h3 className="text-sm font-semibold">{t("notifications.title")}</h3>
           <div className="flex items-center gap-1">
             <Button
               variant={filter === "all" ? "secondary" : "ghost"}
@@ -93,7 +97,7 @@ export default function NotificationPanel() {
               className="h-6 text-xs px-2"
               onClick={() => setFilter("all")}
             >
-              All
+              {t("notifications.all")}
             </Button>
             <Button
               variant={filter === "unread" ? "secondary" : "ghost"}
@@ -101,7 +105,7 @@ export default function NotificationPanel() {
               className="h-6 text-xs px-2"
               onClick={() => setFilter("unread")}
             >
-              Unread
+              {t("notifications.unread")}
             </Button>
           </div>
         </div>
@@ -112,7 +116,7 @@ export default function NotificationPanel() {
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Inbox className="h-6 w-6 mb-2 opacity-40" />
               <p className="text-sm">
-                {filter === "unread" ? "No unread notifications" : "No notifications"}
+                {filter === "unread" ? t("notifications.noUnreadNotifications") : t("notifications.noNotifications")}
               </p>
             </div>
           ) : (
@@ -152,7 +156,7 @@ export default function NotificationPanel() {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {timeAgo(notif.created_at)}
+                      {timeAgo(notif.created_at, t, language)}
                     </p>
                   </div>
                   <button
@@ -180,7 +184,7 @@ export default function NotificationPanel() {
               onClick={handleMarkAllRead}
             >
               <Check className="h-3 w-3" />
-              Mark All Read
+              {t("notifications.markAllRead")}
             </Button>
           </div>
         )}
@@ -189,7 +193,7 @@ export default function NotificationPanel() {
   );
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string, language: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffMs = now - then;
@@ -197,11 +201,11 @@ function timeAgo(dateStr: string): string {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  if (diffMins < 1) return t("notifications.justNow");
+  if (diffMins < 60) return t("notifications.minutesAgo", { count: diffMins });
+  if (diffHours < 24) return t("notifications.hoursAgo", { count: diffHours });
+  if (diffDays < 7) return t("notifications.daysAgo", { count: diffDays });
+  return new Date(dateStr).toLocaleDateString(language === "he" ? "he-IL" : "en-US", {
     month: "short",
     day: "numeric",
   });

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Button } from "@/components/ui/button";
@@ -10,10 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, User, Settings } from "lucide-react";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
+import LanguageToggle from "@/components/LanguageToggle";
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
   const location = useLocation();
@@ -23,8 +26,8 @@ export default function Navbar() {
     : user?.email?.charAt(0).toUpperCase() ?? "?";
 
   const navLinks = [
-    { to: "/", label: "Forms", icon: FileText },
-    { to: "/submissions", label: "Submissions", icon: Inbox },
+    { to: "/", label: t("nav.forms"), icon: FileText },
+    { to: "/submissions", label: t("nav.submissions"), icon: Inbox },
   ];
 
   return (
@@ -39,7 +42,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav links */}
-        <nav className="ml-6 flex items-center gap-1">
+        <nav className="ms-6 flex items-center gap-1">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to;
             return (
@@ -53,7 +56,7 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ms-auto flex items-center gap-3">
           {/* Workspace switcher */}
           {currentWorkspace && (
             <DropdownMenu>
@@ -72,6 +75,10 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* === AGENT 5: Language toggle === */}
+          <LanguageToggle />
+          {/* === END AGENT 5 === */}
 
           {/* === AGENT 3: Notifications === */}
           <NotificationPanel />
@@ -100,7 +107,7 @@ export default function Navbar() {
               <div className="px-2 py-1.5 text-sm font-medium truncate">{user?.email}</div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" /> Sign out
+                <LogOut className="me-2 h-4 w-4" /> {t("nav.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

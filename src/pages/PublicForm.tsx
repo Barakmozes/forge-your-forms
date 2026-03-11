@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { FormRenderer, FormField } from "@/components/FormRenderer";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
@@ -24,6 +25,7 @@ interface FormData {
 }
 
 export default function PublicForm() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState<FormData | null>(null);
@@ -60,7 +62,7 @@ export default function PublicForm() {
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm">Loading...</p>
+          <p className="text-sm">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -73,9 +75,9 @@ export default function PublicForm() {
           <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
             <AlertCircle className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h1 className="text-xl font-semibold text-foreground">Form not found</h1>
+          <h1 className="text-xl font-semibold text-foreground">{t("forms.formNotFound")}</h1>
           <p className="text-sm text-muted-foreground">
-            This form doesn't exist or may have been removed.
+            {t("forms.formNotFoundDesc")}
           </p>
         </div>
       </div>
@@ -90,10 +92,10 @@ export default function PublicForm() {
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="text-xl font-semibold text-foreground">
-            This form is no longer accepting responses
+            {t("forms.formClosed")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            The form has been closed by its creator.
+            {t("forms.formClosedDesc")}
           </p>
         </div>
       </div>
@@ -108,10 +110,10 @@ export default function PublicForm() {
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="text-xl font-semibold text-foreground">
-            This form is not yet available
+            {t("forms.formDraft")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            This form is still a draft and not open for submissions.
+            {t("forms.formDraftDesc")}
           </p>
         </div>
       </div>
@@ -190,7 +192,7 @@ export default function PublicForm() {
         <div className="h-px bg-border mb-10" />
         {form.fields.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">This form has no fields yet.</p>
+            <p className="text-sm">{t("forms.noFieldsYet")}</p>
           </div>
         ) : (
           <FormRenderer
@@ -204,7 +206,7 @@ export default function PublicForm() {
         {(form.branding as FormBranding)?.showPoweredBy !== false && (
           <div className="mt-12 pt-6 border-t text-center">
             <p className="text-xs text-muted-foreground">
-              Powered by <span className="font-medium text-foreground">FormForge</span>
+              {t("common.poweredBy")}
             </p>
           </div>
         )}

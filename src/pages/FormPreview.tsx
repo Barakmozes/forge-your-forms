@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye } from "lucide-react";
@@ -18,6 +19,7 @@ interface FormData {
 }
 
 export default function FormPreview() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormData | null>(null);
@@ -48,7 +50,7 @@ export default function FormPreview() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground text-sm">Loading preview...</div>
+        <div className="text-muted-foreground text-sm">{t("forms.loadingPreview")}</div>
       </div>
     );
   }
@@ -62,7 +64,7 @@ export default function FormPreview() {
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Eye className="h-4 w-4" />
-            <span>Preview mode — this is how respondents will see your form</span>
+            <span>{t("forms.previewMode")}</span>
           </div>
           <Button
             variant="secondary"
@@ -71,7 +73,7 @@ export default function FormPreview() {
             onClick={() => navigate(`/forms/${id}/edit`)}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Editor
+            {t("forms.backToEditor")}
           </Button>
         </div>
       </div>
@@ -96,7 +98,7 @@ export default function FormPreview() {
         {/* Form Fields */}
         {form.fields.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">No fields added yet. Go back to the editor to add fields.</p>
+            <p className="text-sm">{t("forms.noFieldsAddedYet")}</p>
           </div>
         ) : (
           <FormRenderer

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Translation } from "react-i18next";
 import { logError } from "@/lib/errorLogger";
 import { Button } from "@/components/ui/button";
 
@@ -35,11 +36,15 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center">
-          <h1 className="text-2xl font-semibold text-foreground">Something went wrong</h1>
-          <p className="text-muted-foreground">An unexpected error occurred. Please try again.</p>
-          <Button onClick={this.handleReset}>Try Again</Button>
-        </div>
+        <Translation>
+          {(t) => (
+            <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-center">
+              <h1 className="text-2xl font-semibold text-foreground">{t("common.somethingWentWrong")}</h1>
+              <p className="text-muted-foreground">{t("common.unexpectedError")}</p>
+              <Button onClick={this.handleReset}>{t("common.retry")}</Button>
+            </div>
+          )}
+        </Translation>
       );
     }
 

@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import "@/i18n";
 
 // === AGENT 4 — Lazy-loaded route components for code splitting ===
 const Auth = lazy(() => import("./pages/Auth"));
@@ -85,6 +87,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <WorkspaceProvider>
+            <LanguageProvider>
             {/* === AGENT 1: ErrorBoundary wraps all routes === */}
             <ErrorBoundary>
               {/* === AGENT 4 — Suspense for lazy-loaded routes === */}
@@ -94,6 +97,7 @@ const App = () => (
               {/* === END AGENT 4 === */}
             </ErrorBoundary>
             {/* === END AGENT 1 === */}
+            </LanguageProvider>
           </WorkspaceProvider>
         </AuthProvider>
       </BrowserRouter>

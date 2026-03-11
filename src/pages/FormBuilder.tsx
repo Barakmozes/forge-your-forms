@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,28 @@ const FIELD_CATEGORIES = [
   },
 ] as const;
 
+const FIELD_TYPE_KEYS: Record<string, string> = {
+  text: "builder.fieldText",
+  textarea: "builder.fieldTextarea",
+  number: "builder.fieldNumber",
+  email: "builder.fieldEmail",
+  phone: "builder.fieldPhone",
+  select: "builder.fieldDropdown",
+  multi_select: "builder.fieldMultiSelect",
+  radio: "builder.fieldRadio",
+  checkbox: "builder.fieldCheckboxes",
+  date: "builder.fieldDate",
+  file_upload: "builder.fieldFileUpload",
+  section_header: "builder.fieldSectionHeader",
+  paragraph_text: "builder.fieldParagraph",
+};
+
+const CATEGORY_KEYS: Record<string, string> = {
+  Basic: "builder.categoryBasic",
+  Choice: "builder.categoryChoice",
+  Other: "builder.categoryOther",
+};
+
 const createNewField = (type: FieldType): FormField => ({
   id: crypto.randomUUID(),
   type,
@@ -106,7 +129,7 @@ function PaletteItem({ type, label, icon: Icon }: { type: string; label: string;
   );
 }
 
-function SortableFieldItem({ field, activeId, onClick, onRemove }: { field: FormField, activeId: string | null, onClick: () => void, onRemove: () => void }) {
+function SortableFieldItem({ field, activeId, onClick, onRemove, t }: { field: FormField, activeId: string | null, onClick: () => void, onRemove: () => void, t: (key: string) => string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
 
   const style = {
@@ -125,9 +148,9 @@ function SortableFieldItem({ field, activeId, onClick, onRemove }: { field: Form
         </div>
         <div className="flex-1 space-y-1 pointer-events-none">
           <div className="font-medium text-sm flex items-center gap-2">
-            {field.label || "Untitled Field"}
+            {field.label || t("builder.untitledField")}
             {field.required && <span className="text-destructive">*</span>}
-            <Badge variant="secondary" className="text-[10px] ml-2 font-normal">{field.type}</Badge>
+            <Badge variant="secondary" className="text-[10px] ms-2 font-normal">{field.type}</Badge>
           </div>
           {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
           <div className="mt-2 text-sm text-muted-foreground/60 border border-dashed p-2 rounded bg-muted/20">
@@ -140,7 +163,7 @@ function SortableFieldItem({ field, activeId, onClick, onRemove }: { field: Form
             ) : field.type === "paragraph_text" ? (
               <div className="text-sm text-foreground">{field.label}</div>
             ) : (
-              <div>{field.placeholder || "User input goes here..."}</div>
+              <div>{field.placeholder || t("builder.userInputPlaceholder")}</div>
             )}
           </div>
         </div>
@@ -156,6 +179,7 @@ export default function FormBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -214,7 +238,7 @@ export default function FormBuilder() {
     
     if (error) {
       setSaveStatus("Unsaved");
-      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      toast({ title: t("builder.saveFailed"), description: error.message, variant: "destructive" });
     } else {
       setSaveStatus("Saved");
     }
@@ -295,7 +319,13 @@ export default function FormBuilder() {
     if (selectedFieldId === id) setSelectedFieldId(null);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  const saveStatusLabels: Record<string, string> = {
+    "Saved": t("builder.saved"),
+    "Saving...": t("builder.saving"),
+    "Unsaved": t("builder.unsaved"),
+  };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">{t("common.loading")}</div>;
 
   return (
     <div className="flex flex-col h-screen bg-muted/10">
@@ -310,24 +340,24 @@ export default function FormBuilder() {
               value={title} 
               onChange={(e) => setTitle(e.target.value)} 
               className="font-semibold border-none bg-transparent focus-visible:ring-1 h-8 px-2"
-              placeholder="Form Title"
+              placeholder={t("builder.formTitlePlaceholder")}
             />
           </div>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             {saveStatus === "Saved" ? <CheckCircle2 className="h-3 w-3 text-success" /> : null}
-            {saveStatus}
+            {saveStatusLabels[saveStatus]}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="h-8 w-28 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="draft">{t("forms.statusDraft")}</SelectItem>
+              <SelectItem value="active">{t("forms.statusActive")}</SelectItem>
+              <SelectItem value="closed">{t("forms.statusClosed")}</SelectItem>
             </SelectContent>
           </Select>
           
@@ -335,13 +365,13 @@ export default function FormBuilder() {
           <BrandingPanel branding={branding} onChange={setBranding} formId={id ?? ""} />
 
           <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/preview`, '_blank')}>
-            <Eye className="h-4 w-4" /> Preview
+            <Eye className="h-4 w-4" /> {t("builder.preview")}
           </Button>
           
           <SharePanel formId={id ?? ""} formTitle={title} />
 
           <Button size="sm" className="h-8 gap-2" onClick={save} disabled={saveStatus === "Saving..."}>
-            <Save className="h-4 w-4" /> Save
+            <Save className="h-4 w-4" /> {t("common.save")}
           </Button>
         </div>
       </header>
@@ -350,10 +380,10 @@ export default function FormBuilder() {
         <div className="border-b bg-background px-4 shrink-0">
           <TabsList className="h-9 bg-transparent gap-1 p-0">
             <TabsTrigger value="build" className="h-9 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm gap-2 px-3">
-              <LayoutTemplate className="h-3.5 w-3.5" /> Build
+              <LayoutTemplate className="h-3.5 w-3.5" /> {t("builder.build")}
             </TabsTrigger>
             <TabsTrigger value="responses" className="h-9 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm gap-2 px-3">
-              <BarChart2 className="h-3.5 w-3.5" /> Responses
+              <BarChart2 className="h-3.5 w-3.5" /> {t("builder.responses")}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -367,15 +397,15 @@ export default function FormBuilder() {
         <div className="flex flex-1 overflow-hidden">
           
           {/* Left Sidebar - Palette */}
-          <aside className="w-64 border-r bg-background flex flex-col shrink-0 overflow-y-auto">
-            <div className="p-4 border-b font-medium text-sm">Field Types</div>
+          <aside className="w-64 border-e bg-background flex flex-col shrink-0 overflow-y-auto">
+            <div className="p-4 border-b font-medium text-sm">{t("builder.fieldTypes")}</div>
             <div className="p-4 space-y-6">
               {FIELD_CATEGORIES.map((cat) => (
                 <div key={cat.name} className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{cat.name}</h3>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t(CATEGORY_KEYS[cat.name])}</h3>
                   <div className="grid grid-cols-1 gap-2">
                     {cat.items.map((item) => (
-                      <PaletteItem key={item.type} type={item.type} label={item.label} icon={item.icon} />
+                      <PaletteItem key={item.type} type={item.type} label={t(FIELD_TYPE_KEYS[item.type])} icon={item.icon} />
                     ))}
                   </div>
                 </div>
@@ -390,7 +420,7 @@ export default function FormBuilder() {
                 <Input 
                   value={description} 
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add a description for your form..."
+                  placeholder={t("builder.addDescription")}
                   className="bg-transparent border-none text-muted-foreground focus-visible:ring-1 shadow-none px-2"
                 />
               </div>
@@ -399,17 +429,18 @@ export default function FormBuilder() {
                 {fields.length === 0 ? (
                   <div className="text-center space-y-2 text-muted-foreground">
                     <LayoutTemplate className="h-10 w-10 mx-auto opacity-50" />
-                    <p>Drag and drop fields from the left to start building</p>
+                    <p>{t("builder.dragDropHint")}</p>
                   </div>
                 ) : (
                   <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
                     {fields.map((field) => (
-                      <SortableFieldItem 
-                        key={field.id} 
-                        field={field} 
+                      <SortableFieldItem
+                        key={field.id}
+                        field={field}
                         activeId={selectedFieldId}
                         onClick={() => setSelectedFieldId(field.id)}
                         onRemove={() => removeField(field.id)}
+                        t={t}
                       />
                     ))}
                   </SortableContext>
@@ -419,13 +450,13 @@ export default function FormBuilder() {
           </main>
 
           {/* Right Sidebar - Properties */}
-          <aside className="w-80 border-l bg-background flex flex-col shrink-0 overflow-y-auto">
-            <div className="p-4 border-b font-medium text-sm">Properties</div>
+          <aside className="w-80 border-s bg-background flex flex-col shrink-0 overflow-y-auto">
+            <div className="p-4 border-b font-medium text-sm">{t("builder.properties")}</div>
             
             {selectedField ? (
               <div className="p-4 space-y-6">
                 <div className="space-y-2">
-                  <Label>Field Label</Label>
+                  <Label>{t("builder.fieldLabel")}</Label>
                   <Input 
                     value={selectedField.label} 
                     onChange={(e) => updateField(selectedField.id, { label: e.target.value })} 
@@ -434,7 +465,7 @@ export default function FormBuilder() {
 
                 {!['section_header', 'paragraph_text'].includes(selectedField.type) && (
                   <div className="space-y-2">
-                    <Label>Placeholder</Label>
+                    <Label>{t("builder.placeholder")}</Label>
                     <Input 
                       value={selectedField.placeholder} 
                       onChange={(e) => updateField(selectedField.id, { placeholder: e.target.value })} 
@@ -443,17 +474,17 @@ export default function FormBuilder() {
                 )}
 
                 <div className="space-y-2">
-                  <Label>Help Text</Label>
-                  <Input 
-                    value={selectedField.helpText} 
-                    onChange={(e) => updateField(selectedField.id, { helpText: e.target.value })} 
-                    placeholder="Small text below the field"
+                  <Label>{t("builder.helpText")}</Label>
+                  <Input
+                    value={selectedField.helpText}
+                    onChange={(e) => updateField(selectedField.id, { helpText: e.target.value })}
+                    placeholder={t("builder.helpTextPlaceholder")}
                   />
                 </div>
 
                 {!['section_header', 'paragraph_text'].includes(selectedField.type) && (
                   <div className="flex items-center justify-between">
-                    <Label className="cursor-pointer" htmlFor="req-toggle">Required field</Label>
+                    <Label className="cursor-pointer" htmlFor="req-toggle">{t("builder.requiredField")}</Label>
                     <Switch 
                       id="req-toggle"
                       checked={selectedField.required} 
@@ -465,7 +496,7 @@ export default function FormBuilder() {
                 {/* Options Editor */}
                 {['select', 'multi_select', 'radio', 'checkbox'].includes(selectedField.type) && (
                   <div className="space-y-3">
-                    <Label>Options</Label>
+                    <Label>{t("builder.options")}</Label>
                     <div className="space-y-2">
                       {selectedField.options.map((opt, i) => (
                         <div key={i} className="flex gap-2">
@@ -488,7 +519,7 @@ export default function FormBuilder() {
                     <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => {
                       updateField(selectedField.id, { options: [...selectedField.options, `Option ${selectedField.options.length + 1}`] });
                     }}>
-                      <Plus className="h-4 w-4" /> Add Option
+                      <Plus className="h-4 w-4" /> {t("builder.addOption")}
                     </Button>
                   </div>
                 )}
@@ -497,7 +528,7 @@ export default function FormBuilder() {
                 {selectedField.type === 'number' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Min Value</Label>
+                      <Label>{t("builder.minValue")}</Label>
                       <Input 
                         type="number" 
                         value={selectedField.validation.min ?? ''} 
@@ -505,7 +536,7 @@ export default function FormBuilder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Max Value</Label>
+                      <Label>{t("builder.maxValue")}</Label>
                       <Input 
                         type="number" 
                         value={selectedField.validation.max ?? ''} 
@@ -519,7 +550,7 @@ export default function FormBuilder() {
                 {['text', 'textarea'].includes(selectedField.type) && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Min Length</Label>
+                      <Label>{t("builder.minLength")}</Label>
                       <Input
                         type="number"
                         value={selectedField.validation.minLength ?? ''}
@@ -527,7 +558,7 @@ export default function FormBuilder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Max Length</Label>
+                      <Label>{t("builder.maxLength")}</Label>
                       <Input
                         type="number"
                         value={selectedField.validation.maxLength ?? ''}
@@ -540,14 +571,15 @@ export default function FormBuilder() {
                 {/* Phone Validation */}
                 {selectedField.type === 'phone' && (
                   <div className="space-y-2">
-                    <Label>Regex Pattern</Label>
+                    <Label>{t("builder.regexPattern")}</Label>
                     <Input
                       value={selectedField.validation.phonePattern ?? ''}
                       onChange={(e) => updateField(selectedField.id, { validation: { ...selectedField.validation, phonePattern: e.target.value || undefined } })}
                       placeholder="^[+]?[\d\s()-]{7,20}$"
                       className="font-mono text-xs"
+                      dir="ltr"
                     />
-                    <p className="text-xs text-muted-foreground">Custom regex for phone validation. Leave blank for default.</p>
+                    <p className="text-xs text-muted-foreground">{t("builder.regexHint")}</p>
                   </div>
                 )}
 
@@ -555,7 +587,7 @@ export default function FormBuilder() {
                 {selectedField.type === 'file_upload' && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Max File Size (MB)</Label>
+                      <Label>{t("builder.maxFileSize")}</Label>
                       <Input
                         type="number"
                         min={0}
@@ -565,7 +597,7 @@ export default function FormBuilder() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Allowed File Types</Label>
+                      <Label>{t("builder.allowedFileTypes")}</Label>
                       <Input
                         value={selectedField.validation.allowedFileTypes?.join(', ') ?? ''}
                         onChange={(e) => {
@@ -576,7 +608,7 @@ export default function FormBuilder() {
                         }}
                         placeholder="pdf, jpg, png, docx"
                       />
-                      <p className="text-xs text-muted-foreground">Comma-separated extensions. Leave blank for any.</p>
+                      <p className="text-xs text-muted-foreground">{t("builder.allowedFileTypesHint")}</p>
                     </div>
                   </div>
                 )}
@@ -596,7 +628,7 @@ export default function FormBuilder() {
             ) : (
               <div className="p-8 text-center text-sm text-muted-foreground flex flex-col items-center justify-center h-full gap-3">
                 <LayoutTemplate className="h-8 w-8 opacity-20" />
-                <p>Select a field on the canvas to edit its properties here.</p>
+                <p>{t("builder.selectFieldHint")}</p>
               </div>
             )}
           </aside>

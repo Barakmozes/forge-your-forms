@@ -1,12 +1,13 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Inbox,
@@ -14,6 +15,7 @@ import {
   CalendarDays,
   Plus,
   ArrowRight,
+  ArrowLeft,
   Clock,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, startOfDay, isWithinInterval } from "date-fns";
@@ -39,6 +41,8 @@ interface DashboardHomeProps {
 }
 
 export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -118,15 +122,18 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  }, []);
+    if (hour < 12) return t("dashboard.greetingMorning");
+    if (hour < 18) return t("dashboard.greetingAfternoon");
+    return t("dashboard.greetingEvening");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
 
   const displayName =
     user?.user_metadata?.full_name?.split(" ")[0] ??
     user?.email?.split("@")[0] ??
     "there";
+
+  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
   return (
     <div className="space-y-6">
@@ -136,7 +143,7 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
           {greeting}, {displayName}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Here's an overview of your workspace activity.
+          {t("dashboard.overview")}
         </p>
       </div>
 
@@ -145,7 +152,7 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Forms
+              {t("dashboard.totalForms")}
             </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -157,33 +164,33 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              This Month
+              {t("dashboard.thisMonth")}
             </CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{monthlyCount}</div>
-            <p className="text-xs text-muted-foreground">submissions</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.submissionsLabel")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Today
+              {t("dashboard.today")}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{todayCount}</div>
-            <p className="text-xs text-muted-foreground">submissions</p>
+            <p className="text-xs text-muted-foreground">{t("dashboard.submissionsLabel")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Most Active
+              {t("dashboard.mostActive")}
             </CardTitle>
             <Inbox className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -194,11 +201,11 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
                   {mostActive.title}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {mostActive.submission_count} responses
+                  {mostActive.submission_count} {t("dashboard.responses")}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">No forms yet</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.noFormsYet")}</p>
             )}
           </CardContent>
         </Card>
@@ -211,7 +218,7 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold">
-                Recent Submissions
+                {t("dashboard.recentSubmissions")}
               </CardTitle>
               <Button
                 variant="ghost"
@@ -219,13 +226,13 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
                 className="gap-1 text-xs"
                 onClick={() => navigate("/submissions")}
               >
-                View all <ArrowRight className="h-3 w-3" />
+                {t("dashboard.viewAll")} <ArrowIcon className="h-3 w-3" />
               </Button>
             </CardHeader>
             <CardContent>
               {recentSubs.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  No submissions yet. Share your forms to start collecting responses.
+                  {t("dashboard.noSubmissionsYet")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -240,12 +247,12 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
                           {getFormTitle(sub.form_id)}
                         </span>
                         {sub.submitted_by_email && (
-                          <span className="text-muted-foreground truncate hidden sm:inline">
+                          <span className="text-muted-foreground truncate hidden sm:inline" dir="ltr">
                             {sub.submitted_by_email}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap" dir="ltr">
                         {format(parseISO(sub.submitted_at), "MMM d, h:mm a")}
                       </span>
                     </div>
@@ -260,7 +267,7 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">
-              Quick Actions
+              {t("dashboard.quickActions")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -269,14 +276,14 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
               className="w-full justify-start gap-2"
               onClick={onCreateForm}
             >
-              <Plus className="h-4 w-4" /> Create New Form
+              <Plus className="h-4 w-4" /> {t("dashboard.createNewForm")}
             </Button>
             <Button
               variant="outline"
               className="w-full justify-start gap-2"
               onClick={() => navigate("/submissions")}
             >
-              <Inbox className="h-4 w-4" /> View All Submissions
+              <Inbox className="h-4 w-4" /> {t("dashboard.viewAllSubmissions")}
             </Button>
           </CardContent>
         </Card>

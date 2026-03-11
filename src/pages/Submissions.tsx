@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useSubmissions } from "@/hooks/useSubmissions";
@@ -27,10 +28,10 @@ interface FormOption {
   fields: FormField[];
 }
 
-function formatValue(value: unknown, type?: string): string {
+function formatValue(value: unknown, type?: string, t?: (key: string) => string): string {
   if (value === null || value === undefined || value === "") return "—";
   if (Array.isArray(value)) return value.join(", ");
-  if (type === "file_upload") return typeof value === "string" ? "File uploaded" : "—";
+  if (type === "file_upload") return typeof value === "string" ? (t ? t("submissions.fileUploaded") : "File uploaded") : "—";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
@@ -38,6 +39,7 @@ function formatValue(value: unknown, type?: string): string {
 const PAGE_SIZE = 25;
 
 export default function Submissions() {
+  const { t } = useTranslation();
   const { id: preFilterFormId } = useParams<{ id?: string }>();
   const { currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
@@ -198,11 +200,11 @@ export default function Submissions() {
           )}
           <div>
             <h1 className="text-2xl font-display font-bold">
-              {preFilterFormId && currentForm ? `${currentForm.title} — Submissions` : "Submissions"}
+              {preFilterFormId && currentForm ? `${currentForm.title} — ${t("submissions.title")}` : t("submissions.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {filtered.length} response{filtered.length !== 1 ? "s" : ""}
-              {submissions.length !== filtered.length ? ` (filtered from ${submissions.length})` : ""}
+              {filtered.length} {filtered.length === 1 ? t("forms.response") : t("forms.responses")}
+              {submissions.length !== filtered.length ? ` ${t("submissions.filteredFrom", { count: submissions.length })}` : ""}
             </p>
           </div>
         </div>
@@ -211,10 +213,10 @@ export default function Submissions() {
           {!preFilterFormId && (
             <Select value={selectedFormId} onValueChange={setSelectedFormId}>
               <SelectTrigger className="w-[200px] h-9">
-                <SelectValue placeholder="Filter by form" />
+                <SelectValue placeholder={t("submissions.filterByForm")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All forms</SelectItem>
+                <SelectItem value="all">{t("submissions.allForms")}</SelectItem>
                 {forms.map((f) => (
                   <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
                 ))}
@@ -223,7 +225,7 @@ export default function Submissions() {
           )}
 
           <Button variant="outline" size="sm" className="h-9 gap-2" onClick={exportCSV} disabled={filtered.length === 0}>
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className="h-4 w-4" /> {t("submissions.exportCSV")}
           </Button>
         </div>
       </div>
@@ -233,7 +235,7 @@ export default function Submissions() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search responses..."
+            placeholder={t("submissions.searchResponses")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9"
@@ -258,7 +260,7 @@ export default function Submissions() {
           />
           {(dateFrom || dateTo) && (
             <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => { setDateFrom(""); setDateTo(""); }}>
-              Clear
+              {t("submissions.clearDates")}
             </Button>
           )}
         </div>
@@ -273,9 +275,9 @@ export default function Submissions() {
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <Inbox className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-display font-semibold text-lg">No submissions found</h3>
+            <h3 className="font-display font-semibold text-lg">{t("submissions.noSubmissionsFound")}</h3>
             <p className="text-muted-foreground text-sm max-w-sm">
-              {submissions.length > 0 ? "Try adjusting your filters." : "Submissions will appear here once your forms are filled out."}
+              {submissions.length > 0 ? t("submissions.adjustFilters") : t("submissions.submissionsWillAppear")}
             </p>
           </CardContent>
         </Card>

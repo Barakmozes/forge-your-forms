@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +52,7 @@ const ROLE_COLORS: Record<WorkspaceRole, string> = {
 };
 
 export default function MembersManager() {
+  const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -111,7 +113,6 @@ export default function MembersManager() {
 
     const result = await handleAsync(
       async () => {
-        // Find user by email
         const { data: profile, error: profileErr } = await supabase
           .from("profiles")
           .select("id")
@@ -119,13 +120,11 @@ export default function MembersManager() {
           .maybeSingle();
 
         if (profileErr) throw profileErr;
-        if (!profile) throw new Error("No user found with that email. They must sign up first.");
+        if (!profile) throw new Error(t("members.noUserFound"));
 
-        // Check if already a member
         const existing = members.find((m) => m.user_id === profile.id);
-        if (existing) throw new Error("This user is already a workspace member.");
+        if (existing) throw new Error(t("members.alreadyMember"));
 
-        // Add member
         const { error: insertErr } = await supabase
           .from("workspace_members")
           .insert({
@@ -139,12 +138,12 @@ export default function MembersManager() {
       },
       {
         context: { component: "MembersManager", action: "inviteMember" },
-        errorMessage: "Failed to invite member.",
+        errorMessage: t("members.failedInvite"),
       }
     );
 
     if (result) {
-      toast({ title: "Member invited", description: `${inviteEmail} added as ${inviteRole}.` });
+      toast({ title: t("members.memberInvited"), description: t("members.memberAdded", { email: inviteEmail, role: inviteRole }) });
       setInviteEmail("");
       setInviteRole("editor");
       setInviteOpen(false);
@@ -156,7 +155,7 @@ export default function MembersManager() {
   async function handleRemove(memberId: string) {
     if (!currentWorkspace) return;
     if (memberId === user?.id) {
-      toast({ title: "Cannot remove yourself", variant: "destructive" });
+      toast({ title: t("members.cannotRemoveSelf"), variant: "destructive" });
       return;
     }
 
@@ -172,11 +171,11 @@ export default function MembersManager() {
       },
       {
         context: { component: "MembersManager", action: "removeMember" },
-        errorMessage: "Failed to remove member.",
+        errorMessage: t("members.failedRemove"),
       }
     );
 
-    toast({ title: "Member removed" });
+    toast({ title: t("members.memberRemoved") });
     fetchMembers();
   }
 
@@ -195,11 +194,11 @@ export default function MembersManager() {
       },
       {
         context: { component: "MembersManager", action: "changeRole" },
-        errorMessage: "Failed to update role.",
+        errorMessage: t("members.failedUpdateRole"),
       }
     );
 
-    toast({ title: "Role updated", description: `Changed to ${newRole}.` });
+    toast({ title: t("members.roleUpdated"), description: t("members.roleChangedTo", { role: newRole }) });
     fetchMembers();
   }
 
@@ -208,54 +207,66 @@ export default function MembersManager() {
     return email.charAt(0).toUpperCase();
   }
 
+  const getRoleLabel = (role: WorkspaceRole): string => {
+    const labels: Record<WorkspaceRole, string> = {
+      owner: t("members.owner"),
+      editor: t("members.editor"),
+      viewer: t("members.viewer"),
+    };
+    return labels[role] ?? role;
+  };
+
   if (loading) {
-    return <div className="py-8 text-center text-muted-foreground">Loading members...</div>;
+    return <div className="py-8 text-center text-muted-foreground">{t("members.loadingMembers")}</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Team Members</h3>
-          <p className="text-sm text-muted-foreground">{members.length} member{members.length !== 1 ? "s" : ""}</p>
+          <h3 className="text-lg font-semibold">{t("settings.teamMembers")}</h3>
+          <p className="text-sm text-muted-foreground">
+            {members.length} {members.length === 1 ? t("members.member") : t("settings.members").toLowerCase()}
+          </p>
         </div>
 
         {isOwner && (
           <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" /> Invite Member
+                <Plus className="h-4 w-4" /> {t("members.inviteMember")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invite a Team Member</DialogTitle>
+                <DialogTitle>{t("members.inviteTeamMember")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="invite-email">Email</Label>
+                  <Label htmlFor="invite-email">{t("members.email")}</Label>
                   <Input
                     id="invite-email"
                     type="email"
                     placeholder="user@example.com"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
+                    dir="ltr"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="invite-role">Role</Label>
+                  <Label htmlFor="invite-role">{t("members.role")}</Label>
                   <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as WorkspaceRole)}>
                     <SelectTrigger id="invite-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
+                      <SelectItem value="editor">{t("members.editor")}</SelectItem>
+                      <SelectItem value="viewer">{t("members.viewer")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()} className="w-full">
-                  {inviting ? "Inviting..." : "Send Invite"}
+                  {inviting ? t("members.inviting") : t("members.sendInvite")}
                 </Button>
               </div>
             </DialogContent>
@@ -267,9 +278,9 @@ export default function MembersManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>{t("members.member")}</TableHead>
+              <TableHead>{t("members.email")}</TableHead>
+              <TableHead>{t("members.role")}</TableHead>
               {isOwner && <TableHead className="w-[60px]" />}
             </TableRow>
           </TableHeader>
@@ -287,7 +298,7 @@ export default function MembersManager() {
                     <span className="font-medium">{member.full_name || member.email.split("@")[0]}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{member.email}</TableCell>
+                <TableCell className="text-muted-foreground" dir="ltr">{member.email}</TableCell>
                 <TableCell>
                   {isOwner && member.role !== "owner" ? (
                     <Select value={member.role} onValueChange={(v) => handleRoleChange(member.user_id, v as WorkspaceRole)}>
@@ -295,13 +306,13 @@ export default function MembersManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="editor">Editor</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="editor">{t("members.editor")}</SelectItem>
+                        <SelectItem value="viewer">{t("members.viewer")}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
                     <Badge variant="secondary" className={ROLE_COLORS[member.role]}>
-                      {member.role}
+                      {getRoleLabel(member.role)}
                     </Badge>
                   )}
                 </TableCell>

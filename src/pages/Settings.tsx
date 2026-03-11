@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Users, User } from "lucide-react";
 
 export default function Settings() {
+  const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,7 +39,6 @@ export default function Settings() {
   useEffect(() => {
     if (currentWorkspace) {
       setWorkspaceName(currentWorkspace.name);
-      // Fetch workspace slug
       supabase
         .from("workspaces")
         .select("slug")
@@ -81,12 +82,12 @@ export default function Settings() {
       },
       {
         context: { component: "Settings", action: "saveWorkspace" },
-        errorMessage: "Failed to save workspace settings.",
+        errorMessage: t("settings.failedSaveWorkspace"),
       }
     );
 
     if (result) {
-      toast({ title: "Workspace updated", description: "Workspace name saved." });
+      toast({ title: t("settings.workspaceUpdated"), description: t("settings.workspaceNameSaved") });
     }
     setSavingWorkspace(false);
   }
@@ -106,12 +107,12 @@ export default function Settings() {
       },
       {
         context: { component: "Settings", action: "saveProfile" },
-        errorMessage: "Failed to save profile.",
+        errorMessage: t("settings.failedSaveProfile"),
       }
     );
 
     if (result) {
-      toast({ title: "Profile updated", description: "Your profile has been saved." });
+      toast({ title: t("settings.profileUpdated"), description: t("settings.profileSaved") });
     }
     setSavingProfile(false);
   }
@@ -121,11 +122,11 @@ export default function Settings() {
     if (!file || !user) return;
 
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please upload an image.", variant: "destructive" });
+      toast({ title: t("settings.invalidFile"), description: t("settings.pleaseUploadImage"), variant: "destructive" });
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Maximum size is 2MB.", variant: "destructive" });
+      toast({ title: t("settings.fileTooLarge"), description: t("settings.maxSizeIs"), variant: "destructive" });
       return;
     }
 
@@ -154,13 +155,13 @@ export default function Settings() {
       },
       {
         context: { component: "Settings", action: "uploadAvatar" },
-        errorMessage: "Failed to upload avatar.",
+        errorMessage: t("settings.failedUploadAvatar"),
       }
     );
 
     if (result) {
       setAvatarUrl(result);
-      toast({ title: "Avatar updated" });
+      toast({ title: t("settings.avatarUpdated") });
     }
     setUploadingAvatar(false);
   }
@@ -172,18 +173,18 @@ export default function Settings() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
+        <h1 className="text-2xl font-bold mb-6">{t("settings.title")}</h1>
 
         <Tabs defaultValue="workspace">
           <TabsList className="mb-6">
             <TabsTrigger value="workspace" className="gap-2">
-              <Building2 className="h-4 w-4" /> Workspace
+              <Building2 className="h-4 w-4" /> {t("settings.workspace")}
             </TabsTrigger>
             <TabsTrigger value="members" className="gap-2">
-              <Users className="h-4 w-4" /> Members
+              <Users className="h-4 w-4" /> {t("settings.members")}
             </TabsTrigger>
             <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" /> Profile
+              <User className="h-4 w-4" /> {t("settings.profile")}
             </TabsTrigger>
           </TabsList>
 
@@ -191,12 +192,12 @@ export default function Settings() {
           <TabsContent value="workspace">
             <Card>
               <CardHeader>
-                <CardTitle>Workspace Settings</CardTitle>
-                <CardDescription>Manage your workspace details.</CardDescription>
+                <CardTitle>{t("settings.workspaceSettings")}</CardTitle>
+                <CardDescription>{t("settings.workspaceDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ws-name">Workspace Name</Label>
+                  <Label htmlFor="ws-name">{t("settings.workspaceName")}</Label>
                   <Input
                     id="ws-name"
                     value={workspaceName}
@@ -204,17 +205,17 @@ export default function Settings() {
                     disabled={!isOwner}
                   />
                   {!isOwner && (
-                    <p className="text-xs text-muted-foreground">Only the workspace owner can change the name.</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.ownerOnly")}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ws-slug">Slug</Label>
-                  <Input id="ws-slug" value={workspaceSlug} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Read-only identifier.</p>
+                  <Label htmlFor="ws-slug">{t("settings.slug")}</Label>
+                  <Input id="ws-slug" value={workspaceSlug} disabled className="bg-muted" dir="ltr" />
+                  <p className="text-xs text-muted-foreground">{t("settings.readOnlyIdentifier")}</p>
                 </div>
                 {isOwner && (
                   <Button onClick={handleSaveWorkspace} disabled={savingWorkspace || !workspaceName.trim()}>
-                    {savingWorkspace ? "Saving..." : "Save Changes"}
+                    {savingWorkspace ? t("common.saving") : t("common.saveChanges")}
                   </Button>
                 )}
               </CardContent>
@@ -225,8 +226,8 @@ export default function Settings() {
           <TabsContent value="members">
             <Card>
               <CardHeader>
-                <CardTitle>Team Members</CardTitle>
-                <CardDescription>Manage who has access to this workspace.</CardDescription>
+                <CardTitle>{t("settings.teamMembers")}</CardTitle>
+                <CardDescription>{t("settings.teamMembersDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <MembersManager />
@@ -238,8 +239,8 @@ export default function Settings() {
           <TabsContent value="profile">
             <Card>
               <CardHeader>
-                <CardTitle>Your Profile</CardTitle>
-                <CardDescription>Update your personal information.</CardDescription>
+                <CardTitle>{t("settings.yourProfile")}</CardTitle>
+                <CardDescription>{t("settings.profileDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -252,7 +253,7 @@ export default function Settings() {
                   <div>
                     <Label htmlFor="avatar-upload" className="cursor-pointer">
                       <Button variant="outline" size="sm" asChild disabled={uploadingAvatar}>
-                        <span>{uploadingAvatar ? "Uploading..." : "Change Avatar"}</span>
+                        <span>{uploadingAvatar ? t("settings.uploading") : t("settings.changeAvatar")}</span>
                       </Button>
                     </Label>
                     <input
@@ -262,25 +263,25 @@ export default function Settings() {
                       className="hidden"
                       onChange={handleAvatarUpload}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Max 2MB. JPG, PNG, or GIF.</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("settings.maxFileSize")}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="profile-name">Full Name</Label>
+                  <Label htmlFor="profile-name">{t("settings.fullName")}</Label>
                   <Input
                     id="profile-name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t("settings.fullNamePlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="profile-email">Email</Label>
-                  <Input id="profile-email" value={profileEmail} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+                  <Label htmlFor="profile-email">{t("settings.emailLabel")}</Label>
+                  <Input id="profile-email" value={profileEmail} disabled className="bg-muted" dir="ltr" />
+                  <p className="text-xs text-muted-foreground">{t("settings.emailCannotChange")}</p>
                 </div>
                 <Button onClick={handleSaveProfile} disabled={savingProfile}>
-                  {savingProfile ? "Saving..." : "Save Profile"}
+                  {savingProfile ? t("common.saving") : t("settings.saveProfile")}
                 </Button>
               </CardContent>
             </Card>

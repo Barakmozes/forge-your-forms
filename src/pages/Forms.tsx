@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,23 +33,25 @@ import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
 
-const MODE_CONFIG: Record<FormMode, { label: string; icon: React.ElementType; color: string; badgeClass: string; description: string; available: boolean }> = {
-  standard: { label: "Standard Form", icon: ClipboardList, color: "border-blue-500/50 bg-blue-500/5", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Collect responses with custom fields", available: true },
-  waitlist: { label: "Waitlist", icon: Users, color: "border-purple-500/50 bg-purple-500/5", badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Capture leads with referral tracking", available: true },
-  feedback: { label: "Feedback / NPS", icon: MessageSquare, color: "border-amber-500/50 bg-amber-500/5", badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", description: "Measure satisfaction & NPS scores", available: true },
-  support: { label: "Support Tickets", icon: Headphones, color: "border-green-500/50 bg-green-500/5", badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Track & resolve customer issues", available: true },
+const MODE_CONFIG: Record<FormMode, { labelKey: string; icon: React.ElementType; color: string; badgeClass: string; descKey: string; available: boolean }> = {
+  standard: { labelKey: "forms.modeStandard", icon: ClipboardList, color: "border-blue-500/50 bg-blue-500/5", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", descKey: "forms.modeStandardDesc", available: true },
+  waitlist: { labelKey: "forms.modeWaitlist", icon: Users, color: "border-purple-500/50 bg-purple-500/5", badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", descKey: "forms.modeWaitlistDesc", available: true },
+  feedback: { labelKey: "forms.modeFeedback", icon: MessageSquare, color: "border-amber-500/50 bg-amber-500/5", badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", descKey: "forms.modeFeedbackDesc", available: true },
+  support: { labelKey: "forms.modeSupport", icon: Headphones, color: "border-green-500/50 bg-green-500/5", badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", descKey: "forms.modeSupportDesc", available: true },
 };
 
 function ModeBadge({ mode }: { mode: FormMode }) {
+  const { t } = useTranslation();
   const config = MODE_CONFIG[mode];
   return (
     <Badge variant="secondary" className={`text-[10px] font-medium ${config.badgeClass}`}>
-      {config.label}
+      {t(config.labelKey)}
     </Badge>
   );
 }
 
 export default function Forms() {
+  const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { forms, isLoading, refetch, createForm } = useForms();
@@ -89,8 +92,8 @@ export default function Forms() {
         navigate(`/forms/${result.id}/edit`);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to create form";
-      toast({ title: "Error", description: message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : t("forms.failedCreate");
+      toast({ title: t("common.error"), description: message, variant: "destructive" });
     }
     setDialogOpen(false);
     setSelectedMode("standard");
@@ -116,7 +119,7 @@ export default function Forms() {
         .insert({
           workspace_id: currentWorkspace.id,
           created_by: user.id,
-          title: `Copy of ${original.title}`,
+          title: t("forms.copyOf", { title: original.title }),
           description: original.description,
           fields: original.fields,
           settings: original.settings,
@@ -129,11 +132,11 @@ export default function Forms() {
 
       if (insertError) throw insertError;
 
-      toast({ title: "Form duplicated", description: `"Copy of ${original.title}" created as draft.` });
+      toast({ title: t("forms.formDuplicated"), description: t("forms.duplicateDescription", { title: original.title }) });
       refetch();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to duplicate form";
-      toast({ title: "Error", description: message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : t("forms.failedDuplicate");
+      toast({ title: t("common.error"), description: message, variant: "destructive" });
     }
     setDuplicating(null);
   };
@@ -148,16 +151,16 @@ export default function Forms() {
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" /> New Form
+          <Plus className="h-4 w-4" /> {t("forms.newForm")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create a new form</DialogTitle>
+          <DialogTitle>{t("forms.createNewForm")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label>Mode</Label>
+            <Label>{t("forms.mode")}</Label>
             <div className="grid grid-cols-2 gap-2">
               {(Object.entries(MODE_CONFIG) as [FormMode, typeof MODE_CONFIG[FormMode]][]).map(([mode, config]) => {
                 const Icon = config.icon;
@@ -173,11 +176,11 @@ export default function Forms() {
                   >
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{config.label}</span>
+                      <span className="text-sm font-medium">{t(config.labelKey)}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{config.description}</span>
+                    <span className="text-xs text-muted-foreground">{t(config.descKey)}</span>
                     {!config.available && (
-                      <Badge variant="outline" className="absolute top-2 right-2 text-[9px]">Soon</Badge>
+                      <Badge variant="outline" className="absolute top-2 end-2 text-[9px]">{t("forms.soon")}</Badge>
                     )}
                   </button>
                 );
@@ -185,15 +188,15 @@ export default function Forms() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Title</Label>
-            <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. Onboarding Checklist" />
+            <Label>{t("forms.title")}</Label>
+            <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={t("forms.titlePlaceholder")} />
           </div>
           <div className="space-y-2">
-            <Label>Description (optional)</Label>
-            <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="What's this form for?" rows={3} />
+            <Label>{t("forms.descriptionOptional")}</Label>
+            <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder={t("forms.descriptionPlaceholder")} rows={3} />
           </div>
           <Button onClick={handleCreate} disabled={createForm.isPending || !newTitle.trim()} className="w-full">
-            {createForm.isPending ? "Creating..." : "Create Form"}
+            {createForm.isPending ? t("forms.creating") : t("forms.createForm")}
           </Button>
         </div>
       </DialogContent>
@@ -206,10 +209,10 @@ export default function Forms() {
         <div className="flex items-center justify-between mb-6">
           <TabsList className="h-9">
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs">
-              <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+              <LayoutDashboard className="h-3.5 w-3.5" /> {t("forms.dashboard")}
             </TabsTrigger>
             <TabsTrigger value="forms" className="gap-1.5 text-xs">
-              <List className="h-3.5 w-3.5" /> All Forms
+              <List className="h-3.5 w-3.5" /> {t("forms.allForms")}
             </TabsTrigger>
           </TabsList>
           {createDialog}
@@ -234,8 +237,8 @@ export default function Forms() {
                 <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-display font-semibold text-lg">No forms yet</h3>
-                <p className="text-muted-foreground text-sm max-w-sm">Create your first form to start collecting responses from your team.</p>
+                <h3 className="font-display font-semibold text-lg">{t("forms.noFormsYet")}</h3>
+                <p className="text-muted-foreground text-sm max-w-sm">{t("forms.noFormsDescription")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -252,7 +255,7 @@ export default function Forms() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <ModeBadge mode={form.mode} />
                         <Badge variant="secondary" className={`text-xs ${statusColor[form.status] ?? ""}`}>
-                          {form.status}
+                          {t(`forms.status${form.status.charAt(0).toUpperCase() + form.status.slice(1)}`)}
                         </Badge>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -273,8 +276,8 @@ export default function Forms() {
                               }}
                               disabled={duplicating === form.id}
                             >
-                              <Copy className="mr-2 h-4 w-4" />
-                              {duplicating === form.id ? "Duplicating..." : "Duplicate"}
+                              <Copy className="me-2 h-4 w-4" />
+                              {duplicating === form.id ? t("forms.duplicating") : t("forms.duplicate")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -296,10 +299,10 @@ export default function Forms() {
                         <span className="font-medium tabular-nums">
                           {form.submission_count}
                         </span>
-                        <span>{form.submission_count === 1 ? "response" : "responses"}</span>
+                        <span>{form.submission_count === 1 ? t("forms.response") : t("forms.responses")}</span>
                       </button>
                       <span className="text-xs text-muted-foreground">
-                        Updated {new Date(form.updated_at).toLocaleDateString()}
+                        {t("forms.updated")} {new Date(form.updated_at).toLocaleDateString()}
                       </span>
                     </div>
                   </CardContent>
