@@ -38,12 +38,7 @@ export default function FeatureGate({
 
   if (fallback) return <>{fallback}</>;
 
-  const PLAN_LABELS: Record<PlanTier, string> = {
-    free: "Free",
-    pro: "Pro",
-    growth: "Growth",
-    business: "Business",
-  };
+  const planLabel = t(`billing.plan${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}`);
 
   return (
     <>
@@ -57,13 +52,13 @@ export default function FeatureGate({
               <Lock className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium">
-              {t("upgrade.requiresPlan", { plan: PLAN_LABELS[requiredPlan] })}
+              {t("upgrade.requiresPlan", { plan: planLabel })}
             </p>
             <Button
               size="sm"
               onClick={() => setPaywallOpen(true)}
             >
-              {t("upgrade.upgradeTo", { plan: PLAN_LABELS[requiredPlan] })}
+              {t("upgrade.upgradeTo", { plan: planLabel })}
             </Button>
           </div>
         </div>

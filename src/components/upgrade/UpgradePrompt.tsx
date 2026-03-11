@@ -14,16 +14,11 @@ interface UpgradePromptProps {
   featureName: string;
 }
 
-const PLAN_LABELS: Record<PlanTier, string> = {
-  free: "Free",
-  pro: "Pro",
-  growth: "Growth",
-  business: "Business",
-};
-
 export default function UpgradePrompt({ requiredPlan, featureName }: UpgradePromptProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const planLabel = t(`billing.plan${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}`);
 
   return (
     <Card className="border-dashed">
@@ -36,7 +31,7 @@ export default function UpgradePrompt({ requiredPlan, featureName }: UpgradeProm
             {t("upgrade.featureRequiresPlan", { feature: featureName })}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md">
-            {t("upgrade.upgradeToAccess", { plan: PLAN_LABELS[requiredPlan] })}
+            {t("upgrade.upgradeToAccess", { plan: planLabel })}
           </p>
         </div>
         <Button className="gap-2" onClick={() => navigate("/pricing")}>

@@ -168,7 +168,7 @@ export default function BillingPortal() {
                       tier === "growth" && "border-primary/30 bg-primary/5"
                     )}
                   >
-                    <div className="font-semibold">{tierPlan.name}</div>
+                    <div className="font-semibold">{t(`billing.plan${tier.charAt(0).toUpperCase() + tier.slice(1)}`)}</div>
                     <div className="mt-1">
                       <span className="text-2xl font-bold">${tierPlan.price}</span>
                       <span className="text-sm text-muted-foreground">{t("pricing.perMonth")}</span>

@@ -3,7 +3,7 @@
 // Creates a template form based on the selected mode
 // ============================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,14 +26,14 @@ const MODE_ICONS: Record<FormMode, typeof FileText> = {
   support: Headphones,
 };
 
-const TEMPLATE_CONFIGS: Record<FormMode, { titleKey: string; descKey: string; fields: unknown[] }> = {
+const TEMPLATE_CONFIGS: Record<FormMode, { titleKey: string; descKey: string; fieldLabelKeys: { id: string; type: string; labelKey: string; required: boolean }[] }> = {
   standard: {
     titleKey: "onboarding.template_standard_title",
     descKey: "onboarding.template_standard_desc",
-    fields: [
-      { id: "name", type: "text", label: "Full Name", required: true },
-      { id: "email", type: "email", label: "Email Address", required: true },
-      { id: "message", type: "textarea", label: "Message", required: false },
+    fieldLabelKeys: [
+      { id: "name", type: "text", labelKey: "forms.templateFieldFullName", required: true },
+      { id: "email", type: "email", labelKey: "forms.templateFieldEmail", required: true },
+      { id: "message", type: "textarea", labelKey: "forms.templateFieldMessage", required: false },
     ],
   },
   waitlist: {
@@ -64,6 +64,14 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
   const config = TEMPLATE_CONFIGS[primaryMode];
   const Icon = MODE_ICONS[primaryMode];
 
+  // Translate field labels at runtime so they match the current locale
+  const translatedFields = useMemo(
+    () => config.fieldLabelKeys.map(({ id, type, labelKey, required }) => ({
+      id, type, label: t(labelKey), required,
+    })),
+    [config.fieldLabelKeys, t]
+  );
+
   const handleCreateForm = async () => {
     if (!user || !currentWorkspace) return;
     setCreating(true);
@@ -76,7 +84,7 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
         title: t(config.titleKey),
         description: t(config.descKey),
         mode: primaryMode,
-        fields: config.fields,
+        fields: translatedFields,
         status: "draft",
       })
       .select("id")

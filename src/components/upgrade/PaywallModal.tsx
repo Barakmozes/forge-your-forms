@@ -24,13 +24,6 @@ interface PaywallModalProps {
   description?: string;
 }
 
-const PLAN_LABELS: Record<PlanTier, string> = {
-  free: "Free",
-  pro: "Pro",
-  growth: "Growth",
-  business: "Business",
-};
-
 const PLAN_COLORS: Record<PlanTier, string> = {
   free: "bg-muted text-muted-foreground",
   pro: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -47,6 +40,8 @@ export default function PaywallModal({
 }: PaywallModalProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const planLabel = t(`billing.plan${requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +68,7 @@ export default function PaywallModal({
                 {t("upgrade.unlockWith")}
               </span>
               <Badge className={PLAN_COLORS[requiredPlan]}>
-                {PLAN_LABELS[requiredPlan]}
+                {planLabel}
               </Badge>
             </div>
             <ul className="text-sm text-muted-foreground space-y-1.5 ps-6 list-disc">

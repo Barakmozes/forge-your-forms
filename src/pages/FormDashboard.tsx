@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface FormMeta {
 }
 
 export default function FormDashboard() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormMeta | null>(null);
@@ -58,7 +60,7 @@ export default function FormDashboard() {
   if (loading || !form) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center py-20 text-muted-foreground">Loading...</div>
+        <div className="flex items-center justify-center py-20 text-muted-foreground">{t("common.loading")}</div>
       </AppLayout>
     );
   }
@@ -67,10 +69,10 @@ export default function FormDashboard() {
   const renderDashboard = () => {
     // === AGENT 7: Mode Gating ===
     if (form.mode === "feedback" && !canAccessMode("feedback")) {
-      return <UpgradePrompt requiredPlan="pro" featureName="Feedback / NPS" />;
+      return <UpgradePrompt requiredPlan="pro" featureName={t("upgrade.feedbackMode")} />;
     }
     if (form.mode === "support" && !canAccessMode("support")) {
-      return <UpgradePrompt requiredPlan="growth" featureName="Support Tickets" />;
+      return <UpgradePrompt requiredPlan="growth" featureName={t("upgrade.supportMode")} />;
     }
     // === END AGENT 7 ===
 
@@ -96,7 +98,7 @@ export default function FormDashboard() {
         </Button>
         <div>
           <h1 className="text-2xl font-display font-bold">{form.title}</h1>
-          <p className="text-muted-foreground text-sm">{form.mode} dashboard</p>
+          <p className="text-muted-foreground text-sm">{t("upgrade.modeDashboard", { mode: form.mode })}</p>
         </div>
       </div>
       {renderDashboard()}

@@ -143,7 +143,7 @@ export default function UsageDashboard() {
                           key={p}
                           className={`pb-2 text-center font-medium ${p === plan ? "text-primary" : "text-muted-foreground"}`}
                         >
-                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                          {t(`billing.plan${p.charAt(0).toUpperCase() + p.slice(1)}`)}
                           {p === plan && (
                             <Badge variant="secondary" className="ms-1 text-[8px] py-0">
                               {t("upgrade.current")}
