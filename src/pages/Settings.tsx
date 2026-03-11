@@ -24,13 +24,18 @@ import ApiDocs from "@/components/api/ApiDocs";
 // === AGENT 10: Integrations Tab ===
 import IntegrationManager from "@/components/integrations/IntegrationManager";
 // === END AGENT 10 ===
+// === AGENT 14: Enterprise Tab ===
+import SsoConfig from "@/components/enterprise/SsoConfig";
+import WhiteLabelConfig from "@/components/enterprise/WhiteLabelConfig";
+import CustomDomainConfig from "@/components/enterprise/CustomDomainConfig";
+// === END AGENT 14 ===
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Building2, Users, User, CreditCard, Webhook, Code, Plug } from "lucide-react";
+import { Building2, Users, User, CreditCard, Webhook, Code, Plug, ShieldCheck } from "lucide-react";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -227,6 +232,13 @@ export default function Settings() {
               <Plug className="h-4 w-4" /> {t("integrations.title")}
             </TabsTrigger>
             {/* === END AGENT 10 === */}
+            {/* === AGENT 14: Enterprise Tab === */}
+            {isOwner && (
+              <TabsTrigger value="enterprise" className="gap-2">
+                <ShieldCheck className="h-4 w-4" /> {t("enterprise.title")}
+              </TabsTrigger>
+            )}
+            {/* === END AGENT 14 === */}
           </TabsList>
 
           {/* Workspace Tab */}
@@ -305,6 +317,16 @@ export default function Settings() {
             <IntegrationManager />
           </TabsContent>
           {/* === END AGENT 10 === */}
+
+          {/* === AGENT 14: Enterprise Tab === */}
+          {isOwner && (
+            <TabsContent value="enterprise" className="space-y-6">
+              <SsoConfig />
+              <WhiteLabelConfig />
+              <CustomDomainConfig />
+            </TabsContent>
+          )}
+          {/* === END AGENT 14 === */}
 
           {/* Profile Tab */}
           <TabsContent value="profile">

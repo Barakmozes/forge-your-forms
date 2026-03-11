@@ -17,12 +17,18 @@ import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 6: Plan Badge ===
 import PlanBadge from "@/components/billing/PlanBadge";
 // === END AGENT 6 ===
+// === AGENT 14: White Label ===
+import { useEnterprise } from "@/hooks/useEnterprise";
+// === END AGENT 14 ===
 
 export default function Navbar() {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
   const location = useLocation();
+  // === AGENT 14: White Label ===
+  const { settings: enterprise, whiteLabelEnabled } = useEnterprise();
+  // === END AGENT 14 ===
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase()
@@ -40,12 +46,18 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-sm">
       <div className="container flex h-14 items-center gap-4">
         {/* Logo */}
+        {/* === AGENT 14: White Label Logo === */}
         <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-colored">
-            <Hammer className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span>FormForge</span>
+          {whiteLabelEnabled && enterprise?.custom_logo_url ? (
+            <img src={enterprise.custom_logo_url} alt="" className="h-8 w-8 rounded-lg object-contain" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-colored">
+              <Hammer className="h-4 w-4 text-primary-foreground" />
+            </div>
+          )}
+          <span>{whiteLabelEnabled && enterprise?.custom_app_name ? enterprise.custom_app_name : "FormForge"}</span>
         </Link>
+        {/* === END AGENT 14 === */}
 
         {/* Nav links */}
         <nav className="ms-6 flex items-center gap-1">
