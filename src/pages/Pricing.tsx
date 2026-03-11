@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,12 +21,18 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+// === AGENT 6: Stripe checkout integration ===
+import CheckoutButton from "@/components/billing/CheckoutButton";
+import { useSubscription } from "@/hooks/useSubscription";
+import type { PlanTier } from "@/lib/stripe";
+// === END AGENT 6 ===
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
 interface Tier {
+  planId: PlanTier;
   name: string;
   monthlyPrice: number;
   description: string;
@@ -65,10 +72,15 @@ function CellValue({ value }: { value: boolean | string }) {
 export default function Pricing() {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
+  const { user } = useAuth();
   const [annual, setAnnual] = useState(false);
+  // === AGENT 6: subscription detection for current plan ===
+  const { plan: currentPlan } = useSubscription();
+  // === END AGENT 6 ===
 
   const tiers: Tier[] = [
     {
+      planId: "free",
       name: t('pricing.tierFree'),
       monthlyPrice: 0,
       description: t('pricing.tierFreeDesc'),
@@ -84,6 +96,7 @@ export default function Pricing() {
       ],
     },
     {
+      planId: "pro",
       name: t('pricing.tierPro'),
       monthlyPrice: 29,
       description: t('pricing.tierProDesc'),
@@ -101,6 +114,7 @@ export default function Pricing() {
       ],
     },
     {
+      planId: "growth",
       name: t('pricing.tierGrowth'),
       monthlyPrice: 59,
       description: t('pricing.tierGrowthDesc'),
@@ -120,6 +134,7 @@ export default function Pricing() {
       ],
     },
     {
+      planId: "business",
       name: t('pricing.tierBusiness'),
       monthlyPrice: 99,
       description: t('pricing.tierBusinessDesc'),
@@ -291,18 +306,47 @@ export default function Pricing() {
                     ))}
                   </ul>
 
-                  {/* CTA */}
-                  <Link to="/auth" className="mt-auto">
-                    <Button
-                      className={cn(
-                        "w-full gap-2",
-                        tier.highlighted && "gradient-primary text-primary-foreground shadow-colored"
-                      )}
-                      variant={tier.highlighted ? "default" : tier.ctaVariant}
-                    >
-                      {tier.cta} <CtaArrow className="h-4 w-4" />
-                    </Button>
-                  </Link>
+                  {/* CTA — AGENT 6: wired to Stripe Checkout */}
+                  <div className="mt-auto">
+                    {currentPlan === tier.planId ? (
+                      <Badge variant="secondary" className="w-full py-2 justify-center text-sm">
+                        {t("billing.currentPlanBadge")}
+                      </Badge>
+                    ) : tier.planId === "free" ? (
+                      <Link to="/auth">
+                        <Button
+                          className={cn("w-full gap-2")}
+                          variant={tier.ctaVariant}
+                        >
+                          {tier.cta} <CtaArrow className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    ) : user ? (
+                      <CheckoutButton
+                        plan={tier.planId}
+                        interval={annual ? "annual" : "monthly"}
+                        className={cn(
+                          "w-full gap-2",
+                          tier.highlighted && "gradient-primary text-primary-foreground shadow-colored"
+                        )}
+                        variant={tier.highlighted ? "default" : tier.ctaVariant}
+                      >
+                        {tier.cta} <CtaArrow className="h-4 w-4" />
+                      </CheckoutButton>
+                    ) : (
+                      <Link to="/auth">
+                        <Button
+                          className={cn(
+                            "w-full gap-2",
+                            tier.highlighted && "gradient-primary text-primary-foreground shadow-colored"
+                          )}
+                          variant={tier.highlighted ? "default" : tier.ctaVariant}
+                        >
+                          {tier.cta} <CtaArrow className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

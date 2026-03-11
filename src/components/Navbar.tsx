@@ -14,6 +14,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
 import LanguageToggle from "@/components/LanguageToggle";
+// === AGENT 6: Plan Badge ===
+import PlanBadge from "@/components/billing/PlanBadge";
+// === END AGENT 6 ===
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -75,6 +78,10 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* === AGENT 6: Plan Badge === */}
+          <PlanBadge />
+          {/* === END AGENT 6 === */}
 
           {/* === AGENT 5: Language toggle === */}
           <LanguageToggle />

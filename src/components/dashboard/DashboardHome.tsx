@@ -125,7 +125,6 @@ export default function DashboardHome({ onCreateForm }: DashboardHomeProps) {
     if (hour < 12) return t("dashboard.greetingMorning");
     if (hour < 18) return t("dashboard.greetingAfternoon");
     return t("dashboard.greetingEvening");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
   const displayName =

@@ -30,6 +30,11 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 // === END AGENT 4 ===
 
+// === AGENT 6 — Billing pages ===
+const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
+// === END AGENT 6 ===
+
 function AuthHashErrorHandler() {
   useAuthHashError();
   return null;
@@ -101,6 +106,11 @@ const AppRoutes = () => (
     {/* === AGENT 1 ROUTES === */}
     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     {/* === END AGENT 1 ROUTES === */}
+    {/* === AGENT 6 ROUTES === */}
+    <Route path="/billing" element={<Navigate to="/settings?tab=billing" replace />} />
+    <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+    <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+    {/* === END AGENT 6 === */}
     <Route path="/canned-responses" element={<ProtectedRoute><CannedResponses /></ProtectedRoute>} />
     <Route path="/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />
     <Route path="/forms/:id/submissions" element={<ProtectedRoute><Submissions /></ProtectedRoute>} />

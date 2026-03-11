@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,13 +8,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
 import AppLayout from "@/components/AppLayout";
 import MembersManager from "@/components/MembersManager";
+// === AGENT 6: Billing Tab ===
+import BillingPortal from "@/components/billing/BillingPortal";
+// === END AGENT 6 ===
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Building2, Users, User } from "lucide-react";
+import { Building2, Users, User, CreditCard } from "lucide-react";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -22,6 +26,8 @@ export default function Settings() {
   const { toast } = useToast();
   const { handleAsync } = useErrorHandler();
 
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") ?? "workspace";
   const isOwner = currentWorkspace?.owner_id === user?.id;
 
   // Workspace tab state
@@ -175,7 +181,7 @@ export default function Settings() {
       <div className="mx-auto max-w-3xl">
         <h1 className="text-2xl font-bold mb-6">{t("settings.title")}</h1>
 
-        <Tabs defaultValue="workspace">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="workspace" className="gap-2">
               <Building2 className="h-4 w-4" /> {t("settings.workspace")}
@@ -186,6 +192,13 @@ export default function Settings() {
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" /> {t("settings.profile")}
             </TabsTrigger>
+            {/* === AGENT 6: Billing Tab === */}
+            {isOwner && (
+              <TabsTrigger value="billing" className="gap-2">
+                <CreditCard className="h-4 w-4" /> {t("billing.billingTab")}
+              </TabsTrigger>
+            )}
+            {/* === END AGENT 6 === */}
           </TabsList>
 
           {/* Workspace Tab */}
@@ -234,6 +247,14 @@ export default function Settings() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* === AGENT 6: Billing Tab === */}
+          {isOwner && (
+            <TabsContent value="billing">
+              <BillingPortal />
+            </TabsContent>
+          )}
+          {/* === END AGENT 6 === */}
 
           {/* Profile Tab */}
           <TabsContent value="profile">

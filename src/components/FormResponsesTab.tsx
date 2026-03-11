@@ -47,7 +47,7 @@ export default function FormResponsesTab({ formId, fields }: Props) {
     const channel = supabase
       .channel(`responses-${formId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "submissions", filter: `form_id=eq.${formId}` }, (payload) => {
-        const newSub = payload.new as any;
+        const newSub = payload.new as Record<string, unknown>;
         setSubmissions((prev) => [{ data: newSub.data ?? {}, submitted_at: newSub.submitted_at }, ...prev]);
       })
       .subscribe();
@@ -167,7 +167,7 @@ function ChoiceFieldChart({ field, submissions }: { field: FormField; submission
             <XAxis type="number" domain={[0, max]} hide />
             <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
             <Tooltip
-              formatter={(v: any, _: any, props: any) => [`${v} (${props.payload.pct}%)`, "Responses"]}
+              formatter={(v: number, _: string, props: { payload: { pct: number } }) => [`${v} (${props.payload.pct}%)`, "Responses"]}
               contentStyle={{ fontSize: 12, borderRadius: 8 }}
             />
             <Bar dataKey="count" radius={4} maxBarSize={24}>
