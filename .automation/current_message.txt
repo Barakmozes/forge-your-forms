@@ -1,14 +1,14 @@
 Read these files in this exact order before doing anything:
 1. CLAUDE.md
-2. .agents/agent-12-ai-generator/AGENT.md
-3. .agents/agent-12-ai-generator/HANDOFF.md
-4. .agents/agent-12-ai-generator/PROMPTS.md
+2. .agents/agent-13-smart-routing/AGENT.md
+3. .agents/agent-13-smart-routing/HANDOFF.md
+4. .agents/agent-13-smart-routing/PROMPTS.md
 5. .agents/SYNC-LOG.md
 
-You are Agent 12. Confirm you understand your role, owned files, and DO NOT TOUCH files.
+You are Agent 13. Confirm you understand your role, owned files, and DO NOT TOUCH files.
 
 CRITICAL WORKING RULES:
-- Start with Prompt 12.0 (planning). When complete, immediately continue to 12.1, then 12.2, and so on through ALL prompts.
+- Start with Prompt 13.0 (planning). When complete, immediately continue to 13.1, then 13.2, and so on through ALL prompts.
 - After completing each prompt, run: npm run lint && npx tsc --noEmit
 - If both pass, update PROGRESS.md (mark prompt as ✅ Complete with timestamp).
 - Then IMMEDIATELY continue to the next prompt. Do NOT stop and wait for me.
@@ -24,4 +24,4 @@ CRITICAL WORKING RULES:
   4. Say exactly: "AGENT_COMPLETE" so the automation knows to proceed.
 - git commits are handled externally. Do NOT run git commands.
 
-Start working now. Begin with Prompt 12.0.
+Start working now. Begin with Prompt 13.0.

@@ -80,6 +80,9 @@ import {
 import { toast } from "sonner";
 // === AGENT 12: AI Summary ===
 import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
+// === AGENT 13: At-Risk Widget ===
+import AtRiskWidget from "@/components/predictions/AtRiskWidget";
+// === END AGENT 13 ===
 import type { AiSubmissionInput } from "@/lib/ai";
 // === END AGENT 12 ===
 
@@ -1131,6 +1134,10 @@ export default function SupportDashboard({
               </CardContent>
             </Card>
           )}
+
+          {/* === AGENT 13: At-Risk Widget === */}
+          <AtRiskWidget />
+          {/* === END AGENT 13 === */}
         </TabsContent>
 
         {/* ─── Tab 2: Kanban Board (DnD) ────────────────────────────────── */}

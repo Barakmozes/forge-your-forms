@@ -37,6 +37,10 @@ const TemplateDetail = lazy(() => import("./pages/TemplateDetail"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 // === END AGENT 4 ===
 
+// === AGENT 13: At-Risk Dashboard ===
+const AtRiskDashboard = lazy(() => import("./components/predictions/AtRiskDashboard"));
+// === END AGENT 13 ===
+
 // === AGENT 6 — Billing pages ===
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
@@ -138,6 +142,9 @@ const AppRoutes = () => (
     <Route path="/templates" element={<Templates />} />
     <Route path="/templates/:slug" element={<TemplateDetail />} />
     {/* === END AGENT 11 === */}
+    {/* === AGENT 13: At-Risk Dashboard === */}
+    <Route path="/at-risk" element={<ProtectedRoute><AtRiskDashboard /></ProtectedRoute>} />
+    {/* === END AGENT 13 === */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

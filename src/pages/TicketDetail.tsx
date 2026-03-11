@@ -34,17 +34,27 @@ import {
   FileText,
   X,
   Plus,
+  Sparkles,
+  Bot,
 } from "lucide-react";
 import { useTicketMessages } from "@/hooks/useTicketMessages";
 import { useCannedResponses } from "@/hooks/useCannedResponses";
 import { useTags } from "@/hooks/useTags";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import AiCannedSuggestions from "@/components/predictions/AiCannedSuggestions";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Ticket = Tables<"tickets">;
 type TicketStatus = Database["public"]["Enums"]["ticket_status"];
 type TicketPriority = Database["public"]["Enums"]["ticket_priority"];
+
+interface AiClassification {
+  category: string;
+  priority: string;
+  confidence: number;
+  reasoning: string;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   open: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -271,6 +281,14 @@ export default function TicketDetailPage() {
             {ticket.category && (
               <Badge variant="outline">{ticket.category}</Badge>
             )}
+            {/* === AGENT 13: AI Classification === */}
+            {(ticket as Ticket & { ai_classification?: AiClassification }).ai_classification && (
+              <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">
+                <Bot className="h-3 w-3" />
+                {t("predictions.aiClassified", "AI Classified")}
+              </Badge>
+            )}
+            {/* === END AGENT 13 === */}
           </div>
           <h1 className="text-xl font-bold mt-1">{ticket.subject}</h1>
           {ticket.description && (
@@ -611,6 +629,72 @@ export default function TicketDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* === AGENT 13: AI Suggestions === */}
+          {formId && (
+            <AiCannedSuggestions
+              formId={formId}
+              ticketCategory={ticket.category}
+              ticketSubject={ticket.subject}
+              onInsertResponse={handleInsertCanned}
+            />
+          )}
+          {/* === END AGENT 13 === */}
+
+          {/* === AGENT 13: AI Classification Details === */}
+          {(ticket as Ticket & { ai_classification?: AiClassification }).ai_classification && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  {t("predictions.aiClassification", "AI Classification")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {(() => {
+                  const classification = (ticket as Ticket & { ai_classification?: AiClassification }).ai_classification;
+                  if (!classification) return null;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{t("predictions.suggestedCategory", "Category")}</span>
+                        <Badge variant="outline">{classification.category}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{t("predictions.suggestedPriority", "Priority")}</span>
+                        <Badge variant="secondary" className={PRIORITY_COLORS[classification.priority] ?? ""}>
+                          {classification.priority}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{t("predictions.confidence", "Confidence")}</span>
+                        <span className="font-medium">{Math.round(classification.confidence * 100)}%</span>
+                      </div>
+                      {classification.reasoning && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          {classification.reasoning}
+                        </p>
+                      )}
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 flex-1"
+                          onClick={() => {
+                            updateField("category", classification.category);
+                            updateField("priority", classification.priority);
+                          }}
+                        >
+                          {t("predictions.acceptSuggestion", "Accept")}
+                        </Button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+          {/* === END AGENT 13 === */}
 
           {/* Timeline */}
           <Card>
