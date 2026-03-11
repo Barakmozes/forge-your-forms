@@ -53,40 +53,40 @@ const MODE_OPTIONS: { mode: FormMode; icon: React.ElementType; labelKey: string;
   { mode: "support", icon: Headphones, labelKey: "forms.modeSupport", descKey: "forms.modeSupportDesc" },
 ];
 
-const PROMPT_EXAMPLES: Record<FormMode, string[]> = {
+const PROMPT_EXAMPLE_KEYS: Record<FormMode, string[]> = {
   standard: [
-    "Customer satisfaction survey for a restaurant",
-    "Job application form for a tech startup",
-    "Event registration form with dietary preferences",
+    "ai.promptExampleStandard1",
+    "ai.promptExampleStandard2",
+    "ai.promptExampleStandard3",
   ],
   waitlist: [
-    "Early access waitlist for a mobile app launch",
-    "Beta program signup for a SaaS product",
+    "ai.promptExampleWaitlist1",
+    "ai.promptExampleWaitlist2",
   ],
   feedback: [
-    "Post-purchase experience survey for an e-commerce store",
-    "Employee satisfaction survey with NPS scoring",
+    "ai.promptExampleFeedback1",
+    "ai.promptExampleFeedback2",
   ],
   support: [
-    "Bug report form for a mobile app",
-    "Customer support ticket for a subscription service",
+    "ai.promptExampleSupport1",
+    "ai.promptExampleSupport2",
   ],
 };
 
-const FIELD_TYPE_LABELS: Record<string, string> = {
-  text: "Text",
-  textarea: "Long Text",
-  number: "Number",
-  email: "Email",
-  phone: "Phone",
-  date: "Date",
-  select: "Dropdown",
-  multi_select: "Multi Select",
-  checkbox: "Checkboxes",
-  radio: "Radio",
-  file_upload: "File Upload",
-  section_header: "Section",
-  paragraph_text: "Paragraph",
+const FIELD_TYPE_LABEL_KEYS: Record<string, string> = {
+  text: "ai.fieldTypeText",
+  textarea: "ai.fieldTypeLongText",
+  number: "ai.fieldTypeNumber",
+  email: "ai.fieldTypeEmail",
+  phone: "ai.fieldTypePhone",
+  date: "ai.fieldTypeDate",
+  select: "ai.fieldTypeDropdown",
+  multi_select: "ai.fieldTypeMultiSelect",
+  checkbox: "ai.fieldTypeCheckboxes",
+  radio: "ai.fieldTypeRadio",
+  file_upload: "ai.fieldTypeFileUpload",
+  section_header: "ai.fieldTypeSection",
+  paragraph_text: "ai.fieldTypeParagraph",
 };
 
 export default function AiFormGenerator({
@@ -244,15 +244,15 @@ export default function AiFormGenerator({
             <div className="space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground">{t("ai.promptExamples")}</p>
               <div className="flex flex-wrap gap-1.5">
-                {PROMPT_EXAMPLES[selectedMode].map((example) => (
+                {PROMPT_EXAMPLE_KEYS[selectedMode].map((key) => (
                   <button
-                    key={example}
+                    key={key}
                     type="button"
                     className="text-xs px-2.5 py-1 rounded-full border border-border hover:bg-muted transition-colors cursor-pointer"
-                    onClick={() => setPrompt(example)}
+                    onClick={() => setPrompt(t(key))}
                     disabled={isLoading}
                   >
-                    {example}
+                    {t(key)}
                   </button>
                 ))}
               </div>
@@ -311,7 +311,7 @@ export default function AiFormGenerator({
                     )}
                   </div>
                   <Badge variant="secondary" className="text-[10px] shrink-0">
-                    {FIELD_TYPE_LABELS[field.type] || field.type}
+                    {FIELD_TYPE_LABEL_KEYS[field.type] ? t(FIELD_TYPE_LABEL_KEYS[field.type]) : field.type}
                   </Badge>
                 </div>
               ))}

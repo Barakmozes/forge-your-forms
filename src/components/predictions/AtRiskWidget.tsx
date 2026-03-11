@@ -26,13 +26,13 @@ export default function AtRiskWidget() {
   if (loading || atRisk.length === 0) return null;
 
   return (
-    <FeatureGate feature="churn_prediction" requiredPlan="business" featureName="Churn Prediction">
+    <FeatureGate feature="churn_prediction" requiredPlan="business" featureName={t("predictions.churnPrediction")}>
       {/* === AGENT 13: At-Risk Widget === */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
-            {t("predictions.atRiskCustomers", "At-Risk Customers")}
+            {t("predictions.atRiskCustomers")}
           </CardTitle>
           <Button
             variant="ghost"
@@ -40,7 +40,7 @@ export default function AtRiskWidget() {
             className="gap-1 text-xs"
             onClick={() => navigate("/at-risk")}
           >
-            {t("predictions.viewAll", "View All")}
+            {t("predictions.viewAll")}
             <ArrowRight className="h-3 w-3" />
           </Button>
         </CardHeader>
@@ -51,17 +51,17 @@ export default function AtRiskWidget() {
               className="flex items-center justify-between gap-3 py-1.5"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">
+                <p className="text-sm font-medium truncate" dir="ltr">
                   {customer.customer_email}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {customer.risk_factors.nps_flag === "very_low"
-                    ? t("predictions.veryLowNps", "Very low NPS")
+                    ? t("predictions.veryLowNps")
                     : customer.risk_factors.ticket_flag === "high_frequency"
-                      ? t("predictions.frequentTickets", "Frequent tickets")
+                      ? t("predictions.frequentTickets")
                       : customer.risk_factors.sentiment_trend === "negative"
-                        ? t("predictions.negativeSentiment", "Negative sentiment")
-                        : t("predictions.atRisk", "At risk")}
+                        ? t("predictions.negativeSentiment")
+                        : t("predictions.atRisk")}
                 </p>
               </div>
               <ChurnScoreBadge score={customer.risk_score} />

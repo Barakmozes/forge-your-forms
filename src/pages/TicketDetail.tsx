@@ -285,7 +285,7 @@ export default function TicketDetailPage() {
             {(ticket as Ticket & { ai_classification?: AiClassification }).ai_classification && (
               <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">
                 <Bot className="h-3 w-3" />
-                {t("predictions.aiClassified", "AI Classified")}
+                {t("predictions.aiClassified")}
               </Badge>
             )}
             {/* === END AGENT 13 === */}
@@ -647,7 +647,7 @@ export default function TicketDetailPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />
-                  {t("predictions.aiClassification", "AI Classification")}
+                  {t("predictions.aiClassification")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -657,17 +657,17 @@ export default function TicketDetailPage() {
                   return (
                     <>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{t("predictions.suggestedCategory", "Category")}</span>
+                        <span className="text-muted-foreground">{t("predictions.suggestedCategory")}</span>
                         <Badge variant="outline">{classification.category}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{t("predictions.suggestedPriority", "Priority")}</span>
+                        <span className="text-muted-foreground">{t("predictions.suggestedPriority")}</span>
                         <Badge variant="secondary" className={PRIORITY_COLORS[classification.priority] ?? ""}>
                           {classification.priority}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{t("predictions.confidence", "Confidence")}</span>
+                        <span className="text-muted-foreground">{t("predictions.confidence")}</span>
                         <span className="font-medium">{Math.round(classification.confidence * 100)}%</span>
                       </div>
                       {classification.reasoning && (
@@ -685,7 +685,7 @@ export default function TicketDetailPage() {
                             updateField("priority", classification.priority);
                           }}
                         >
-                          {t("predictions.acceptSuggestion", "Accept")}
+                          {t("predictions.acceptSuggestion")}
                         </Button>
                       </div>
                     </>

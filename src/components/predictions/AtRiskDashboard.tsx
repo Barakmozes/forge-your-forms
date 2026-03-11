@@ -76,8 +76,8 @@ export default function AtRiskDashboard() {
     await calculate();
     await refetch();
     toast({
-      title: t("predictions.scoresUpdated", "Scores Updated"),
-      description: t("predictions.recalculationComplete", "Churn scores have been recalculated."),
+      title: t("predictions.scoresUpdated"),
+      description: t("predictions.recalculationComplete"),
     });
   };
 
@@ -88,17 +88,17 @@ export default function AtRiskDashboard() {
 
   return (
     <AppLayout>
-      <FeatureGate feature="churn_prediction" requiredPlan="business" featureName="Churn Prediction">
+      <FeatureGate feature="churn_prediction" requiredPlan="business" featureName={t("predictions.churnPrediction")}>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-display font-bold flex items-center gap-2">
                 <AlertTriangle className="h-6 w-6 text-amber-500" />
-                {t("predictions.atRiskCustomers", "At-Risk Customers")}
+                {t("predictions.atRiskCustomers")}
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
-                {t("predictions.atRiskDescription", "Customers with high churn risk based on NPS, ticket frequency, and engagement.")}
+                {t("predictions.atRiskDescription")}
               </p>
             </div>
             <Button
@@ -112,7 +112,7 @@ export default function AtRiskDashboard() {
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              {t("predictions.recalculate", "Recalculate Scores")}
+              {t("predictions.recalculate")}
             </Button>
           </div>
 
@@ -123,7 +123,7 @@ export default function AtRiskDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 rounded-full bg-red-500" />
                   <span className="text-sm text-muted-foreground">
-                    {t("predictions.critical", "Critical")}
+                    {t("predictions.critical")}
                   </span>
                 </div>
                 <p className="text-2xl font-bold">{summary.critical}</p>
@@ -134,7 +134,7 @@ export default function AtRiskDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 rounded-full bg-orange-500" />
                   <span className="text-sm text-muted-foreground">
-                    {t("predictions.high", "High")}
+                    {t("predictions.high")}
                   </span>
                 </div>
                 <p className="text-2xl font-bold">{summary.high}</p>
@@ -145,7 +145,7 @@ export default function AtRiskDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 rounded-full bg-yellow-500" />
                   <span className="text-sm text-muted-foreground">
-                    {t("predictions.medium", "Medium")}
+                    {t("predictions.medium")}
                   </span>
                 </div>
                 <p className="text-2xl font-bold">{summary.medium}</p>
@@ -156,7 +156,7 @@ export default function AtRiskDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
                   <span className="text-sm text-muted-foreground">
-                    {t("predictions.low", "Low")}
+                    {t("predictions.low")}
                   </span>
                 </div>
                 <p className="text-2xl font-bold">{summary.low}</p>
@@ -171,18 +171,18 @@ export default function AtRiskDashboard() {
               onValueChange={(v) => setRiskFilter(v as RiskLevel | "all")}
             >
               <SelectTrigger className="w-40 h-9">
-                <SelectValue placeholder={t("predictions.allLevels", "All Levels")} />
+                <SelectValue placeholder={t("predictions.allLevels")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("predictions.allLevels", "All Levels")}</SelectItem>
-                <SelectItem value="critical">{t("predictions.critical", "Critical")} (&gt;80)</SelectItem>
-                <SelectItem value="high">{t("predictions.high", "High")} (60–80)</SelectItem>
-                <SelectItem value="medium">{t("predictions.medium", "Medium")} (40–60)</SelectItem>
-                <SelectItem value="low">{t("predictions.low", "Low")} (&lt;40)</SelectItem>
+                <SelectItem value="all">{t("predictions.allLevels")}</SelectItem>
+                <SelectItem value="critical">{t("predictions.critical")} (&gt;80)</SelectItem>
+                <SelectItem value="high">{t("predictions.high")} (60–80)</SelectItem>
+                <SelectItem value="medium">{t("predictions.medium")} (40–60)</SelectItem>
+                <SelectItem value="low">{t("predictions.low")} (&lt;40)</SelectItem>
               </SelectContent>
             </Select>
             <span className="text-sm text-muted-foreground">
-              {filteredCustomers.length} {t("predictions.customers", "customers")}
+              {filteredCustomers.length} {t("predictions.customers")}
             </span>
           </div>
 
@@ -191,20 +191,20 @@ export default function AtRiskDashboard() {
             <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-20 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  {t("common.loading", "Loading...")}
+                  <Loader2 className="h-5 w-5 animate-spin me-2" />
+                  {t("common.loading")}
                 </div>
               ) : filteredCustomers.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Shield className="h-10 w-10 mb-3 opacity-40" />
                   <p className="text-sm font-medium">
                     {customers.length === 0
-                      ? t("predictions.noScoresYet", "No churn scores calculated yet")
-                      : t("predictions.noCustomersInFilter", "No customers match this filter")}
+                      ? t("predictions.noScoresYet")
+                      : t("predictions.noCustomersInFilter")}
                   </p>
                   {customers.length === 0 && (
                     <p className="text-xs mt-1">
-                      {t("predictions.clickRecalculate", "Click 'Recalculate Scores' to analyze your customers.")}
+                      {t("predictions.clickRecalculate")}
                     </p>
                   )}
                 </div>
@@ -213,12 +213,12 @@ export default function AtRiskDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t("predictions.customer", "Customer")}</TableHead>
-                        <TableHead className="w-32">{t("predictions.riskScore", "Risk Score")}</TableHead>
-                        <TableHead className="w-24 hidden sm:table-cell">{t("predictions.nps", "NPS Avg")}</TableHead>
-                        <TableHead className="w-24 hidden md:table-cell">{t("predictions.tickets30d", "Tickets (30d)")}</TableHead>
-                        <TableHead className="w-28 hidden md:table-cell">{t("predictions.sentiment", "Sentiment")}</TableHead>
-                        <TableHead className="w-32 hidden lg:table-cell">{t("predictions.lastInteraction", "Last Interaction")}</TableHead>
+                        <TableHead>{t("predictions.customer")}</TableHead>
+                        <TableHead className="w-32">{t("predictions.riskScore")}</TableHead>
+                        <TableHead className="w-24 hidden sm:table-cell">{t("predictions.nps")}</TableHead>
+                        <TableHead className="w-24 hidden md:table-cell">{t("predictions.tickets30d")}</TableHead>
+                        <TableHead className="w-28 hidden md:table-cell">{t("predictions.sentiment")}</TableHead>
+                        <TableHead className="w-32 hidden lg:table-cell">{t("predictions.lastInteraction")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -237,7 +237,7 @@ export default function AtRiskDashboard() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="text-sm font-medium truncate max-w-[200px]">
+                              <span className="text-sm font-medium truncate max-w-[200px]" dir="ltr">
                                 {customer.customer_email}
                               </span>
                             </div>
@@ -275,7 +275,7 @@ export default function AtRiskDashboard() {
                                       : ""
                                 }
                               >
-                                {customer.sentiment_trend}
+                                {t(`predictions.sentiment${customer.sentiment_trend.charAt(0).toUpperCase() + customer.sentiment_trend.slice(1)}`)}
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground text-sm">—</span>
@@ -305,7 +305,7 @@ export default function AtRiskDashboard() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    {customer.customer_email}
+                    <span dir="ltr">{customer.customer_email}</span>
                     <ChurnScoreBadge score={customer.risk_score} showLabel size="md" />
                   </CardTitle>
                 </CardHeader>
@@ -315,7 +315,7 @@ export default function AtRiskDashboard() {
                       <TrendingUp className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          {t("predictions.npsAverage", "NPS Average")}
+                          {t("predictions.npsAverage")}
                         </p>
                         <p className="text-lg font-bold tabular-nums">
                           {factors.nps_average !== null ? factors.nps_average.toFixed(1) : "N/A"}
@@ -331,7 +331,7 @@ export default function AtRiskDashboard() {
                       <Ticket className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          {t("predictions.tickets30d", "Tickets (30d)")}
+                          {t("predictions.tickets30d")}
                         </p>
                         <p className="text-lg font-bold tabular-nums">
                           {factors.ticket_count_30d}
@@ -347,7 +347,7 @@ export default function AtRiskDashboard() {
                       <TrendingUp className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          {t("predictions.sentimentTrend", "Sentiment Trend")}
+                          {t("predictions.sentimentTrend")}
                         </p>
                         <p className="text-lg font-bold capitalize">
                           {factors.sentiment_trend ?? "N/A"}
@@ -358,7 +358,7 @@ export default function AtRiskDashboard() {
                       <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          {t("predictions.daysSinceContact", "Days Since Contact")}
+                          {t("predictions.daysSinceContact")}
                         </p>
                         <p className="text-lg font-bold tabular-nums">
                           {factors.days_since_interaction ?? "N/A"}

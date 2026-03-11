@@ -23,10 +23,10 @@ export default function ChurnScoreBadge({
   const bgClass = getRiskBgColor(score);
 
   const levelLabels: Record<string, string> = {
-    critical: t("predictions.critical", "Critical"),
-    high: t("predictions.high", "High"),
-    medium: t("predictions.medium", "Medium"),
-    low: t("predictions.low", "Low"),
+    critical: t("predictions.critical"),
+    high: t("predictions.high"),
+    medium: t("predictions.medium"),
+    low: t("predictions.low"),
   };
 
   return (

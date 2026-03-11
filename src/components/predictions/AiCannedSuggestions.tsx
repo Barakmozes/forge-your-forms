@@ -119,20 +119,20 @@ export default function AiCannedSuggestions({
   if (!loading && visibleSuggestions.length === 0) return null;
 
   return (
-    <FeatureGate feature="ai_suggestions" requiredPlan="business" featureName="AI Response Suggestions">
+    <FeatureGate feature="ai_suggestions" requiredPlan="business" featureName={t("predictions.aiSuggestedResponses")}>
       {/* === AGENT 13: AI Canned Suggestions === */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            {t("predictions.aiSuggestions", "AI Suggested Responses")}
+            {t("predictions.aiSuggestions")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-4 text-muted-foreground text-sm gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {t("predictions.loadingSuggestions", "Finding similar tickets...")}
+              {t("predictions.loadingSuggestions")}
             </div>
           ) : (
             visibleSuggestions.map((suggestion) => (
@@ -142,15 +142,15 @@ export default function AiCannedSuggestions({
               >
                 <div className="flex items-center justify-between gap-2">
                   <Badge variant="outline" className="text-[10px]">
-                    {t("predictions.fromTicket", "From")} {suggestion.fromTicketNumber}
+                    {t("predictions.fromTicket")} {suggestion.fromTicketNumber}
                   </Badge>
                   <Badge
                     variant="secondary"
                     className="text-[10px]"
                   >
                     {suggestion.similarity === "category"
-                      ? t("predictions.categoryMatch", "Category match")
-                      : t("predictions.formMatch", "Same form")}
+                      ? t("predictions.categoryMatch")
+                      : t("predictions.formMatch")}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-3">
@@ -164,7 +164,7 @@ export default function AiCannedSuggestions({
                     onClick={() => onInsertResponse(suggestion.message)}
                   >
                     <Copy className="h-3 w-3" />
-                    {t("predictions.useResponse", "Use This Response")}
+                    {t("predictions.useResponse")}
                   </Button>
                   <Button
                     size="sm"
@@ -173,7 +173,7 @@ export default function AiCannedSuggestions({
                     onClick={() => handleDismiss(suggestion.id)}
                   >
                     <ThumbsDown className="h-3 w-3" />
-                    {t("predictions.notHelpful", "Not helpful")}
+                    {t("predictions.notHelpful")}
                   </Button>
                 </div>
               </div>
