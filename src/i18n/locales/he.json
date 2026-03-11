@@ -78,7 +78,18 @@
     "loginFailed": "ההתחברות נכשלה",
     "signupFailed": "ההרשמה נכשלה",
     "checkEmail": "בדוק את האימייל שלך",
-    "confirmationSent": "שלחנו לך קישור לאימות."
+    "confirmationSent": "שלחנו לך קישור לאימות.",
+    "checkYourEmail": "בדוק את האימייל שלך",
+    "verificationSentTo": "שלחנו קישור אימות אל <1>{{email}}</1>. לחץ על הקישור באימייל כדי לאמת את החשבון.",
+    "resendVerification": "שלח שוב אימייל אימות",
+    "resendAvailableIn": "שליחה חוזרת בעוד {{seconds}} שניות",
+    "useDifferentEmail": "השתמש באימייל אחר",
+    "emailResent": "אימייל האימות נשלח שוב",
+    "resendFailed": "שליחת אימייל האימות נכשלה",
+    "authError": "שגיאת אימות",
+    "otpExpired": "קישור האימות שלך פג תוקף. בקש קישור חדש.",
+    "accessDenied": "הגישה נדחתה. נסה להתחבר שוב.",
+    "genericAuthError": "אירעה שגיאת אימות. נסה שוב."
   },
   "dashboard": {
     "greetingMorning": "בוקר טוב",

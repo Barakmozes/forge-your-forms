@@ -78,7 +78,18 @@
     "loginFailed": "Login failed",
     "signupFailed": "Signup failed",
     "checkEmail": "Check your email",
-    "confirmationSent": "We sent you a confirmation link."
+    "confirmationSent": "We sent you a confirmation link.",
+    "checkYourEmail": "Check your email",
+    "verificationSentTo": "We sent a verification link to <1>{{email}}</1>. Click the link in the email to verify your account.",
+    "resendVerification": "Resend verification email",
+    "resendAvailableIn": "Resend available in {{seconds}}s",
+    "useDifferentEmail": "Use a different email",
+    "emailResent": "Verification email resent",
+    "resendFailed": "Failed to resend verification email",
+    "authError": "Authentication error",
+    "otpExpired": "Your verification link has expired. Please request a new one.",
+    "accessDenied": "Access denied. Please try signing in again.",
+    "genericAuthError": "An authentication error occurred. Please try again."
   },
   "dashboard": {
     "greetingMorning": "Good morning",

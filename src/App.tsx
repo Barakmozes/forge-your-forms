@@ -1,13 +1,14 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useAuthHashError } from "@/hooks/useAuthHashError";
 import "@/i18n";
 
 // === AGENT 4 — Lazy-loaded route components for code splitting ===
@@ -27,6 +28,32 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 // === END AGENT 4 ===
+
+function AuthHashErrorHandler() {
+  useAuthHashError();
+  return null;
+}
+
+function PostVerificationRedirect() {
+  const { user, lastEvent } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    if (
+      lastEvent === "SIGNED_IN" &&
+      user &&
+      location.pathname === "/auth" &&
+      !hasRedirected.current
+    ) {
+      hasRedirected.current = true;
+      navigate("/", { replace: true });
+    }
+  }, [lastEvent, user, location.pathname, navigate]);
+
+  return null;
+}
 
 const queryClient = new QueryClient();
 
@@ -86,6 +113,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <AuthHashErrorHandler />
+          <PostVerificationRedirect />
           <WorkspaceProvider>
             <LanguageProvider>
             {/* === AGENT 1: ErrorBoundary wraps all routes === */}
