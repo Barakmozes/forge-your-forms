@@ -11,6 +11,9 @@ import MembersManager from "@/components/MembersManager";
 // === AGENT 6: Billing Tab ===
 import BillingPortal from "@/components/billing/BillingPortal";
 // === END AGENT 6 ===
+// === AGENT 7: Usage Dashboard ===
+import UsageDashboard from "@/components/upgrade/UsageDashboard";
+// === END AGENT 7 ===
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -250,8 +253,11 @@ export default function Settings() {
 
           {/* === AGENT 6: Billing Tab === */}
           {isOwner && (
-            <TabsContent value="billing">
+            <TabsContent value="billing" className="space-y-6">
               <BillingPortal />
+              {/* === AGENT 7: Usage Dashboard === */}
+              <UsageDashboard />
+              {/* === END AGENT 7 === */}
             </TabsContent>
           )}
           {/* === END AGENT 6 === */}

@@ -13,9 +13,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Paintbrush, UploadCloud, X } from "lucide-react";
+import { Paintbrush, UploadCloud, X, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+// === AGENT 7: Branding Enforcement ===
+import { useSubscription } from "@/hooks/useSubscription";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+// === END AGENT 7 ===
 
 export interface FormBranding {
   primaryColor?: string;
@@ -50,6 +54,9 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
   const [local, setLocal] = useState<FormBranding>(branding);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  // === AGENT 7: Branding Enforcement ===
+  const { isFree, isBusiness } = useSubscription();
+  // === END AGENT 7 ===
 
   useEffect(() => {
     setLocal(branding);
@@ -231,21 +238,45 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
           <Separator />
 
           {/* Powered By */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="cursor-pointer" htmlFor="powered-by-toggle">
-                {t("builder.showPoweredBy")}
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                {t("builder.poweredByHint")}
-              </p>
+          {/* === AGENT 7: Branding Enforcement === */}
+          {!isBusiness && (
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className={isFree ? "" : "cursor-pointer"} htmlFor="powered-by-toggle">
+                  {t("builder.showPoweredBy")}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isFree
+                    ? t("upgrade.poweredByFreeHint")
+                    : t("builder.poweredByHint")}
+                </p>
+              </div>
+              {isFree ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Lock className="h-3.5 w-3.5" />
+                      <Switch
+                        id="powered-by-toggle"
+                        checked={true}
+                        disabled
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("upgrade.upgradeToRemoveBranding")}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Switch
+                  id="powered-by-toggle"
+                  checked={local.showPoweredBy ?? true}
+                  onCheckedChange={(v) => update({ showPoweredBy: v })}
+                />
+              )}
             </div>
-            <Switch
-              id="powered-by-toggle"
-              checked={local.showPoweredBy ?? true}
-              onCheckedChange={(v) => update({ showPoweredBy: v })}
-            />
-          </div>
+          )}
+          {/* === END AGENT 7 === */}
 
           {/* Preview */}
           <Separator />

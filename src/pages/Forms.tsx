@@ -29,6 +29,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+// === AGENT 7: Plan Limits ===
+import { usePlanLimits, getRequiredPlanForMode } from "@/hooks/usePlanLimits";
+import PaywallModal from "@/components/upgrade/PaywallModal";
+// === END AGENT 7 ===
 import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
@@ -62,6 +66,12 @@ export default function Forms() {
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  // === AGENT 7: Form Creation Gate ===
+  const { canCreateForm, canAccessMode } = usePlanLimits();
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallPlan, setPaywallPlan] = useState<"free" | "pro" | "growth" | "business">("pro");
+  const [paywallFeature, setPaywallFeature] = useState("");
+  // === END AGENT 7 ===
 
   // Real-time: refetch when new submissions arrive to update counts
   useEffect(() => {
@@ -82,6 +92,19 @@ export default function Forms() {
 
   const handleCreate = async () => {
     if (!newTitle.trim()) return;
+    // === AGENT 7: Form Creation Gate ===
+    if (!canCreateForm(selectedMode)) {
+      setDialogOpen(false);
+      setPaywallPlan(getRequiredPlanForMode(selectedMode));
+      setPaywallFeature(
+        !canAccessMode(selectedMode)
+          ? t(`forms.mode${selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1)}`)
+          : t("upgrade.moreFormsFeature")
+      );
+      setPaywallOpen(true);
+      return;
+    }
+    // === END AGENT 7 ===
     try {
       const result = await createForm.mutateAsync({
         title: newTitle,
@@ -312,6 +335,14 @@ export default function Forms() {
           )}
         </TabsContent>
       </Tabs>
+      {/* === AGENT 7: Form Creation Gate === */}
+      <PaywallModal
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        requiredPlan={paywallPlan}
+        featureName={paywallFeature}
+      />
+      {/* === END AGENT 7 === */}
     </AppLayout>
   );
 }

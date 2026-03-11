@@ -31,15 +31,18 @@ export default function PublicForm() {
   const [form, setForm] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // === AGENT 7: Submission Gate ===
+  const [submissionLimitReached, setSubmissionLimitReached] = useState(false);
+  // === END AGENT 7 ===
 
   useEffect(() => {
     if (!id) return;
     supabase
       .from("forms")
-      .select("id, title, description, fields, status, mode, branding, settings")
+      .select("id, title, description, fields, status, mode, branding, settings, workspace_id")
       .eq("id", id)
       .maybeSingle()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error || !data) {
           setNotFound(true);
         } else {
@@ -50,6 +53,33 @@ export default function PublicForm() {
             branding: data.branding as Record<string, string> | null,
             settings: data.settings as Record<string, unknown> | null,
           });
+
+          // === AGENT 7: Submission Gate — lightweight limit check ===
+          try {
+            const { data: usageData } = await supabase
+              .rpc("get_workspace_usage", { ws_id: data.workspace_id });
+            const row = Array.isArray(usageData) ? usageData[0] : usageData;
+            const subCount = row?.submission_count ?? 0;
+
+            // Check subscription to determine limit
+            const { data: sub } = await supabase
+              .from("subscriptions")
+              .select("plan, status")
+              .eq("workspace_id", data.workspace_id)
+              .maybeSingle();
+
+            const plan = sub && (sub.status === "active" || sub.status === "trialing") ? sub.plan : "free";
+            const limitMap: Record<string, number | null> = {
+              free: 100, pro: 5000, growth: 25000, business: null,
+            };
+            const limit = limitMap[plan] ?? 100;
+            if (limit !== null && subCount >= limit) {
+              setSubmissionLimitReached(true);
+            }
+          } catch {
+            // If usage check fails, allow submission (fail open)
+          }
+          // === END AGENT 7 ===
         }
         setLoading(false);
       });
@@ -119,6 +149,26 @@ export default function PublicForm() {
       </div>
     );
   }
+
+  // === AGENT 7: Submission Gate ===
+  if (submissionLimitReached) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">
+            {t("forms.notAcceptingResponses")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("forms.notAcceptingResponsesDesc")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // === END AGENT 7 ===
 
   // Mode-specific rendering
   if (form.mode === "waitlist") {

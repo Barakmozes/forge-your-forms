@@ -7,6 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import WaitlistDashboard from "@/components/waitlist/WaitlistDashboard";
 import FeedbackDashboard from "@/components/feedback/FeedbackDashboard";
 import SupportDashboard from "@/components/support/SupportDashboard";
+// === AGENT 7: Mode Gating ===
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import UpgradePrompt from "@/components/upgrade/UpgradePrompt";
+// === END AGENT 7 ===
 import type { Database } from "@/integrations/supabase/types";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
@@ -26,6 +30,9 @@ export default function FormDashboard() {
   const navigate = useNavigate();
   const [form, setForm] = useState<FormMeta | null>(null);
   const [loading, setLoading] = useState(true);
+  // === AGENT 7: Mode Gating ===
+  const { canAccessMode } = usePlanLimits();
+  // === END AGENT 7 ===
 
   useEffect(() => {
     if (!id) return;
@@ -58,6 +65,15 @@ export default function FormDashboard() {
 
   // Route to mode-specific dashboard
   const renderDashboard = () => {
+    // === AGENT 7: Mode Gating ===
+    if (form.mode === "feedback" && !canAccessMode("feedback")) {
+      return <UpgradePrompt requiredPlan="pro" featureName="Feedback / NPS" />;
+    }
+    if (form.mode === "support" && !canAccessMode("support")) {
+      return <UpgradePrompt requiredPlan="growth" featureName="Support Tickets" />;
+    }
+    // === END AGENT 7 ===
+
     switch (form.mode) {
       case "waitlist":
         return <WaitlistDashboard formId={form.id} formTitle={form.title} formStatus={form.status} />;

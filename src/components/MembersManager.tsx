@@ -33,6 +33,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
+// === AGENT 7: Member Invite Gate ===
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import PaywallModal from "@/components/upgrade/PaywallModal";
+// === END AGENT 7 ===
 import type { Database } from "@/integrations/supabase/types";
 
 type WorkspaceRole = Database["public"]["Enums"]["workspace_role"];
@@ -65,6 +69,10 @@ export default function MembersManager() {
   const [inviting, setInviting] = useState(false);
 
   const isOwner = currentWorkspace?.owner_id === user?.id;
+  // === AGENT 7: Member Invite Gate ===
+  const { canInviteMember, plan } = usePlanLimits();
+  const [memberPaywallOpen, setMemberPaywallOpen] = useState(false);
+  // === END AGENT 7 ===
 
   useEffect(() => {
     if (!currentWorkspace) return;
@@ -231,9 +239,25 @@ export default function MembersManager() {
         </div>
 
         {isOwner && (
+          <>
+          {/* === AGENT 7: Member Invite Gate === */}
+          <PaywallModal
+            open={memberPaywallOpen}
+            onOpenChange={setMemberPaywallOpen}
+            requiredPlan={plan === "free" ? "pro" : plan === "pro" ? "growth" : "business"}
+            featureName={t("upgrade.moreMembers")}
+          />
+          {/* === END AGENT 7 === */}
           <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
+              <Button size="sm" className="gap-2" onClick={(e) => {
+                // === AGENT 7: Member Invite Gate ===
+                if (!canInviteMember()) {
+                  e.preventDefault();
+                  setMemberPaywallOpen(true);
+                }
+                // === END AGENT 7 ===
+              }}>
                 <Plus className="h-4 w-4" /> {t("members.inviteMember")}
               </Button>
             </DialogTrigger>
@@ -271,6 +295,7 @@ export default function MembersManager() {
               </div>
             </DialogContent>
           </Dialog>
+          </>
         )}
       </div>
 
