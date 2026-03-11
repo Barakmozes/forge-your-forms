@@ -17,11 +17,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Shield, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
-const SSO_PROVIDERS = [
-  { value: "okta", label: "Okta" },
-  { value: "azure_ad", label: "Azure AD (Entra ID)" },
-  { value: "onelogin", label: "OneLogin" },
-  { value: "custom_saml", label: "Custom SAML 2.0" },
+const SSO_PROVIDER_KEYS = [
+  { value: "okta", labelKey: "enterprise.sso.providerOkta" },
+  { value: "azure_ad", labelKey: "enterprise.sso.providerAzureAd" },
+  { value: "onelogin", labelKey: "enterprise.sso.providerOnelogin" },
+  { value: "custom_saml", labelKey: "enterprise.sso.providerCustomSaml" },
 ] as const;
 
 export default function SsoConfig() {
@@ -131,9 +131,9 @@ export default function SsoConfig() {
                     <SelectValue placeholder={t("enterprise.sso.selectProvider")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {SSO_PROVIDERS.map((p) => (
+                    {SSO_PROVIDER_KEYS.map((p) => (
                       <SelectItem key={p.value} value={p.value}>
-                        {p.label}
+                        {t(p.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>

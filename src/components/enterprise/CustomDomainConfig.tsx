@@ -163,7 +163,7 @@ export default function CustomDomainConfig() {
           {/* Add Domain */}
           <div className="flex gap-2">
             <Input
-              placeholder="forms.yourdomain.com"
+              placeholder={t("enterprise.domains.domainPlaceholder")}
               value={newDomain}
               onChange={(e) => setNewDomain(e.target.value)}
               dir="ltr"
@@ -200,12 +200,12 @@ export default function CustomDomainConfig() {
                         )}
                         {domain.ssl_status === "active" && (
                           <Badge variant="secondary" className="gap-1 text-green-600">
-                            SSL
+                            {t("enterprise.domains.sslActive")}
                           </Badge>
                         )}
                         {domain.ssl_status === "error" && (
                           <Badge variant="destructive" className="gap-1">
-                            <AlertCircle className="h-3 w-3" /> SSL Error
+                            <AlertCircle className="h-3 w-3" /> {t("enterprise.domains.sslError")}
                           </Badge>
                         )}
                       </div>

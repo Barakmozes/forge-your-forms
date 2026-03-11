@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,26 @@ interface FormOption {
   mode: string;
 }
 
+const TRIGGER_LABEL_KEYS: Record<string, string> = {
+  form_submitted: "workflows.trigger.formSubmitted",
+  nps_below_threshold: "workflows.trigger.npsBelowThreshold",
+  ticket_created: "workflows.trigger.ticketCreated",
+  waitlist_milestone: "workflows.trigger.waitlistMilestone",
+  ticket_resolved: "workflows.trigger.ticketResolved",
+  detractor_alert: "workflows.trigger.detractorAlert",
+};
+
+const TRIGGER_DESC_KEYS: Record<string, string> = {
+  form_submitted: "workflows.trigger.formSubmittedDesc",
+  nps_below_threshold: "workflows.trigger.npsBelowThresholdDesc",
+  ticket_created: "workflows.trigger.ticketCreatedDesc",
+  waitlist_milestone: "workflows.trigger.waitlistMilestoneDesc",
+  ticket_resolved: "workflows.trigger.ticketResolvedDesc",
+  detractor_alert: "workflows.trigger.detractorAlertDesc",
+};
+
 export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
+  const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const [forms, setForms] = useState<FormOption[]>([]);
 
@@ -56,12 +76,12 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <Zap className="h-3 w-3" />
           </div>
-          Trigger
+          {t("workflows.trigger.title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <Label className="text-xs text-muted-foreground">When this happens...</Label>
+          <Label className="text-xs text-muted-foreground">{t("workflows.trigger.whenThisHappens")}</Label>
           <Select
             value={config.type}
             onValueChange={(value: TriggerType) =>
@@ -69,25 +89,25 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
             }
           >
             <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select trigger" />
+              <SelectValue placeholder={t("workflows.trigger.selectTrigger")} />
             </SelectTrigger>
             <SelectContent>
               {Object.values(TRIGGER_TYPES).map((type) => (
                 <SelectItem key={type} value={type}>
-                  {TRIGGER_LABELS[type]}
+                  {t(TRIGGER_LABEL_KEYS[type])}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {config.type && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {TRIGGER_DESCRIPTIONS[config.type]}
+              {t(TRIGGER_DESC_KEYS[config.type])}
             </p>
           )}
         </div>
 
         <div>
-          <Label className="text-xs text-muted-foreground">For form (optional)</Label>
+          <Label className="text-xs text-muted-foreground">{t("workflows.trigger.forForm")}</Label>
           <Select
             value={config.formId || "all"}
             onValueChange={(value) =>
@@ -95,10 +115,10 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
             }
           >
             <SelectTrigger className="mt-1">
-              <SelectValue placeholder="All forms" />
+              <SelectValue placeholder={t("workflows.trigger.allForms")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All forms</SelectItem>
+              <SelectItem value="all">{t("workflows.trigger.allForms")}</SelectItem>
               {forms.map((form) => (
                 <SelectItem key={form.id} value={form.id}>
                   {form.title} ({form.mode})
@@ -110,7 +130,7 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
 
         {needsThreshold && (
           <div>
-            <Label className="text-xs text-muted-foreground">NPS Threshold</Label>
+            <Label className="text-xs text-muted-foreground">{t("workflows.trigger.npsThreshold")}</Label>
             <Input
               type="number"
               min={0}
@@ -129,7 +149,7 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
 
         {needsMilestone && (
           <div>
-            <Label className="text-xs text-muted-foreground">Milestone Count</Label>
+            <Label className="text-xs text-muted-foreground">{t("workflows.trigger.milestoneCount")}</Label>
             <Input
               type="number"
               min={1}

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +40,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 export default function WorkflowBuilder() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -77,7 +79,7 @@ export default function WorkflowBuilder() {
     const validation = validateWorkflow(name, triggerConfig, steps);
     if (!validation.valid) {
       toast({
-        title: "Validation Error",
+        title: t("workflows.validationError"),
         description: validation.errors.join(". "),
         variant: "destructive",
       });
@@ -95,17 +97,17 @@ export default function WorkflowBuilder() {
           active,
         });
         if (success) {
-          toast({ title: "Workflow saved" });
+          toast({ title: t("workflows.workflowSaved") });
         } else {
-          toast({ title: "Failed to save workflow", variant: "destructive" });
+          toast({ title: t("workflows.saveFailed"), variant: "destructive" });
         }
       } else {
         const workflow = await createWorkflow(name, description, triggerConfig, steps);
         if (workflow) {
-          toast({ title: "Workflow created" });
+          toast({ title: t("workflows.workflowCreated") });
           navigate(`/workflows/${workflow.id}/edit`, { replace: true });
         } else {
-          toast({ title: "Failed to create workflow", variant: "destructive" });
+          toast({ title: t("workflows.createFailed"), variant: "destructive" });
         }
       }
     } finally {
@@ -119,7 +121,7 @@ export default function WorkflowBuilder() {
     setTriggerConfig(template.triggerConfig);
     setSteps(template.steps);
     setTemplateDialogOpen(false);
-    toast({ title: "Template applied", description: `"${template.name}" loaded.` });
+    toast({ title: t("workflows.templateApplied"), description: t("workflows.templateLoaded", { name: template.name }) });
   };
 
   return (
@@ -133,17 +135,17 @@ export default function WorkflowBuilder() {
             </Button>
             <div>
               <h1 className="text-xl font-bold font-display">
-                {isEditing ? "Edit Workflow" : "New Workflow"}
+                {isEditing ? t("workflows.editWorkflow") : t("workflows.newWorkflow")}
               </h1>
               <p className="text-xs text-muted-foreground">
-                {isEditing ? "Modify your automation" : "Build a new automation pipeline"}
+                {isEditing ? t("workflows.modifyAutomation") : t("workflows.buildAutomation")}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {isEditing && (
-              <div className="flex items-center gap-2 mr-2">
-                <Label htmlFor="active-toggle" className="text-sm text-muted-foreground">Active</Label>
+              <div className="flex items-center gap-2 me-2">
+                <Label htmlFor="active-toggle" className="text-sm text-muted-foreground">{t("workflows.active")}</Label>
                 <Switch
                   id="active-toggle"
                   checked={active}
@@ -153,15 +155,15 @@ export default function WorkflowBuilder() {
             )}
             <Button onClick={handleSave} disabled={saving} className="gap-2">
               <Save className="h-4 w-4" />
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("workflows.saving") : t("workflows.save")}
             </Button>
           </div>
         </div>
 
         <Tabs defaultValue="builder">
           <TabsList>
-            <TabsTrigger value="builder">Builder</TabsTrigger>
-            {isEditing && <TabsTrigger value="runs">Runs</TabsTrigger>}
+            <TabsTrigger value="builder">{t("workflows.builder")}</TabsTrigger>
+            {isEditing && <TabsTrigger value="runs">{t("workflows.runs")}</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="builder" className="space-y-6 mt-4">
@@ -171,20 +173,20 @@ export default function WorkflowBuilder() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1 space-y-4">
                     <div>
-                      <Label>Workflow Name</Label>
+                      <Label>{t("workflows.workflowName")}</Label>
                       <Input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. NPS Alert Pipeline"
+                        placeholder={t("workflows.workflowNamePlaceholder")}
                         className="mt-1 max-w-md"
                       />
                     </div>
                     <div>
-                      <Label>Description (optional)</Label>
+                      <Label>{t("workflows.descriptionOptional")}</Label>
                       <Textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="What does this workflow do?"
+                        placeholder={t("workflows.descriptionPlaceholder")}
                         className="mt-1 max-w-md"
                         rows={2}
                       />
@@ -196,14 +198,14 @@ export default function WorkflowBuilder() {
                       <DialogTrigger asChild>
                         <Button variant="outline" className="gap-2 shrink-0">
                           <BookOpen className="h-4 w-4" />
-                          Templates
+                          {t("workflows.templates")}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Workflow Templates</DialogTitle>
+                          <DialogTitle>{t("workflows.workflowTemplates")}</DialogTitle>
                           <DialogDescription>
-                            Start with a pre-built workflow and customize it.
+                            {t("workflows.templatesDescription")}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -216,10 +218,10 @@ export default function WorkflowBuilder() {
                                 <p className="text-xs text-muted-foreground">{template.description}</p>
                                 <div className="flex gap-2 mt-2">
                                   <Badge variant="secondary" className="text-xs">
-                                    {template.steps.filter((s) => s.type === "condition").length} conditions
+                                    {t("workflows.conditionsCount", { count: template.steps.filter((s) => s.type === "condition").length })}
                                   </Badge>
                                   <Badge variant="secondary" className="text-xs">
-                                    {template.steps.filter((s) => s.type === "action").length} actions
+                                    {t("workflows.actionsCount", { count: template.steps.filter((s) => s.type === "action").length })}
                                   </Badge>
                                 </div>
                               </CardContent>
@@ -227,7 +229,7 @@ export default function WorkflowBuilder() {
                           ))}
                         </div>
                         <DialogFooter>
-                          <Button variant="ghost" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
+                          <Button variant="ghost" onClick={() => setTemplateDialogOpen(false)}>{t("common.cancel")}</Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -249,15 +251,15 @@ export default function WorkflowBuilder() {
             <TabsContent value="runs" className="mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Execution History</CardTitle>
+                  <CardTitle className="text-base">{t("workflows.executionHistory")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {runsLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading runs...</p>
+                    <p className="text-sm text-muted-foreground">{t("workflows.loadingRuns")}</p>
                   ) : runs.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No runs yet. Activate this workflow to start.</p>
+                      <p className="text-sm">{t("workflows.noRunsYet")}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -269,14 +271,14 @@ export default function WorkflowBuilder() {
                             {run.status === "running" && <AlertCircle className="h-4 w-4 text-amber-500 animate-pulse" />}
                             <div>
                               <p className="text-sm font-medium">
-                                {run.status === "completed" ? "Completed" : run.status === "failed" ? "Failed" : "Running"}
+                                {run.status === "completed" ? t("workflows.completed") : run.status === "failed" ? t("workflows.failed") : t("workflows.running")}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {run.steps_executed?.length ?? 0} steps executed
+                                {t("workflows.stepsExecuted", { count: run.steps_executed?.length ?? 0 })}
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-end">
                             <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(run.started_at), { addSuffix: true })}
                             </p>

@@ -3,6 +3,7 @@
 // Agent 15: Visual Workflow Builder
 // ============================================
 
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { GitBranch, Play, Plus, ArrowDown } from "lucide-react";
@@ -32,6 +33,7 @@ export default function WorkflowCanvas({
   onTriggerChange,
   onStepsChange,
 }: WorkflowCanvasProps) {
+  const { t } = useTranslation();
   const addCondition = () => {
     const id = generateStepId();
     const newStep: WorkflowStep = {
@@ -124,12 +126,12 @@ export default function WorkflowCanvas({
         <Button variant="outline" size="sm" onClick={addCondition} className="gap-1.5">
           <GitBranch className="h-3.5 w-3.5" />
           <Plus className="h-3 w-3" />
-          Condition
+          {t("workflows.addCondition")}
         </Button>
         <Button variant="outline" size="sm" onClick={addAction} className="gap-1.5">
           <Play className="h-3.5 w-3.5" />
           <Plus className="h-3 w-3" />
-          Action
+          {t("workflows.addAction")}
         </Button>
       </div>
     </div>

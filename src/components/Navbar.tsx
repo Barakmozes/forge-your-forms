@@ -38,10 +38,10 @@ export default function Navbar() {
     { to: "/", label: t("nav.forms"), icon: FileText },
     { to: "/submissions", label: t("nav.submissions"), icon: Inbox },
     // === AGENT 11: Templates Link ===
-    { to: "/templates", label: "Templates", icon: LayoutTemplate },
+    { to: "/templates", label: t("nav.templates"), icon: LayoutTemplate },
     // === END AGENT 11 ===
     // === AGENT 15: Workflows Link ===
-    { to: "/workflows", label: "Workflows", icon: Zap },
+    { to: "/workflows", label: t("nav.workflows"), icon: Zap },
     // === END AGENT 15 ===
   ];
 

@@ -130,7 +130,7 @@ export default function WhiteLabelConfig() {
                 <Label htmlFor="app-name">{t("enterprise.whiteLabel.appName")}</Label>
                 <Input
                   id="app-name"
-                  placeholder="Your Company"
+                  placeholder={t("enterprise.whiteLabel.appNamePlaceholder")}
                   value={appName}
                   onChange={(e) => setAppName(e.target.value)}
                 />
@@ -192,7 +192,7 @@ export default function WhiteLabelConfig() {
                 <Input
                   id="favicon-url"
                   type="url"
-                  placeholder="https://example.com/favicon.ico"
+                  placeholder={t("enterprise.whiteLabel.faviconPlaceholder")}
                   value={faviconUrl}
                   onChange={(e) => setFaviconUrl(e.target.value)}
                   dir="ltr"
