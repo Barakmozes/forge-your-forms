@@ -47,6 +47,11 @@ import {
   BarChart2,
 } from "lucide-react";
 import { toast } from "sonner";
+// === AGENT 12: AI Summary ===
+import { useMemo } from "react";
+import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
+import type { AiSubmissionInput } from "@/lib/ai";
+// === END AGENT 12 ===
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -292,6 +297,22 @@ export default function FeedbackDashboard({
     { name: t('feedback.detractors'), value: breakdown.detractors, color: COLORS.detractor },
   ];
 
+  // === AGENT 12: AI Summary ===
+  const aiSubmissions: AiSubmissionInput[] = useMemo(
+    () =>
+      responses
+        .filter((r) => r.follow_up || r.category)
+        .map((r) => ({
+          id: r.id,
+          text_fields: {
+            ...(r.follow_up ? { feedback: r.follow_up } : {}),
+            ...(r.category ? { category: r.category } : {}),
+          },
+        })),
+    [responses]
+  );
+  // === END AGENT 12 ===
+
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -327,6 +348,10 @@ export default function FeedbackDashboard({
           ))}
         </div>
       )}
+
+      {/* === AGENT 12: AI Summary === */}
+      <AiSummaryWidget formId={formId} submissions={aiSubmissions} />
+      {/* === END AGENT 12 === */}
 
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

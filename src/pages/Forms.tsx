@@ -10,7 +10,11 @@ import DashboardHome from "@/components/dashboard/DashboardHome";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Inbox, ClipboardList, Users, MessageSquare, Headphones, LayoutDashboard, List, MoreVertical, Copy, LayoutTemplate } from "lucide-react";
+import { Plus, FileText, Inbox, ClipboardList, Users, MessageSquare, Headphones, LayoutDashboard, List, MoreVertical, Copy, LayoutTemplate, Sparkles } from "lucide-react";
+// === AGENT 12: AI Create Button ===
+import AiFormGenerator from "@/components/ai/AiFormGenerator";
+import FeatureGate from "@/components/upgrade/FeatureGate";
+// === END AGENT 12 ===
 import {
   Dialog,
   DialogContent,
@@ -72,6 +76,9 @@ export default function Forms() {
   const [paywallPlan, setPaywallPlan] = useState<"free" | "pro" | "growth" | "business">("pro");
   const [paywallFeature, setPaywallFeature] = useState("");
   // === END AGENT 7 ===
+  // === AGENT 12: AI Create Button ===
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  // === END AGENT 12 ===
 
   // Real-time: refetch when new submissions arrive to update counts
   useEffect(() => {
@@ -248,7 +255,20 @@ export default function Forms() {
               <List className="h-3.5 w-3.5" /> {t("forms.allForms")}
             </TabsTrigger>
           </TabsList>
-          {createDialog}
+          <div className="flex items-center gap-2">
+            {/* === AGENT 12: AI Create Button === */}
+            <FeatureGate feature="ai-form-generation" requiredPlan="business" fallback={
+              <Button variant="outline" className="gap-2 opacity-60" onClick={() => setAiDialogOpen(true)}>
+                <Sparkles className="h-4 w-4" /> {t("ai.createWithAi")}
+              </Button>
+            }>
+              <Button variant="outline" className="gap-2" onClick={() => setAiDialogOpen(true)}>
+                <Sparkles className="h-4 w-4" /> {t("ai.createWithAi")}
+              </Button>
+            </FeatureGate>
+            {/* === END AGENT 12 === */}
+            {createDialog}
+          </div>
         </div>
 
         <TabsContent value="dashboard" className="mt-0">
@@ -353,6 +373,9 @@ export default function Forms() {
         featureName={paywallFeature}
       />
       {/* === END AGENT 7 === */}
+      {/* === AGENT 12: AI Create Dialog === */}
+      <AiFormGenerator open={aiDialogOpen} onOpenChange={setAiDialogOpen} />
+      {/* === END AGENT 12 === */}
     </AppLayout>
   );
 }

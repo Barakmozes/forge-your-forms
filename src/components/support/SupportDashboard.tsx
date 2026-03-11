@@ -78,6 +78,10 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+// === AGENT 12: AI Summary ===
+import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
+import type { AiSubmissionInput } from "@/lib/ai";
+// === END AGENT 12 ===
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -602,10 +606,31 @@ export default function SupportDashboard({
     },
   ];
 
+  // === AGENT 12: AI Summary ===
+  const aiSubmissions: AiSubmissionInput[] = useMemo(
+    () =>
+      tickets
+        .filter((t) => t.subject || t.description)
+        .map((t) => ({
+          id: t.id,
+          text_fields: {
+            ...(t.subject ? { subject: t.subject } : {}),
+            ...(t.description ? { description: t.description } : {}),
+            ...(t.category ? { category: t.category } : {}),
+          },
+        })),
+    [tickets]
+  );
+  // === END AGENT 12 ===
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
+      {/* === AGENT 12: AI Summary === */}
+      <AiSummaryWidget formId={formId} submissions={aiSubmissions} />
+      {/* === END AGENT 12 === */}
+
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

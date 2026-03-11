@@ -11,7 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Save, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, GripVertical, Plus, Trash2, Eye, LayoutTemplate, Type, Hash, Mail, Phone, Calendar, CheckSquare, List, CheckCircle2, UploadCloud, Heading1, AlignLeft, BarChart2, Sparkles } from "lucide-react";
+// === AGENT 12: AI Generate Fields ===
+import AiFormGenerator from "@/components/ai/AiFormGenerator";
+import FeatureGate from "@/components/upgrade/FeatureGate";
+import type { AiFormField } from "@/lib/ai";
+// === END AGENT 12 ===
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -196,6 +201,23 @@ export default function FormBuilder() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"Saved" | "Saving..." | "Unsaved">("Saved");
+  // === AGENT 12: AI Generate Fields ===
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const handleAiFieldsGenerated = (aiFields: AiFormField[]) => {
+    const mapped: FormField[] = aiFields.map((f) => ({
+      id: f.id,
+      type: f.type as FieldType,
+      label: f.label,
+      placeholder: f.placeholder || "",
+      helpText: f.helpText || "",
+      required: f.required,
+      options: f.options || [],
+      validation: (f.validation || {}) as FormField["validation"],
+    }));
+    setFields(mapped);
+    setSaveStatus("Unsaved");
+  };
+  // === END AGENT 12 ===
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialLoad = useRef(true);
@@ -430,9 +452,20 @@ export default function FormBuilder() {
 
               <div ref={setDroppableRef} className={`min-h-[400px] pb-32 space-y-3 ${fields.length === 0 ? 'flex items-center justify-center border-2 border-dashed rounded-xl' : ''}`}>
                 {fields.length === 0 ? (
-                  <div className="text-center space-y-2 text-muted-foreground">
+                  <div className="text-center space-y-4 text-muted-foreground">
                     <LayoutTemplate className="h-10 w-10 mx-auto opacity-50" />
                     <p>{t("builder.dragDropHint")}</p>
+                    {/* === AGENT 12: AI Generate Fields === */}
+                    <FeatureGate feature="ai-field-generation" requiredPlan="business" fallback={
+                      <Button variant="outline" size="sm" className="gap-2 opacity-60">
+                        <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
+                      </Button>
+                    }>
+                      <Button variant="outline" size="sm" className="gap-2" onClick={() => setAiDialogOpen(true)}>
+                        <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
+                      </Button>
+                    </FeatureGate>
+                    {/* === END AGENT 12 === */}
                   </div>
                 ) : (
                   <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
@@ -655,6 +688,14 @@ export default function FormBuilder() {
       </DndContext>
         </TabsContent>
       </Tabs>
+      {/* === AGENT 12: AI Generate Fields Dialog === */}
+      <AiFormGenerator
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onFieldsGenerated={handleAiFieldsGenerated}
+        fixedMode={mode}
+      />
+      {/* === END AGENT 12 === */}
     </div>
   );
 }
