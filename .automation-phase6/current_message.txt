@@ -1,0 +1,19 @@
+Read these files in this exact order:
+1. CLAUDE.md
+2. .agents-phase-6/agent-16-supabase-audit/AGENT.md
+3. .agents-phase-6/agent-16-supabase-audit/HANDOFF.md
+4. .agents-phase-6/agent-16-supabase-audit/PROMPTS.md
+5. .agents-phase-6/SYNC-LOG.md
+
+You are Agent 16 — Supabase Audit for FormForge Phase 6: Production Hardening & Security.
+
+CRITICAL WORKING RULES:
+- Execute ALL prompts in order (16.0, 16.1, 16.2, 16.3, 16.4) without stopping.
+- After each prompt: update the checkbox in PROMPTS.md and append a session entry to PROGRESS.md.
+- Run npm run lint and npx tsc --noEmit after each prompt to verify nothing broke.
+- Do NOT run any git commands. Git is handled externally by the automation script.
+- If you complete ALL prompts successfully, write PROGRESS.md status as COMPLETE and say the exact phrase: AGENT_COMPLETE
+- If you are running low on context and cannot finish all prompts, write your current state to HANDOFF.md (what is done, what is next, files created/modified) and say the exact phrase: CONTEXT_LIMIT_REACHED
+- These two phrases (AGENT_COMPLETE and CONTEXT_LIMIT_REACHED) are CRITICAL signals — the automation script watches for them.
+
+Start working now.
