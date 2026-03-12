@@ -32,6 +32,7 @@ import {
   RefreshCw,
   ArrowLeft,
   CheckCircle2,
+  LayoutTemplate,
 } from "lucide-react";
 import type { AiFormField } from "@/lib/ai";
 
@@ -258,7 +259,12 @@ export default function AiFormGenerator({
               </div>
             </div>
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <div className="space-y-2">
+                <p className="text-sm text-destructive">{error}</p>
+                <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => { handleClose(); navigate("/templates"); }}>
+                  <LayoutTemplate className="h-4 w-4" /> {t("ai.tryTemplateInstead")}
+                </Button>
+              </div>
             )}
             <Button
               className="w-full gap-2"

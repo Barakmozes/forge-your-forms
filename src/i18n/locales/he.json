@@ -209,7 +209,10 @@
     "notAcceptingResponsesDesc": "מגבלת התשובות הושגה. נסו שוב מאוחר יותר.",
     "templateFieldFullName": "שם מלא",
     "templateFieldEmail": "כתובת אימייל",
-    "templateFieldMessage": "הודעה"
+    "templateFieldMessage": "הודעה",
+    "delete": "מחיקה",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק טופס זה? לא ניתן לבטל פעולה זו.",
+    "formDeleted": "הטופס נמחק"
   },
   "builder": {
     "fieldTypes": "סוגי שדות",
@@ -310,7 +313,10 @@
     "copyEmbedCode": "העתק קוד הטמעה",
     "embedHint": "הדבק קוד זה ב-HTML של האתר שלך להטמעת הטופס.",
     "qrScanHint": "סרוק קוד QR זה לפתיחת הטופס במכשיר נייד.",
-    "downloadQRCode": "הורד קוד QR"
+    "downloadQRCode": "הורד קוד QR",
+    "draftBanner": "טופס זה במצב טיוטה — הוא לא יקבל תשובות מהציבור עד לפרסום.",
+    "publishNow": "פרסם",
+    "browseTemplates": "עיין בתבניות"
   },
   "submissions": {
     "title": "תשובות",
@@ -1206,7 +1212,8 @@
     "noSubmissionsToAnalyze": "אין תגובות לניתוח",
     "analysisError": "הניתוח נכשל",
     "generateError": "יצירת הטופס נכשלה",
-    "analyzeError": "ניתוח התגובות נכשל"
+    "analyzeError": "ניתוח התגובות נכשל",
+    "tryTemplateInstead": "עיין בתבניות במקום"
   },
   "predictions": {
     "atRiskCustomers": "לקוחות בסיכון",

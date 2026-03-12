@@ -116,7 +116,7 @@ const createNewField = (type: FieldType): FormField => ({
   validation: {},
 });
 
-function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: React.ElementType }) {
+function PaletteItem({ type, label, icon: Icon, onAdd }: { type: string; label: string; icon: React.ElementType; onAdd: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${type}`,
     data: { type: 'palette_item', fieldType: type }
@@ -127,10 +127,12 @@ function PaletteItem({ type, label, icon: Icon }: { type: string; label: string;
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-accent cursor-grab active:cursor-grabbing ${isDragging ? "opacity-50" : ""}`}
+      className={`group flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-accent cursor-grab active:cursor-grabbing ${isDragging ? "opacity-50" : ""}`}
+      onClick={(e) => { if (!isDragging) { e.stopPropagation(); onAdd(); } }}
     >
       <Icon className="h-4 w-4 text-muted-foreground" />
       <span className="text-sm font-medium">{label}</span>
+      <Plus className="h-3 w-3 ms-auto text-muted-foreground opacity-0 group-hover:opacity-100" />
     </div>
   );
 }
@@ -417,7 +419,7 @@ export default function FormBuilder() {
           {id && <FormResponsesTab formId={id} fields={fields} />}
         </TabsContent>
 
-        <TabsContent value="build" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+        <TabsContent value="build" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex flex-1 overflow-hidden">
           
@@ -430,7 +432,7 @@ export default function FormBuilder() {
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t(CATEGORY_KEYS[cat.name])}</h3>
                   <div className="grid grid-cols-1 gap-2">
                     {cat.items.map((item) => (
-                      <PaletteItem key={item.type} type={item.type} label={t(FIELD_TYPE_KEYS[item.type])} icon={item.icon} />
+                      <PaletteItem key={item.type} type={item.type} label={t(FIELD_TYPE_KEYS[item.type])} icon={item.icon} onAdd={() => { const f = createNewField(item.type as FieldType); setFields(prev => [...prev, f]); setSelectedFieldId(f.id); }} />
                     ))}
                   </div>
                 </div>
@@ -440,6 +442,16 @@ export default function FormBuilder() {
 
           {/* Center Canvas */}
           <main className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+            {status === "draft" && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 w-full max-w-2xl mb-4 flex items-center justify-between shrink-0">
+                <span className="text-sm text-amber-800 dark:text-amber-200">
+                  {t("builder.draftBanner")}
+                </span>
+                <Button size="sm" onClick={() => setStatus("active")}>
+                  {t("builder.publishNow")}
+                </Button>
+              </div>
+            )}
             <div className="w-full max-w-2xl">
               <div className="mb-6 space-y-2">
                 <Input 
@@ -455,17 +467,22 @@ export default function FormBuilder() {
                   <div className="text-center space-y-4 text-muted-foreground">
                     <LayoutTemplate className="h-10 w-10 mx-auto opacity-50" />
                     <p>{t("builder.dragDropHint")}</p>
-                    {/* === AGENT 12: AI Generate Fields === */}
-                    <FeatureGate feature="ai" requiredPlan="business" featureName="AI Form Generator" fallback={
-                      <Button variant="outline" size="sm" className="gap-2 opacity-60" disabled>
-                        <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/templates")}>
+                        <LayoutTemplate className="h-4 w-4" /> {t("builder.browseTemplates")}
                       </Button>
-                    }>
-                      <Button variant="outline" size="sm" className="gap-2" onClick={() => setAiDialogOpen(true)}>
-                        <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
-                      </Button>
-                    </FeatureGate>
-                    {/* === END AGENT 12 === */}
+                      {/* === AGENT 12: AI Generate Fields === */}
+                      <FeatureGate feature="ai" requiredPlan="business" featureName="AI Form Generator" fallback={
+                        <Button variant="outline" size="sm" className="gap-2 opacity-60" disabled>
+                          <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
+                        </Button>
+                      }>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => setAiDialogOpen(true)}>
+                          <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
+                        </Button>
+                      </FeatureGate>
+                      {/* === END AGENT 12 === */}
+                    </div>
                   </div>
                 ) : (
                   <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>

@@ -7,6 +7,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -82,7 +83,16 @@ export async function generateForm(
   });
 
   if (error) {
-    throw new Error(error.message || "Failed to generate form");
+    let message = "AI service is currently unavailable";
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json();
+        if (body?.error) message = body.error;
+      } catch { /* use default */ }
+    } else if (error.message) {
+      message = error.message;
+    }
+    throw new Error(message);
   }
 
   if (data?.error) {
@@ -108,7 +118,16 @@ export async function analyzeResponses(
   });
 
   if (error) {
-    throw new Error(error.message || "Failed to analyze responses");
+    let message = "AI service is currently unavailable";
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json();
+        if (body?.error) message = body.error;
+      } catch { /* use default */ }
+    } else if (error.message) {
+      message = error.message;
+    }
+    throw new Error(message);
   }
 
   if (data?.error) {

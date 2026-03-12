@@ -209,7 +209,10 @@
     "notAcceptingResponsesDesc": "The submission limit has been reached. Please try again later.",
     "templateFieldFullName": "Full Name",
     "templateFieldEmail": "Email Address",
-    "templateFieldMessage": "Message"
+    "templateFieldMessage": "Message",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this form? This action cannot be undone.",
+    "formDeleted": "Form deleted"
   },
   "builder": {
     "fieldTypes": "Field Types",
@@ -310,7 +313,10 @@
     "copyEmbedCode": "Copy Embed Code",
     "embedHint": "Paste this code into your website's HTML to embed the form.",
     "qrScanHint": "Scan this QR code to open the form on a mobile device.",
-    "downloadQRCode": "Download QR Code"
+    "downloadQRCode": "Download QR Code",
+    "draftBanner": "This form is in draft mode — it won't accept public submissions until published.",
+    "publishNow": "Publish",
+    "browseTemplates": "Browse Templates"
   },
   "submissions": {
     "title": "Submissions",
@@ -1206,7 +1212,8 @@
     "noSubmissionsToAnalyze": "No submissions to analyze",
     "analysisError": "Analysis failed",
     "generateError": "Failed to generate form",
-    "analyzeError": "Failed to analyze responses"
+    "analyzeError": "Failed to analyze responses",
+    "tryTemplateInstead": "Browse Templates Instead"
   },
   "predictions": {
     "atRiskCustomers": "At-Risk Customers",

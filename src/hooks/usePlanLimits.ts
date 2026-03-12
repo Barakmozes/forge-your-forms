@@ -26,8 +26,8 @@ const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   free: {
     maxForms: 3,
     maxWaitlists: 1,
-    maxFeedbackForms: 0,
-    maxSupportInboxes: 0,
+    maxFeedbackForms: 1,
+    maxSupportInboxes: 1,
     maxSubmissionsPerMonth: 100,
     maxMembers: 1,
   },

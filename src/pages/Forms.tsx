@@ -10,7 +10,7 @@ import DashboardHome from "@/components/dashboard/DashboardHome";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Inbox, ClipboardList, Users, MessageSquare, Headphones, LayoutDashboard, List, MoreVertical, Copy, LayoutTemplate, Sparkles } from "lucide-react";
+import { Plus, FileText, Inbox, ClipboardList, Users, MessageSquare, Headphones, LayoutDashboard, List, MoreVertical, Copy, LayoutTemplate, Sparkles, Trash2 } from "lucide-react";
 // === AGENT 12: AI Create Button ===
 import AiFormGenerator from "@/components/ai/AiFormGenerator";
 import FeatureGate from "@/components/upgrade/FeatureGate";
@@ -68,6 +68,8 @@ export default function Forms() {
   const [newDesc, setNewDesc] = useState("");
   const [selectedMode, setSelectedMode] = useState<FormMode>("standard");
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { deleteForm } = useForms();
   const navigate = useNavigate();
   const { toast } = useToast();
   // === AGENT 7: Form Creation Gate ===
@@ -169,6 +171,19 @@ export default function Forms() {
       toast({ title: t("common.error"), description: message, variant: "destructive" });
     }
     setDuplicating(null);
+  };
+
+  const handleDelete = async (formId: string) => {
+    if (!window.confirm(t("forms.confirmDelete"))) return;
+    setDeleting(formId);
+    try {
+      await deleteForm.mutateAsync(formId);
+      toast({ title: t("forms.formDeleted") });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("common.somethingWentWrong");
+      toast({ title: t("common.error"), description: message, variant: "destructive" });
+    }
+    setDeleting(null);
   };
 
   const statusColor: Record<string, string> = {
@@ -331,6 +346,17 @@ export default function Forms() {
                             >
                               <Copy className="me-2 h-4 w-4" />
                               {duplicating === form.id ? t("forms.duplicating") : t("forms.duplicate")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(form.id);
+                              }}
+                              disabled={deleting === form.id}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="me-2 h-4 w-4" />
+                              {deleting === form.id ? t("common.delete") + "..." : t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
