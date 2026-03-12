@@ -7,6 +7,47 @@
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "FormForge <noreply@formforge.io>";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// --- HTML sanitization for user-provided template variables ---
+
+function sanitizeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizeVariables(vars: TemplateVariables): TemplateVariables {
+  const sanitized: TemplateVariables = {};
+  for (const [key, value] of Object.entries(vars)) {
+    // Allow URL values through unsanitized (used in href attributes)
+    if (key.toLowerCase().endsWith("url")) {
+      sanitized[key] = value;
+    } else {
+      sanitized[key] = sanitizeHtml(value);
+    }
+  }
+  return sanitized;
+}
+
+// --- Authorization check ---
+
+function isAuthorized(req: Request): boolean {
+  // Accept calls from Supabase service role (internal triggers/workflows)
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` && SUPABASE_SERVICE_ROLE_KEY) {
+    return true;
+  }
+  // Accept calls with the Supabase apikey header (edge function-to-edge function)
+  const apiKey = req.headers.get("apikey") ?? "";
+  if (apiKey === SUPABASE_SERVICE_ROLE_KEY && SUPABASE_SERVICE_ROLE_KEY) {
+    return true;
+  }
+  return false;
+}
 
 // --- Template definitions ---
 
@@ -176,6 +217,14 @@ Deno.serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  // Authorize: only internal callers (service role)
+  if (!isAuthorized(req)) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   if (!RESEND_API_KEY) {
     console.error("RESEND_API_KEY not configured");
     return new Response(
@@ -211,7 +260,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { subject, html } = templateFn(variables, locale);
+  const safeVars = sanitizeVariables(variables);
+  const { subject, html } = templateFn(safeVars, locale);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {

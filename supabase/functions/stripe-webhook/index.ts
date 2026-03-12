@@ -210,8 +210,21 @@ async function handleSubscriptionDeleted(subscription: Record<string, unknown>) 
 // --- Main handler ---
 
 Deno.serve(async (req: Request) => {
+  // Stripe webhooks are server-to-server — reject CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 405 });
+  }
+
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
+  }
+
+  if (!STRIPE_WEBHOOK_SECRET || !STRIPE_SECRET_KEY) {
+    console.error("Stripe secrets not configured");
+    return new Response(
+      JSON.stringify({ error: "Webhook not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   const body = await req.text();

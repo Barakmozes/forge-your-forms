@@ -1,11 +1,11 @@
 # Agent 17 — Prompts
 
 ## Prompt Checklist
-- [ ] 17.0 — Planning & Edge Function Inventory
-- [ ] 17.1 — Core Functions: Stripe Webhook & Email
-- [ ] 17.2 — API & Webhook Functions: Security Hardening
-- [ ] 17.3 — AI & Enterprise Functions: Verification
-- [ ] 17.4 — Deployment Automation & Documentation
+- [x] 17.0 — Planning & Edge Function Inventory
+- [x] 17.1 — Core Functions: Stripe Webhook & Email
+- [x] 17.2 — API & Webhook Functions: Security Hardening
+- [x] 17.3 — AI & Enterprise Functions: Verification
+- [x] 17.4 — Deployment Automation & Documentation
 
 ---
 

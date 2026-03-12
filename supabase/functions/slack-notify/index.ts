@@ -114,6 +114,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SSRF protection: only allow Slack webhook URLs
+    try {
+      const parsedUrl = new URL(webhook_url);
+      if (parsedUrl.hostname !== "hooks.slack.com") {
+        return new Response(
+          JSON.stringify({ error: "Invalid webhook URL: only hooks.slack.com is allowed" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid webhook URL format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const blocks = formatEventBlocks(event_type, form_title ?? "Unknown Form", data ?? {});
 
     const slackPayload = {

@@ -17,6 +17,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ─── URL Validation (SSRF protection) ───────────────────────────────────────
+
+function isUrlSafe(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    // Only allow HTTPS
+    if (url.protocol !== "https:") return false;
+    // Block internal/private hostnames
+    const hostname = url.hostname.toLowerCase();
+    const blocked = [
+      "localhost", "127.0.0.1", "0.0.0.0", "::1",
+      "metadata.google.internal", "169.254.169.254",
+    ];
+    if (blocked.includes(hostname)) return false;
+    // Block private IP ranges
+    if (hostname.startsWith("10.") || hostname.startsWith("192.168.") || hostname.startsWith("172.")) return false;
+    // Block .internal and .local domains
+    if (hostname.endsWith(".internal") || hostname.endsWith(".local")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── HMAC-SHA256 Signing ────────────────────────────────────────────────────
 
 async function signPayload(secret: string, body: string): Promise<string> {
@@ -163,6 +187,12 @@ Deno.serve(async (req) => {
     const results: DeliveryResult[] = [];
 
     for (const webhook of matching) {
+      // SSRF protection: validate webhook URL
+      if (!isUrlSafe(webhook.url)) {
+        console.warn(`Blocked unsafe webhook URL: ${webhook.url}`);
+        continue;
+      }
+
       const deliveryId = crypto.randomUUID();
       const result = await deliverWebhook(webhook, event_type, payload, deliveryId);
       results.push(result);

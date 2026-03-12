@@ -24,19 +24,27 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 100;
 const RATE_WINDOW_MS = 60 * 1000; // 1 minute
 
-function checkRateLimit(keyHash: string): boolean {
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number;
+}
+
+function checkRateLimit(keyHash: string): RateLimitResult {
   const now = Date.now();
   const entry = rateLimitMap.get(keyHash);
 
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(keyHash, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
+    return { allowed: true, remaining: RATE_LIMIT - 1, resetAt: now + RATE_WINDOW_MS };
   }
 
-  if (entry.count >= RATE_LIMIT) return false;
+  if (entry.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
 
   entry.count++;
-  return true;
+  return { allowed: true, remaining: RATE_LIMIT - entry.count, resetAt: entry.resetAt };
 }
 
 // ─── Auth Middleware ─────────────────────────────────────────────────────────
@@ -44,6 +52,7 @@ function checkRateLimit(keyHash: string): boolean {
 interface AuthResult {
   workspaceId: string;
   keyHash: string;
+  rateLimit: RateLimitResult;
 }
 
 async function authenticateApiKey(req: Request): Promise<AuthResult | Response> {
@@ -75,8 +84,22 @@ async function authenticateApiKey(req: Request): Promise<AuthResult | Response> 
   }
 
   // Check rate limit
-  if (!checkRateLimit(keyHash)) {
-    return jsonError("rate_limited", "Rate limit exceeded. Max 100 requests per minute.", 429);
+  const rateLimit = checkRateLimit(keyHash);
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({ error: { code: "rate_limited", message: "Rate limit exceeded. Max 100 requests per minute." } }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-RateLimit-Limit": String(RATE_LIMIT),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.ceil(rateLimit.resetAt / 1000)),
+          "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+        },
+      }
+    );
   }
 
   // Update last_used_at (fire-and-forget)
@@ -86,22 +109,34 @@ async function authenticateApiKey(req: Request): Promise<AuthResult | Response> 
     .eq("id", keyRecord.id)
     .then(() => {});
 
-  return { workspaceId: keyRecord.workspace_id, keyHash };
+  return { workspaceId: keyRecord.workspace_id, keyHash, rateLimit };
 }
 
 // ─── Response Helpers ───────────────────────────────────────────────────────
 
+function rateLimitHeaders(rl: RateLimitResult): Record<string, string> {
+  return {
+    "X-RateLimit-Limit": String(RATE_LIMIT),
+    "X-RateLimit-Remaining": String(rl.remaining),
+    "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+  };
+}
+
+let _currentRateLimit: RateLimitResult | null = null;
+
 function jsonResponse(data: unknown, status = 200): Response {
+  const rlHeaders = _currentRateLimit ? rateLimitHeaders(_currentRateLimit) : {};
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, ...rlHeaders, "Content-Type": "application/json" },
   });
 }
 
 function jsonError(code: string, message: string, status: number): Response {
+  const rlHeaders = _currentRateLimit ? rateLimitHeaders(_currentRateLimit) : {};
   return new Response(
     JSON.stringify({ error: { code, message } }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { status, headers: { ...corsHeaders, ...rlHeaders, "Content-Type": "application/json" } }
   );
 }
 
@@ -332,7 +367,8 @@ Deno.serve(async (req) => {
   const authResult = await authenticateApiKey(req);
   if (authResult instanceof Response) return authResult;
 
-  const { workspaceId } = authResult;
+  const { workspaceId, rateLimit } = authResult;
+  _currentRateLimit = rateLimit;
   const url = new URL(req.url);
   const { resource, id } = parsePath(url);
 
