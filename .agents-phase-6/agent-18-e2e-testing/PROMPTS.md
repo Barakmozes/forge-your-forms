@@ -1,11 +1,11 @@
 # Agent 18 — Prompts
 
 ## Prompt Checklist
-- [ ] 18.0 — Planning & Test Architecture
-- [ ] 18.1 — Auth & Core Flow Tests
-- [ ] 18.2 — Form Lifecycle & Mode Tests
-- [ ] 18.3 — Billing, Limits & Feature Gating Tests
-- [ ] 18.4 — Integration Tests & Coverage Report
+- [x] 18.0 — Planning & Test Architecture
+- [x] 18.1 — Auth & Core Flow Tests
+- [x] 18.2 — Form Lifecycle & Mode Tests
+- [x] 18.3 — Billing, Limits & Feature Gating Tests
+- [x] 18.4 — Integration Tests & Coverage Report
 
 ---
 
