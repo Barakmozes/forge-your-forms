@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   {t("common.retry")}
                 </Button>
                 <Button onClick={this.handleReload}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="me-2 h-4 w-4" />
                   {t("common.refresh", "Refresh Page")}
                 </Button>
               </div>

@@ -73,16 +73,16 @@ export default function AccountDeletion() {
       await signOut();
 
       toast({
-        title: t("accountDeletion.success", "Account deleted"),
-        description: t("accountDeletion.successDescription", "Your account and data have been permanently deleted."),
+        title: t("gdpr.accountDeletion.success"),
+        description: t("gdpr.accountDeletion.successDescription"),
       });
 
       navigate("/auth", { replace: true });
     } catch (err) {
       console.error("Account deletion failed:", err);
       toast({
-        title: t("accountDeletion.failed", "Deletion failed"),
-        description: t("accountDeletion.failedDescription", "Some data could not be deleted. Please contact support."),
+        title: t("gdpr.accountDeletion.failed"),
+        description: t("gdpr.accountDeletion.failedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -93,39 +93,39 @@ export default function AccountDeletion() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold mb-6">{t("accountDeletion.title", "Delete Account")}</h1>
+        <h1 className="text-2xl font-bold mb-6">{t("gdpr.accountDeletion.title")}</h1>
 
         <Card className="border-destructive/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
-              {t("accountDeletion.cardTitle", "Danger Zone")}
+              {t("gdpr.accountDeletion.cardTitle")}
             </CardTitle>
             <CardDescription>
-              {t("accountDeletion.cardDescription", "Permanently delete your account and all associated data. This action cannot be undone.")}
+              {t("gdpr.accountDeletion.cardDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-md bg-destructive/10 p-4 text-sm space-y-2">
               <p className="font-medium text-destructive">
-                {t("accountDeletion.consequencesTitle", "Deleting your account will permanently remove:")}
+                {t("gdpr.accountDeletion.consequencesTitle")}
               </p>
-              <ul className="list-disc list-inside space-y-1 text-destructive/80">
-                <li>{t("accountDeletion.consequence1", "Your profile and authentication data")}</li>
-                <li>{t("accountDeletion.consequence2", "All workspaces you own")}</li>
-                <li>{t("accountDeletion.consequence3", "All forms, submissions, and responses")}</li>
-                <li>{t("accountDeletion.consequence4", "All waitlist entries and feedback data")}</li>
-                <li>{t("accountDeletion.consequence5", "All support tickets and messages")}</li>
-                <li>{t("accountDeletion.consequence6", "Your workspace memberships")}</li>
+              <ul className="list-disc ps-5 space-y-1 text-destructive/80">
+                <li>{t("gdpr.accountDeletion.consequence1")}</li>
+                <li>{t("gdpr.accountDeletion.consequence2")}</li>
+                <li>{t("gdpr.accountDeletion.consequence3")}</li>
+                <li>{t("gdpr.accountDeletion.consequence4")}</li>
+                <li>{t("gdpr.accountDeletion.consequence5")}</li>
+                <li>{t("gdpr.accountDeletion.consequence6")}</li>
               </ul>
               <p className="font-medium text-destructive mt-3">
-                {t("accountDeletion.irreversible", "This action is irreversible.")}
+                {t("gdpr.accountDeletion.irreversible")}
               </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirm-delete">
-                {t("accountDeletion.typeToConfirm", 'Type "DELETE MY ACCOUNT" to confirm')}
+                {t("gdpr.accountDeletion.typeToConfirm")}
               </Label>
               <Input
                 id="confirm-delete"
@@ -145,13 +145,13 @@ export default function AccountDeletion() {
                 >
                   {deleting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t("accountDeletion.deleting", "Deleting account...")}
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                      {t("gdpr.accountDeletion.deleting")}
                     </>
                   ) : (
                     <>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {t("accountDeletion.deleteButton", "Delete My Account")}
+                      <Trash2 className="me-2 h-4 w-4" />
+                      {t("gdpr.accountDeletion.deleteButton")}
                     </>
                   )}
                 </Button>
@@ -159,21 +159,21 @@ export default function AccountDeletion() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    {t("accountDeletion.finalConfirmTitle", "Are you absolutely sure?")}
+                    {t("gdpr.accountDeletion.finalConfirmTitle")}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t("accountDeletion.finalConfirmDescription", "This will permanently delete your account, all workspaces you own, and all associated data. This action cannot be undone.")}
+                    {t("gdpr.accountDeletion.finalConfirmDescription")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>
-                    {t("common.cancel", "Cancel")}
+                    {t("common.cancel")}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteAccount}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {t("accountDeletion.confirmDelete", "Yes, delete everything")}
+                    {t("gdpr.accountDeletion.confirmDelete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

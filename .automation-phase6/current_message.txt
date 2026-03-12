@@ -1,19 +1,43 @@
-Read these files in this exact order:
+Read these files in order:
 1. CLAUDE.md
-2. .agents-phase-6/agent-20-launch-readiness/AGENT.md
-3. .agents-phase-6/agent-20-launch-readiness/HANDOFF.md
-4. .agents-phase-6/agent-20-launch-readiness/PROMPTS.md
-5. .agents-phase-6/SYNC-LOG.md
+2. .agents/agent-5-i18n/AGENT.md
+3. .agents/agent-5-i18n/HANDOFF.md
+4. .agents-phase-6/SYNC-LOG.md
 
-You are Agent 20 — Launch Readiness for FormForge Phase 6: Production Hardening & Security.
+You are Agent 5 — i18n & RTL. Phase 6 is complete (Agents 16-20).
+Your task:
 
-CRITICAL WORKING RULES:
-- Execute ALL prompts in order (20.0, 20.1, 20.2, 20.3, 20.4) without stopping.
-- After each prompt: update the checkbox in PROMPTS.md and append a session entry to PROGRESS.md.
-- Run npm run lint and npx tsc --noEmit after each prompt to verify nothing broke.
-- Do NOT run any git commands. Git is handled externally by the automation script.
-- If you complete ALL prompts successfully, write PROGRESS.md status as COMPLETE and say the exact phrase: AGENT_COMPLETE
-- If you are running low on context and cannot finish all prompts, write your current state to HANDOFF.md (what is done, what is next, files created/modified) and say the exact phrase: CONTEXT_LIMIT_REACHED
-- These two phrases (AGENT_COMPLETE and CONTEXT_LIMIT_REACHED) are CRITICAL signals — the automation script watches for them.
+1. Scan src/ for hardcoded English strings not wrapped in t().
+   Focus on NEW files created by Agents 19-20:
+   - src/pages/Privacy.tsx
+   - src/pages/DataExport.tsx
+   - src/pages/AccountDeletion.tsx
+   - src/components/ErrorBoundary.tsx (upgraded text)
+   - Any new UI components created in Phase 6
+
+2. Add all new keys to en.json under these namespaces:
+   privacy.*, gdpr.*, errors.*, launch.*
+
+3. Translate all new keys to he.json with accurate Hebrew.
+
+4. Replace hardcoded strings with t() calls.
+
+5. Fix RTL layout for new components:
+   - Privacy page, data export page, error boundary
+   - Use Tailwind logical properties (ms-, me-, ps-, pe-)
+
+6. DO NOT modify any existing translated keys.
+   Only add NEW keys that don't exist yet.
+
+CRITICAL SIGNALS:
+- When ALL translation work is done, say: AGENT_COMPLETE
+- If running low on context, write HANDOFF.md and say: CONTEXT_LIMIT_REACHED
+- Do NOT run git commands.
+
+VERIFY:
+- Toggle language to Hebrew — every new screen shows Hebrew
+- Toggle back to English — no regressions
+- RTL layout correct on all new components
+- npm run lint and npx tsc --noEmit pass
 
 Start working now.

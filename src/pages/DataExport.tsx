@@ -109,10 +109,10 @@ export default function DataExport() {
       URL.revokeObjectURL(url);
 
       setProgress(100);
-      toast({ title: t("dataExport.success", "Export complete"), description: t("dataExport.downloaded", "Your data has been downloaded.") });
+      toast({ title: t("gdpr.dataExport.success"), description: t("gdpr.dataExport.downloaded") });
     } catch (err) {
       console.error("Export failed:", err);
-      toast({ title: t("dataExport.failed", "Export failed"), description: t("dataExport.tryAgain", "Please try again later."), variant: "destructive" });
+      toast({ title: t("gdpr.dataExport.failed"), description: t("gdpr.dataExport.tryAgain"), variant: "destructive" });
     } finally {
       setExporting(false);
     }
@@ -121,29 +121,29 @@ export default function DataExport() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold mb-6">{t("dataExport.title", "Export Your Data")}</h1>
+        <h1 className="text-2xl font-bold mb-6">{t("gdpr.dataExport.title")}</h1>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileJson className="h-5 w-5" />
-              {t("dataExport.cardTitle", "Data Export")}
+              {t("gdpr.dataExport.cardTitle")}
             </CardTitle>
             <CardDescription>
-              {t("dataExport.cardDescription", "Download all your data in JSON format. This includes your profile, workspaces, forms, submissions, waitlist entries, feedback responses, and support tickets.")}
+              {t("gdpr.dataExport.cardDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground space-y-2">
-              <p>{t("dataExport.includesLabel", "Your export will include")}:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>{t("dataExport.profileData", "Profile information")}</li>
-                <li>{t("dataExport.workspaceData", "Workspace settings")}</li>
-                <li>{t("dataExport.formData", "All forms and their configurations")}</li>
-                <li>{t("dataExport.submissionData", "Form submissions")}</li>
-                <li>{t("dataExport.waitlistData", "Waitlist entries")}</li>
-                <li>{t("dataExport.feedbackData", "Feedback responses")}</li>
-                <li>{t("dataExport.ticketData", "Support tickets")}</li>
+              <p>{t("gdpr.dataExport.includesLabel")}:</p>
+              <ul className="list-disc ps-5 space-y-1">
+                <li>{t("gdpr.dataExport.profileData")}</li>
+                <li>{t("gdpr.dataExport.workspaceData")}</li>
+                <li>{t("gdpr.dataExport.formData")}</li>
+                <li>{t("gdpr.dataExport.submissionData")}</li>
+                <li>{t("gdpr.dataExport.waitlistData")}</li>
+                <li>{t("gdpr.dataExport.feedbackData")}</li>
+                <li>{t("gdpr.dataExport.ticketData")}</li>
               </ul>
             </div>
 
@@ -151,7 +151,7 @@ export default function DataExport() {
               <div className="space-y-2">
                 <Progress value={progress} />
                 <p className="text-sm text-muted-foreground text-center">
-                  {t("dataExport.exporting", "Exporting your data...")} {progress}%
+                  {t("gdpr.dataExport.exporting")} {progress}%
                 </p>
               </div>
             )}
@@ -159,13 +159,13 @@ export default function DataExport() {
             <Button onClick={handleExport} disabled={exporting} className="w-full">
               {exporting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("dataExport.exporting", "Exporting...")}
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {t("gdpr.dataExport.exporting")}
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
-                  {t("dataExport.exportButton", "Export My Data (JSON)")}
+                  <Download className="me-2 h-4 w-4" />
+                  {t("gdpr.dataExport.exportButton")}
                 </>
               )}
             </Button>

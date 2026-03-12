@@ -12,149 +12,119 @@ export default function Privacy() {
         <div className="mb-8">
           <Button variant="ghost" asChild>
             <Link to="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("common.backToHome", "Back to Home")}
+              <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+              {t("common.backToHome")}
             </Link>
           </Button>
         </div>
 
         <article className="prose prose-slate dark:prose-invert max-w-none">
-          <h1>{t("privacy.title", "Privacy Policy")}</h1>
+          <h1>{t("privacy.title")}</h1>
           <p className="text-muted-foreground text-sm">
-            {t("privacy.lastUpdated", "Last updated")}: March 12, 2026
+            {t("privacy.lastUpdated")}: March 12, 2026
           </p>
 
-          <h2>{t("privacy.introTitle", "Introduction")}</h2>
-          <p>
-            FormForge (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your privacy.
-            This Privacy Policy explains how we collect, use, disclose, and safeguard your information
-            when you use our platform at formforge.app (the &quot;Service&quot;).
-          </p>
+          <h2>{t("privacy.introTitle")}</h2>
+          <p>{t("privacy.introBody")}</p>
 
-          <h2>{t("privacy.dataCollectionTitle", "Data We Collect")}</h2>
-          <h3>{t("privacy.accountDataTitle", "Account Data")}</h3>
+          <h2>{t("privacy.dataCollectionTitle")}</h2>
+          <h3>{t("privacy.accountDataTitle")}</h3>
           <ul>
-            <li>Email address (required for authentication)</li>
-            <li>Full name (optional profile field)</li>
-            <li>Avatar image (optional)</li>
+            <li>{t("privacy.accountDataEmail")}</li>
+            <li>{t("privacy.accountDataName")}</li>
+            <li>{t("privacy.accountDataAvatar")}</li>
           </ul>
 
-          <h3>{t("privacy.workspaceDataTitle", "Workspace Data")}</h3>
+          <h3>{t("privacy.workspaceDataTitle")}</h3>
           <ul>
-            <li>Workspace name and configuration</li>
-            <li>Forms, form fields, and form settings</li>
-            <li>Form submissions and responses</li>
-            <li>Waitlist entries (email, name, referral data)</li>
-            <li>Feedback responses (NPS scores, comments)</li>
-            <li>Support tickets and messages</li>
+            <li>{t("privacy.workspaceDataName")}</li>
+            <li>{t("privacy.workspaceDataForms")}</li>
+            <li>{t("privacy.workspaceDataSubmissions")}</li>
+            <li>{t("privacy.workspaceDataWaitlist")}</li>
+            <li>{t("privacy.workspaceDataFeedback")}</li>
+            <li>{t("privacy.workspaceDataTickets")}</li>
           </ul>
 
-          <h3>{t("privacy.technicalDataTitle", "Technical Data")}</h3>
+          <h3>{t("privacy.technicalDataTitle")}</h3>
           <ul>
-            <li>Browser type and version</li>
-            <li>Page views and navigation patterns</li>
-            <li>Error logs (for service reliability)</li>
-            <li>Performance metrics (page load times)</li>
+            <li>{t("privacy.technicalDataBrowser")}</li>
+            <li>{t("privacy.technicalDataPageViews")}</li>
+            <li>{t("privacy.technicalDataErrors")}</li>
+            <li>{t("privacy.technicalDataPerformance")}</li>
           </ul>
 
-          <h2>{t("privacy.dataStorageTitle", "How We Store Your Data")}</h2>
-          <p>
-            Your data is stored securely using the following services:
-          </p>
+          <h2>{t("privacy.dataStorageTitle")}</h2>
+          <p>{t("privacy.dataStorageIntro")}</p>
           <ul>
-            <li><strong>Supabase</strong> (PostgreSQL database): All application data including profiles, forms, submissions,
-              and workspace data. Data is encrypted at rest (AES-256) and in transit (TLS 1.2+).
-              Hosted on AWS in the US region.</li>
-            <li><strong>Supabase Auth</strong>: Authentication tokens and session management.</li>
-            <li><strong>Supabase Storage</strong>: Uploaded images (branding, avatars).</li>
-            <li><strong>Vercel</strong>: Frontend hosting and CDN delivery. No user data stored on Vercel servers.</li>
+            <li><strong>Supabase</strong> — {t("privacy.storageSupabase")}</li>
+            <li><strong>Supabase Auth</strong> — {t("privacy.storageAuth")}</li>
+            <li><strong>Supabase Storage</strong> — {t("privacy.storageFiles")}</li>
+            <li><strong>Vercel</strong> — {t("privacy.storageVercel")}</li>
           </ul>
 
-          <h2>{t("privacy.dataProcessingTitle", "Data Processing")}</h2>
-          <p>We use the following third-party services that may process your data:</p>
+          <h2>{t("privacy.dataProcessingTitle")}</h2>
+          <p>{t("privacy.dataProcessingIntro")}</p>
           <ul>
-            <li><strong>Stripe</strong>: Payment processing for subscriptions. We do not store credit card details.
-              Stripe&apos;s privacy policy applies to payment data.</li>
-            <li><strong>Resend</strong>: Transactional email delivery (waitlist invitations, ticket notifications).
-              Email addresses and message content are processed by Resend.</li>
-            <li><strong>Anthropic (Claude AI)</strong>: AI-powered features (form generation, ticket classification).
-              Form content may be sent to Anthropic&apos;s API for processing.
-              Anthropic does not use this data for training.</li>
+            <li><strong>Stripe</strong> — {t("privacy.processingStripe")}</li>
+            <li><strong>Resend</strong> — {t("privacy.processingResend")}</li>
+            <li><strong>Anthropic (Claude AI)</strong> — {t("privacy.processingAi")}</li>
           </ul>
 
-          <h2>{t("privacy.dataSharingTitle", "Data Sharing")}</h2>
-          <p>
-            We do not sell your personal data. We share data only with:
-          </p>
+          <h2>{t("privacy.dataSharingTitle")}</h2>
+          <p>{t("privacy.dataSharingIntro")}</p>
           <ul>
-            <li>Third-party service providers listed above (for service operation)</li>
-            <li>Law enforcement (when legally required)</li>
-            <li>Workspace members (within the same workspace, as configured by the workspace owner)</li>
+            <li>{t("privacy.sharingProviders")}</li>
+            <li>{t("privacy.sharingLaw")}</li>
+            <li>{t("privacy.sharingMembers")}</li>
           </ul>
 
-          <h2>{t("privacy.dataRetentionTitle", "Data Retention")}</h2>
-          <p>
-            We retain your data for as long as your account is active. When you delete your account:
-          </p>
+          <h2>{t("privacy.dataRetentionTitle")}</h2>
+          <p>{t("privacy.dataRetentionIntro")}</p>
           <ul>
-            <li>All profile data is permanently deleted</li>
-            <li>All workspaces you own (and their forms, submissions, etc.) are permanently deleted</li>
-            <li>Deletion is cascading and irreversible</li>
-            <li>Backup data is purged within 30 days of deletion</li>
+            <li>{t("privacy.retentionProfile")}</li>
+            <li>{t("privacy.retentionWorkspaces")}</li>
+            <li>{t("privacy.retentionCascade")}</li>
+            <li>{t("privacy.retentionBackup")}</li>
           </ul>
 
-          <h2>{t("privacy.yourRightsTitle", "Your Rights")}</h2>
-          <p>
-            Under GDPR and applicable data protection laws, you have the right to:
-          </p>
+          <h2>{t("privacy.yourRightsTitle")}</h2>
+          <p>{t("privacy.yourRightsIntro")}</p>
           <ul>
-            <li><strong>Access</strong>: View all data we hold about you (available in Settings &gt; Data Export)</li>
-            <li><strong>Export</strong>: Download your data in JSON format (available in Settings &gt; Data Export)</li>
-            <li><strong>Deletion</strong>: Delete your account and all associated data (available in Settings &gt; Delete Account)</li>
-            <li><strong>Rectification</strong>: Update or correct your personal data (available in Settings &gt; Profile)</li>
-            <li><strong>Restriction</strong>: Request we limit processing of your data</li>
-            <li><strong>Portability</strong>: Receive your data in a structured, machine-readable format</li>
+            <li>{t("privacy.rightAccess")}</li>
+            <li>{t("privacy.rightExport")}</li>
+            <li>{t("privacy.rightDeletion")}</li>
+            <li>{t("privacy.rightRectification")}</li>
+            <li>{t("privacy.rightRestriction")}</li>
+            <li>{t("privacy.rightPortability")}</li>
           </ul>
 
-          <h2>{t("privacy.cookiesTitle", "Cookies & Local Storage")}</h2>
-          <p>
-            FormForge uses browser localStorage for:
-          </p>
+          <h2>{t("privacy.cookiesTitle")}</h2>
+          <p>{t("privacy.cookiesIntro")}</p>
           <ul>
-            <li>Authentication session tokens (Supabase Auth)</li>
-            <li>User language preference</li>
-            <li>Theme preference (light/dark mode)</li>
+            <li>{t("privacy.cookieAuth")}</li>
+            <li>{t("privacy.cookieLanguage")}</li>
+            <li>{t("privacy.cookieTheme")}</li>
           </ul>
-          <p>
-            We do not use tracking cookies. No third-party advertising cookies are set.
-          </p>
+          <p>{t("privacy.cookiesNoTracking")}</p>
 
-          <h2>{t("privacy.securityTitle", "Security")}</h2>
-          <p>
-            We implement the following security measures:
-          </p>
+          <h2>{t("privacy.securityTitle")}</h2>
+          <p>{t("privacy.securityIntro")}</p>
           <ul>
-            <li>Row-Level Security (RLS) on all database tables</li>
-            <li>Encrypted connections (TLS 1.2+)</li>
-            <li>JWT-based authentication with automatic token refresh</li>
-            <li>Role-based access control (owner, editor, viewer)</li>
-            <li>Security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)</li>
+            <li>{t("privacy.securityRls")}</li>
+            <li>{t("privacy.securityTls")}</li>
+            <li>{t("privacy.securityJwt")}</li>
+            <li>{t("privacy.securityRbac")}</li>
+            <li>{t("privacy.securityHeaders")}</li>
           </ul>
 
-          <h2>{t("privacy.contactTitle", "Contact Us")}</h2>
-          <p>
-            For privacy-related inquiries, data requests, or concerns, contact us at:
-          </p>
+          <h2>{t("privacy.contactTitle")}</h2>
+          <p>{t("privacy.contactIntro")}</p>
           <ul>
-            <li>Email: privacy@formforge.app</li>
+            <li dir="ltr">{t("privacy.contactEmail")}</li>
           </ul>
 
-          <h2>{t("privacy.changesTitle", "Changes to This Policy")}</h2>
-          <p>
-            We may update this Privacy Policy from time to time. We will notify users of material
-            changes via email or an in-app notification. Continued use of the Service after changes
-            constitutes acceptance of the updated policy.
-          </p>
+          <h2>{t("privacy.changesTitle")}</h2>
+          <p>{t("privacy.changesBody")}</p>
         </article>
       </div>
     </div>

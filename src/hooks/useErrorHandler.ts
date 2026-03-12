@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { logError, type ErrorContext } from "@/lib/errorLogger";
 
@@ -18,6 +19,7 @@ interface HandleAsyncOptions {
  *   );
  */
 export function useErrorHandler() {
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   async function handleAsync<T>(
@@ -26,7 +28,7 @@ export function useErrorHandler() {
   ): Promise<T | null> {
     const {
       context,
-      errorMessage = "Something went wrong. Please try again.",
+      errorMessage,
       showToast = true,
     } = options;
 
@@ -37,8 +39,8 @@ export function useErrorHandler() {
 
       if (showToast) {
         toast({
-          title: "Error",
-          description: errorMessage,
+          title: t("errors.genericTitle"),
+          description: errorMessage || t("errors.genericMessage"),
           variant: "destructive",
         });
       }
