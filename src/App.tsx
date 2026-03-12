@@ -51,6 +51,12 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
 // === END AGENT 6 ===
 
+// === AGENT 19: GDPR & Privacy pages ===
+const Privacy = lazy(() => import("./pages/Privacy"));
+const DataExport = lazy(() => import("./pages/DataExport"));
+const AccountDeletion = lazy(() => import("./pages/AccountDeletion"));
+// === END AGENT 19 ===
+
 // === AGENT 8 — Onboarding wizard ===
 const OnboardingWizard = lazy(() => import("./components/onboarding/OnboardingWizard"));
 // === END AGENT 8 ===
@@ -155,6 +161,11 @@ const AppRoutes = () => (
     <Route path="/workflows/new" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
     <Route path="/workflows/:id/edit" element={<ProtectedRoute><WorkflowBuilder /></ProtectedRoute>} />
     {/* === END AGENT 15 === */}
+    {/* === AGENT 19: GDPR & Privacy routes === */}
+    <Route path="/privacy" element={<Privacy />} />
+    <Route path="/data-export" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
+    <Route path="/delete-account" element={<ProtectedRoute><AccountDeletion /></ProtectedRoute>} />
+    {/* === END AGENT 19 === */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

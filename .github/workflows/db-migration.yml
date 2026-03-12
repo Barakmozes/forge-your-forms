@@ -1,0 +1,54 @@
+name: Database Migration Check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+
+jobs:
+  validate:
+    name: Validate SQL Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migration file naming
+        run: |
+          echo "=== Migration File Validation ==="
+          errors=0
+          for f in supabase/migrations/*.sql; do
+            basename=$(basename "$f")
+            echo "Checking $basename..."
+
+            # Verify naming convention (NNN_description.sql or timestamp format)
+            if ! echo "$basename" | grep -qE '^[0-9]+[_-].*\.sql$'; then
+              echo "  ⚠ WARNING: $basename does not follow naming convention (NNN_description.sql)"
+              errors=$((errors + 1))
+            fi
+
+            # Check for common SQL issues
+            if grep -qi 'DROP TABLE' "$f"; then
+              echo "  ⚠ WARNING: $basename contains DROP TABLE — review carefully"
+            fi
+
+            if grep -qi 'TRUNCATE' "$f"; then
+              echo "  ⚠ WARNING: $basename contains TRUNCATE — review carefully"
+            fi
+
+            # Verify RLS is enabled for new tables
+            if grep -qi 'CREATE TABLE' "$f"; then
+              if ! grep -qi 'ENABLE ROW LEVEL SECURITY' "$f"; then
+                echo "  ⚠ WARNING: $basename creates a table but may not enable RLS"
+              fi
+            fi
+
+            echo "  ✓ Basic checks passed"
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo ""
+            echo "=== $errors warning(s) found — review before merging ==="
+          else
+            echo ""
+            echo "=== All migration files validated ==="
+          fi

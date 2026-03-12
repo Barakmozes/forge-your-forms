@@ -1,14 +1,14 @@
 Read these files in this exact order:
 1. CLAUDE.md
-2. .agents-phase-6/agent-18-e2e-testing/AGENT.md
-3. .agents-phase-6/agent-18-e2e-testing/HANDOFF.md
-4. .agents-phase-6/agent-18-e2e-testing/PROMPTS.md
+2. .agents-phase-6/agent-19-devops-infra/AGENT.md
+3. .agents-phase-6/agent-19-devops-infra/HANDOFF.md
+4. .agents-phase-6/agent-19-devops-infra/PROMPTS.md
 5. .agents-phase-6/SYNC-LOG.md
 
-You are Agent 18 — E2E Testing for FormForge Phase 6: Production Hardening & Security.
+You are Agent 19 — DevOps & Infrastructure for FormForge Phase 6: Production Hardening & Security.
 
 CRITICAL WORKING RULES:
-- Execute ALL prompts in order (18.0, 18.1, 18.2, 18.3, 18.4) without stopping.
+- Execute ALL prompts in order (19.0, 19.1, 19.2, 19.3, 19.4) without stopping.
 - After each prompt: update the checkbox in PROMPTS.md and append a session entry to PROGRESS.md.
 - Run npm run lint and npx tsc --noEmit after each prompt to verify nothing broke.
 - Do NOT run any git commands. Git is handled externally by the automation script.
