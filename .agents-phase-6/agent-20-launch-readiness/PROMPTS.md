@@ -1,11 +1,11 @@
 # Agent 20 — Prompts
 
 ## Prompt Checklist
-- [ ] 20.0 — Cross-Agent Verification & Gap Analysis
-- [ ] 20.1 — Stripe Live Mode Cutover
-- [ ] 20.2 — Email Delivery & Template Seeding
-- [ ] 20.3 — Full Integration Smoke Tests
-- [ ] 20.4 — Launch Checklist & Runbook
+- [x] 20.0 — Cross-Agent Verification & Gap Analysis
+- [x] 20.1 — Stripe Live Mode Cutover
+- [x] 20.2 — Email Delivery & Template Seeding
+- [x] 20.3 — Full Integration Smoke Tests
+- [x] 20.4 — Launch Checklist & Runbook
 
 ---
 
