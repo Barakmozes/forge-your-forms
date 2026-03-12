@@ -53,8 +53,6 @@ export default function WaitlistLandingPage({
   const showPosition = settings?.showPosition !== false;
   const showCount = settings?.showCount !== false;
   const enableReferrals = settings?.enableReferrals !== false;
-  const referralBoost = typeof settings?.referral_boost === "number" ? settings.referral_boost : 0;
-
   const primaryColor = branding?.primaryColor ?? "";
   const backgroundColor = branding?.backgroundColor ?? "";
   const backgroundGradient = branding?.backgroundGradient ?? "";
@@ -116,19 +114,9 @@ export default function WaitlistLandingPage({
         return;
       }
 
-      // Get current max position for this form
-      const { data: maxRow } = await supabase
-        .from("waitlist_entries")
-        .select("position")
-        .eq("form_id", formId)
-        .order("position", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const nextPosition = (maxRow?.position ?? 0) + 1;
-
       const newReferralCode = generateReferralCode();
 
+      // Position is auto-assigned by the DB trigger (handle_waitlist_position)
       const { data: inserted, error: insertError } = await supabase
         .from("waitlist_entries")
         .insert({
@@ -137,7 +125,6 @@ export default function WaitlistLandingPage({
           name: name.trim() || null,
           referral_code: newReferralCode,
           referred_by: referralCode ?? null,
-          position: nextPosition,
         })
         .select("id, email, name, position, referral_code, referral_count")
         .single();
@@ -439,14 +426,6 @@ export default function WaitlistLandingPage({
                         {t('waitlist.shareToMoveUp')}
                       </p>
                     </div>
-                    {referralBoost > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {referralBoost === 1
-                          ? t('waitlist.eachReferralSpot', { count: referralBoost })
-                          : t('waitlist.eachReferralSpots', { count: referralBoost })}
-                      </p>
-                    )}
-
                     {/* Referral link copy */}
                     <div className="flex gap-2">
                       <Input

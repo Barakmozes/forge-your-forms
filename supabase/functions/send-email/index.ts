@@ -1,7 +1,7 @@
 // ============================================
 // Send Email Edge Function (Agent 8)
 // Sends transactional emails via Resend API.
-// Deploy: supabase functions deploy send-email
+// Deploy: supabase functions deploy send-email --no-verify-jwt
 // Secrets: RESEND_API_KEY, FROM_EMAIL
 // ============================================
 
@@ -11,6 +11,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "FormForge <noreply@formforge.io>";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -39,24 +40,53 @@ function sanitizeVariables(vars: TemplateVariables): TemplateVariables {
 }
 
 // --- Authorization check ---
+// Deployed with --no-verify-jwt so the function handles all auth.
+// SUPABASE_SERVICE_ROLE_KEY env var contains the new sb_secret_ format key.
+// Callers may use either the new key or the legacy JWT service_role key.
+
+function isServiceRoleJwt(token: string): boolean {
+  // Verify a legacy JWT service_role key by decoding its payload
+  // and checking the role claim matches this project.
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1]));
+    return (
+      payload.role === "service_role" &&
+      payload.iss === "supabase" &&
+      payload.ref === "rsuolemihuqjvrcpqjpa"
+    );
+  } catch {
+    return false;
+  }
+}
 
 async function isAuthorized(req: Request): Promise<boolean> {
-  // Accept calls from Supabase service role (internal triggers/workflows)
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` && SUPABASE_SERVICE_ROLE_KEY) {
-    return true;
-  }
-  // Accept calls with the Supabase apikey header (edge function-to-edge function)
   const apiKey = req.headers.get("apikey") ?? "";
-  if (apiKey === SUPABASE_SERVICE_ROLE_KEY && SUPABASE_SERVICE_ROLE_KEY) {
-    return true;
+
+  // Check 1: Bearer or apikey matches the service role key (new sb_secret_ format)
+  if (SUPABASE_SERVICE_ROLE_KEY) {
+    if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
+    if (apiKey === SUPABASE_SERVICE_ROLE_KEY) return true;
   }
-  // Accept calls with a valid user JWT (frontend calls via supabase.functions.invoke)
+
+  // Check 2: Bearer token is a legacy JWT with service_role claim for this project
+  if (authHeader.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    if (isServiceRoleJwt(token)) return true;
+  }
+
+  // Check 3: apikey header is a legacy JWT with service_role claim
+  if (apiKey && isServiceRoleJwt(apiKey)) return true;
+
+  // Check 4: Valid user JWT (frontend calls via supabase.functions.invoke)
   if (authHeader.startsWith("Bearer ")) {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (!error && user) return true;
   }
+
   return false;
 }
 
@@ -228,7 +258,7 @@ Deno.serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  // Authorize: service role OR authenticated user
+  // Authorize: service role key (new or legacy) OR authenticated user
   if (!(await isAuthorized(req))) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized" }),

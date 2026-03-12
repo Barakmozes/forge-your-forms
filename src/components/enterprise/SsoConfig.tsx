@@ -64,28 +64,106 @@ export default function SsoConfig() {
     }
   }
 
+  /* === AGENT 22: Improved SSO test validation with content-type check === */
   async function handleTestConnection() {
     if (!metadataUrl.trim()) {
       toast({ title: t("enterprise.sso.testFailed"), description: t("enterprise.sso.metadataRequired"), variant: "destructive" });
       return;
     }
 
+    // Basic URL format validation
+    try {
+      new URL(metadataUrl.trim());
+    } catch {
+      setTestResult("error");
+      toast({ title: t("enterprise.sso.testFailed"), description: "Invalid URL format. Please enter a valid HTTPS URL.", variant: "destructive" });
+      return;
+    }
+
     setTesting(true);
     setTestResult(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
-      // Validate the metadata URL is reachable
-      const response = await fetch(metadataUrl.trim(), { method: "HEAD", mode: "no-cors" });
-      // no-cors won't give us the status, but if it doesn't throw, the URL is reachable
-      setTestResult("success");
-      toast({ title: t("enterprise.sso.testSuccess"), description: t("enterprise.sso.testSuccessDescription") });
-    } catch {
-      setTestResult("error");
-      toast({ title: t("enterprise.sso.testFailed"), description: t("enterprise.sso.testFailedDescription"), variant: "destructive" });
+      // Try CORS-enabled GET first to validate response content
+      const response = await fetch(metadataUrl.trim(), {
+        method: "GET",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        setTestResult("error");
+        toast({
+          title: t("enterprise.sso.testFailed"),
+          description: `Server returned HTTP ${response.status}. Verify the metadata URL is correct.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check content type for XML (SAML metadata is XML)
+      const contentType = response.headers.get("content-type") ?? "";
+      const isXml = contentType.includes("xml") || contentType.includes("saml");
+
+      if (isXml) {
+        // Optionally validate SAML metadata indicators in the body
+        const body = await response.text();
+        const hasSamlIndicators = body.includes("EntityDescriptor") || body.includes("IDPSSODescriptor") || body.includes("urn:oasis:names:tc:SAML");
+
+        if (hasSamlIndicators) {
+          setTestResult("success");
+          toast({ title: t("enterprise.sso.testSuccess"), description: "Valid SAML metadata endpoint detected." });
+        } else {
+          setTestResult("success");
+          toast({ title: t("enterprise.sso.testSuccess"), description: "URL is reachable and returns XML, but no SAML metadata markers found. Verify this is the correct metadata URL." });
+        }
+      } else {
+        setTestResult("error");
+        toast({
+          title: t("enterprise.sso.testFailed"),
+          description: "URL is reachable but does not return XML. SAML metadata endpoints should return XML content.",
+          variant: "destructive",
+        });
+      }
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+
+      // CORS or network error — fall back to no-cors reachability check
+      if (fetchErr instanceof DOMException && fetchErr.name === "AbortError") {
+        setTestResult("error");
+        toast({
+          title: t("enterprise.sso.testFailed"),
+          description: "Connection timed out after 10 seconds. The server may be unreachable.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // CORS blocked — try no-cors as reachability fallback
+      try {
+        const fallbackController = new AbortController();
+        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 10000);
+        await fetch(metadataUrl.trim(), { method: "HEAD", mode: "no-cors", signal: fallbackController.signal });
+        clearTimeout(fallbackTimeout);
+
+        setTestResult("success");
+        toast({
+          title: t("enterprise.sso.testSuccess"),
+          description: "URL is reachable, but content could not be validated due to CORS restrictions. Ensure the URL points to valid SAML metadata.",
+        });
+      } catch {
+        setTestResult("error");
+        toast({ title: t("enterprise.sso.testFailed"), description: t("enterprise.sso.testFailedDescription"), variant: "destructive" });
+      }
     } finally {
       setTesting(false);
     }
   }
+  /* === END AGENT 22 === */
 
   if (loading) {
     return (

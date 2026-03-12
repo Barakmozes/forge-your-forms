@@ -43,10 +43,10 @@ describe("errorLogger", () => {
       expect(consoleSpy).toHaveBeenCalledTimes(1);
       const loggedContext = consoleSpy.mock.calls[0][1];
       expect(loggedContext).toHaveProperty("context");
+      // userId is extracted to the report root, not included in context
       expect(loggedContext.context).toEqual({
         component: "TestComponent",
         action: "testAction",
-        userId: "user-1",
       });
     });
 
@@ -64,7 +64,8 @@ describe("errorLogger", () => {
       });
 
       const loggedContext = consoleSpy.mock.calls[0][1];
-      expect(loggedContext.context.metadata).toEqual({
+      // metadata is spread flat into context (not nested under .metadata)
+      expect(loggedContext.context).toEqual({
         requestId: "req-123",
         retryCount: 3,
       });

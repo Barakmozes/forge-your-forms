@@ -56,7 +56,7 @@ const TEMPLATE_CONFIGS: Record<FormMode, { titleKey: string; descKey: string; fi
 export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFormGuideProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, loading: workspaceLoading } = useWorkspace();
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(false);
 
@@ -65,8 +65,9 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
   const Icon = MODE_ICONS[primaryMode];
 
   // Translate field labels at runtime so they match the current locale
+  // Safe fallback for modes without fieldLabelKeys (waitlist, feedback, support)
   const translatedFields = useMemo(
-    () => config.fieldLabelKeys.map(({ id, type, labelKey, required }) => ({
+    () => (config.fieldLabelKeys || []).map(({ id, type, labelKey, required }) => ({
       id, type, label: t(labelKey), required,
     })),
     [config.fieldLabelKeys, t]
@@ -129,6 +130,11 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
               <div className="flex items-center gap-2 text-emerald-600 font-medium">
                 <Check className="h-5 w-5" />
                 {t("onboarding.formCreated")}
+              </div>
+            ) : workspaceLoading ? (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">{t("common.loading")}</span>
               </div>
             ) : (
               <Button

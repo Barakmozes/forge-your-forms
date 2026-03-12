@@ -17,6 +17,7 @@ import {
 import { MessageSquare, Send, Check, Star } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { calculateSentiment } from "@/lib/npsCalculator";
 import type { Json } from "@/integrations/supabase/types";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
@@ -48,14 +49,8 @@ type SubmitState = "idle" | "submitting" | "success";
 
 // ─── NPS Helpers ─────────────────────────────────────────────────────────────
 
-function getNpsCategory(score: number): "detractor" | "passive" | "promoter" {
-  if (score <= 6) return "detractor";
-  if (score <= 8) return "passive";
-  return "promoter";
-}
-
 function getNpsButtonClasses(score: number, isSelected: boolean): string {
-  const category = getNpsCategory(score);
+  const category = calculateSentiment(score);
 
   const baseColors: Record<string, string> = {
     detractor: cn(
@@ -94,7 +89,7 @@ function getNpsButtonClasses(score: number, isSelected: boolean): string {
 function getNpsCategoryBadgeVariant(
   score: number
 ): "destructive" | "secondary" | "default" {
-  const category = getNpsCategory(score);
+  const category = calculateSentiment(score);
   if (category === "detractor") return "destructive";
   if (category === "passive") return "secondary";
   return "default";
@@ -131,7 +126,7 @@ function CustomFieldInput({
             />
           </SelectTrigger>
           <SelectContent>
-            {field.options.map((opt) => (
+            {(field.options ?? []).map((opt) => (
               <SelectItem key={opt} value={opt} className="text-base py-3">
                 {opt}
               </SelectItem>
@@ -276,7 +271,7 @@ export default function FeedbackSurveyPage({
       if (error) throw error;
 
       /* === AGENT 9: Webhook Trigger === */
-      const sentiment = npsScore >= 9 ? "promoter" : npsScore >= 7 ? "passive" : "detractor";
+      const sentiment = calculateSentiment(npsScore);
       dispatchWebhook(
         sentiment === "detractor" ? WEBHOOK_EVENTS.FEEDBACK_RESPONSE : WEBHOOK_EVENTS.FEEDBACK_RESPONSE,
         { form_id: formId, nps_score: npsScore, sentiment },
@@ -305,7 +300,7 @@ export default function FeedbackSurveyPage({
   // ─── Thank You Screen ───────────────────────────────────────────────────────
 
   if (submitState === "success" && npsScore !== null) {
-    const category = getNpsCategory(npsScore);
+    const category = calculateSentiment(npsScore);
     const categoryLabel = category === "detractor" ? t('feedback.detractor') : category === "passive" ? t('feedback.passive') : t('feedback.promoter');
     const badgeVariant = getNpsCategoryBadgeVariant(npsScore);
 
@@ -471,7 +466,7 @@ export default function FeedbackSurveyPage({
                       variant={getNpsCategoryBadgeVariant(npsScore)}
                       className="text-xs px-2.5 py-0.5"
                     >
-                      {getNpsCategory(npsScore) === "detractor" ? t('feedback.detractor') : getNpsCategory(npsScore) === "passive" ? t('feedback.passive') : t('feedback.promoter')} ({npsScore}/10)
+                      {calculateSentiment(npsScore) === "detractor" ? t('feedback.detractor') : calculateSentiment(npsScore) === "passive" ? t('feedback.passive') : t('feedback.promoter')} ({npsScore}/10)
                     </Badge>
                   </div>
                 )}

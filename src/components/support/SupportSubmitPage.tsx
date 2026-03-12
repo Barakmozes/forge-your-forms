@@ -87,6 +87,56 @@ export default function SupportSubmitPage({
     ? { backgroundColor: primaryColor, borderColor: primaryColor }
     : {};
 
+  // ─── AI Classification (fire-and-forget) ────────────────────────────────────
+  /* === AGENT 29: classify-ticket edge function === */
+
+  function classifyTicket(
+    ticketId: string,
+    ticketSubject: string,
+    ticketDesc: string,
+    ticketCategories: string[]
+  ) {
+    (async () => {
+      try {
+        // Fetch workspace_id from the form
+        const { data: formData } = await supabase
+          .from("forms")
+          .select("workspace_id")
+          .eq("id", formId)
+          .single();
+
+        if (!formData?.workspace_id) return;
+
+        const { data, error } = await supabase.functions.invoke("classify-ticket", {
+          body: {
+            subject: ticketSubject,
+            description: ticketDesc,
+            categories: ticketCategories,
+            form_id: formId,
+            workspace_id: formData.workspace_id,
+          },
+        });
+
+        if (error) {
+          console.warn("[classify-ticket] Classification skipped:", error.message);
+          return;
+        }
+
+        if (data && typeof data === "object" && "category" in data) {
+          await supabase
+            .from("tickets")
+            .update({ ai_classification: data } as Record<string, unknown>)
+            .eq("id", ticketId);
+        }
+      } catch (err) {
+        // Classification is an enhancement — never block ticket submission
+        console.warn("[classify-ticket] Silent failure:", err);
+      }
+    })();
+  }
+
+  /* === END AGENT 29 === */
+
   // ─── Form Validation ────────────────────────────────────────────────────────
 
   function validate(): boolean {
@@ -185,6 +235,10 @@ export default function SupportSubmitPage({
       /* === AGENT 15: Workflow Trigger === */
       dispatchWorkflowTrigger(formId, "ticket_created", { form_id: formId, ticket_id: ticketData.id, ticket_number: ticketData.ticket_number, subject: subject.trim(), email: email.trim(), category, priority });
       /* === END AGENT 15 === */
+
+      /* === AGENT 29: classify-ticket edge function (fire-and-forget) === */
+      classifyTicket(ticketData.id, subject.trim(), ticketDescription.trim(), categories);
+      /* === END AGENT 29 === */
 
       setSubmittedTicket({
         ticketNumber: ticketData.ticket_number,

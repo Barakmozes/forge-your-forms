@@ -408,15 +408,35 @@ interface FormRendererProps {
   isPreview?: boolean;
   settings?: FormSettings;
   branding?: FormBranding;
+  submissionCount?: number;
   onSubmitSuccess?: () => void;
 }
 
-export function FormRenderer({ fields, formId, isPreview = false, settings, branding, onSubmitSuccess }: FormRendererProps) {
+export function FormRenderer({ fields, formId, isPreview = false, settings, branding, submissionCount, onSubmitSuccess }: FormRendererProps) {
   const { t } = useTranslation();
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // === AGENT 26: closeAfterCount safety net ===
+  const closeAfterCount = settings?.closeAfterCount;
+  const isClosedByCount = !!(closeAfterCount && closeAfterCount > 0 && submissionCount !== undefined && submissionCount >= closeAfterCount);
+
+  if (isClosedByCount && !isPreview) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+          <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-semibold text-foreground">{t("forms.formClosed")}</h2>
+        <p className="text-muted-foreground max-w-sm">
+          {t("forms.formClosedDesc")}
+        </p>
+      </div>
+    );
+  }
+  // === END AGENT 26 ===
 
   const handleChange = (fieldId: string, value: string | string[] | File | null) => {
     setValues((prev) => ({ ...prev, [fieldId]: value }));

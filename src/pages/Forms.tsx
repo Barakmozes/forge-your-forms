@@ -257,8 +257,8 @@ export default function Forms() {
           </TabsList>
           <div className="flex items-center gap-2">
             {/* === AGENT 12: AI Create Button === */}
-            <FeatureGate feature="ai-form-generation" requiredPlan="business" fallback={
-              <Button variant="outline" className="gap-2 opacity-60" onClick={() => setAiDialogOpen(true)}>
+            <FeatureGate feature="ai" requiredPlan="business" featureName="AI Form Generator" fallback={
+              <Button variant="outline" className="gap-2 opacity-60" onClick={() => { setPaywallPlan("business"); setPaywallFeature("AI Form Generator"); setPaywallOpen(true); }}>
                 <Sparkles className="h-4 w-4" /> {t("ai.createWithAi")}
               </Button>
             }>

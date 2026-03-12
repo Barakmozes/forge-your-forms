@@ -223,6 +223,7 @@ export async function dispatchSlackNotification(
 
 /**
  * Syncs a contact to Mailchimp when a form submission or waitlist signup occurs.
+ * Proxied through mailchimp-sync edge function to avoid browser CORS issues.
  * Fire-and-forget — errors are silently caught.
  */
 export async function syncToMailchimp(
@@ -245,29 +246,48 @@ export async function syncToMailchimp(
 
     if (!mc?.enabled || !mc.api_key || !mc.list_id) return;
 
-    const dc = mc.api_key.split("-").pop();
-    const body: Record<string, unknown> = {
-      email_address: email,
-      status: "subscribed",
-    };
-
-    if (mergeFields && Object.keys(mergeFields).length > 0) {
-      body.merge_fields = mergeFields;
-    }
-
-    // Fire-and-forget — CORS may block client-side calls to Mailchimp API
-    // In production, this should go through a Supabase Edge Function
-    fetch(`https://${dc}.api.mailchimp.com/3.0/lists/${mc.list_id}/members`, {
-      method: "POST",
-      headers: {
-        Authorization: `apikey ${mc.api_key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }).catch(() => {
-      // Silent failure — Mailchimp sync should never block main flow
-    });
+    // Proxy through edge function to avoid CORS
+    supabase.functions
+      .invoke("mailchimp-sync", {
+        body: {
+          action: "sync",
+          api_key: mc.api_key,
+          list_id: mc.list_id,
+          email,
+          merge_fields: mergeFields,
+        },
+      })
+      .catch(() => {
+        // Silent failure — Mailchimp sync should never block main flow
+      });
   } catch {
     // Fire-and-forget
   }
+}
+
+// ─── Mailchimp List Fetch Helper ────────────────────────────────────────────
+
+/**
+ * Fetches Mailchimp audience lists via edge function proxy.
+ * Returns array of lists or throws on error.
+ */
+export async function fetchMailchimpLists(
+  apiKey: string
+): Promise<Array<{ id: string; name: string; member_count: number }>> {
+  const { data, error } = await supabase.functions.invoke("mailchimp-sync", {
+    body: {
+      action: "fetch_lists",
+      api_key: apiKey,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || "Failed to fetch Mailchimp lists");
+  }
+
+  if (!data?.success) {
+    throw new Error(data?.error || "Mailchimp API error");
+  }
+
+  return data.lists ?? [];
 }

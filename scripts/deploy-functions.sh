@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================
 # FormForge Edge Functions Deployment Script
-# Deploys all 10 edge functions to Supabase.
+# Deploys all 12 edge functions to Supabase.
 # Usage: ./scripts/deploy-functions.sh [--verify]
 # ============================================
 
 set -euo pipefail
 
-PROJECT_REF="ywsqgrjfmxdjsuaqzsnw"
+PROJECT_REF="rsuolemihuqjvrcpqjpa"
 FUNCTIONS_DIR="supabase/functions"
 VERIFY=false
 
@@ -30,6 +30,8 @@ FUNCTIONS=(
   "churn-score"
   "execute-workflow"
   "slack-notify"
+  "create-checkout"
+  "create-portal-session"
 )
 
 PASSED=0

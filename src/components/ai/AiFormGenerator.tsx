@@ -100,7 +100,7 @@ export default function AiFormGenerator({
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { createForm } = useForms();
-  const { generate, fields, title, description, isLoading, error, reset } = useAiGenerate();
+  const { generate, fields, title, description, isLoading, error, rateLimited, reset } = useAiGenerate();
   const { toast } = useToast();
 
   const [step, setStep] = useState<"mode" | "prompt" | "preview">(fixedMode ? "prompt" : "mode");
@@ -263,7 +263,7 @@ export default function AiFormGenerator({
             <Button
               className="w-full gap-2"
               onClick={handleGenerate}
-              disabled={!prompt.trim() || isLoading}
+              disabled={!prompt.trim() || isLoading || rateLimited}
             >
               {isLoading ? (
                 <>

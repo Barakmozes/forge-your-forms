@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { toast } from "@/hooks/use-toast";
+import { logError } from "@/lib/errorLogger";
 
 interface AuthContextType {
   session: Session | null;
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /* === AGENT 14: SSO Auth Flow === */
+  /* === AGENT 22: Improved error handling with toast feedback === */
   const signInWithSSO = async (workspaceSlug: string): Promise<{ error?: string }> => {
     try {
       // Look up the workspace by slug to find its SSO settings
@@ -68,7 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (wsError || !workspace) {
-        return { error: "Workspace not found" };
+        const msg = "Workspace not found. Please check the workspace slug and try again.";
+        toast({ title: "SSO Error", description: msg, variant: "destructive" });
+        logError(wsError ?? new Error(msg), { component: "AuthProvider", action: "signInWithSSO" });
+        return { error: msg };
       }
 
       // Check if SSO is enabled for this workspace
@@ -78,8 +84,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("workspace_id", workspace.id)
         .maybeSingle();
 
-      if (entError || !enterprise?.sso_enabled) {
-        return { error: "SSO is not enabled for this workspace" };
+      if (entError) {
+        const msg = "Unable to verify SSO configuration. Please try again later.";
+        toast({ title: "SSO Error", description: msg, variant: "destructive" });
+        logError(entError, { component: "AuthProvider", action: "signInWithSSO" });
+        return { error: msg };
+      }
+
+      if (!enterprise?.sso_enabled) {
+        const msg = "SSO is not enabled for this workspace. Contact your workspace administrator.";
+        toast({ title: "SSO Not Configured", description: msg, variant: "destructive" });
+        return { error: msg };
       }
 
       // Supabase Auth SSO — requires Supabase project to have SSO configured
@@ -91,7 +106,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (ssoError) {
-        return { error: ssoError.message };
+        // Map common Supabase SSO errors to user-friendly messages
+        const ssoMsg = ssoError.message?.includes("No SSO provider")
+          ? "SSO provider is not configured for this workspace. Contact your administrator."
+          : ssoError.message?.includes("rate limit")
+            ? "Too many sign-in attempts. Please wait a moment and try again."
+            : `SSO sign-in failed: ${ssoError.message}`;
+        toast({ title: "SSO Sign-In Failed", description: ssoMsg, variant: "destructive" });
+        logError(ssoError, { component: "AuthProvider", action: "signInWithSSO" });
+        return { error: ssoMsg };
       }
 
       // Redirect to the SSO provider's login page
@@ -101,9 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return {};
     } catch (err) {
-      return { error: "SSO sign-in failed. Please try again." };
+      const msg = "SSO sign-in failed unexpectedly. Please try again.";
+      toast({ title: "SSO Error", description: msg, variant: "destructive" });
+      logError(err, { component: "AuthProvider", action: "signInWithSSO" });
+      return { error: msg };
     }
   };
+  /* === END AGENT 22 === */
   /* === END AGENT 14 === */
 
   return (

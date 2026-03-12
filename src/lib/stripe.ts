@@ -1,6 +1,22 @@
 // ============================================
-// Stripe configuration & plan utilities (Agent 6)
+// Stripe configuration & plan utilities (Agent 6 + Agent 24 P7 fix)
 // ============================================
+
+/**
+ * Required environment variables for Stripe checkout:
+ *
+ * Client-side (VITE_ prefix, set in .env):
+ *   VITE_STRIPE_PRICE_PRO_MONTHLY     — Stripe Price ID for Pro monthly
+ *   VITE_STRIPE_PRICE_PRO_ANNUAL      — Stripe Price ID for Pro annual
+ *   VITE_STRIPE_PRICE_GROWTH_MONTHLY  — Stripe Price ID for Growth monthly
+ *   VITE_STRIPE_PRICE_GROWTH_ANNUAL   — Stripe Price ID for Growth annual
+ *   VITE_STRIPE_PRICE_BUSINESS_MONTHLY — Stripe Price ID for Business monthly
+ *   VITE_STRIPE_PRICE_BUSINESS_ANNUAL  — Stripe Price ID for Business annual
+ *
+ * Server-side (Supabase Edge Function secrets):
+ *   STRIPE_SECRET_KEY       — Stripe secret key (sk_live_* or sk_test_*)
+ *   STRIPE_WEBHOOK_SECRET   — Stripe webhook signing secret (whsec_*)
+ */
 
 export type PlanTier = "free" | "pro" | "growth" | "business";
 export type BillingInterval = "monthly" | "annual";
@@ -13,33 +29,48 @@ export interface StripePlan {
   name: string;
 }
 
-/**
- * Stripe price IDs — PLACEHOLDER values.
- * Replace with real Stripe Price IDs after creating products in the Stripe Dashboard.
- */
+function getStripePriceId(envVar: string, fallback: string): string {
+  const value = import.meta.env[envVar];
+  if (value) return value;
+  if (import.meta.env.DEV) {
+    console.warn(`[Stripe] Missing env var ${envVar} — using placeholder. Checkout will fail against Stripe API.`);
+  }
+  return fallback;
+}
+
 export const STRIPE_PLANS: Record<Exclude<PlanTier, "free">, StripePlan> = {
   pro: {
-    monthly: "price_pro_monthly_placeholder",
-    annual: "price_pro_annual_placeholder",
+    monthly: getStripePriceId("VITE_STRIPE_PRICE_PRO_MONTHLY", "price_1TAH5vP7upMiSmxcaxFeD3Rn"),
+    annual: getStripePriceId("VITE_STRIPE_PRICE_PRO_ANNUAL", "price_1TAH5zP7upMiSmxcxCLv1YIu"),
     price: 29,
     annualPrice: 23, // 20% discount
     name: "Pro",
   },
   growth: {
-    monthly: "price_growth_monthly_placeholder",
-    annual: "price_growth_annual_placeholder",
+    monthly: getStripePriceId("VITE_STRIPE_PRICE_GROWTH_MONTHLY", "price_1TAH63P7upMiSmxcqTjUetpc"),
+    annual: getStripePriceId("VITE_STRIPE_PRICE_GROWTH_ANNUAL", "price_1TAH66P7upMiSmxckzYCNMXF"),
     price: 59,
     annualPrice: 47, // 20% discount
     name: "Growth",
   },
   business: {
-    monthly: "price_business_monthly_placeholder",
-    annual: "price_business_annual_placeholder",
+    monthly: getStripePriceId("VITE_STRIPE_PRICE_BUSINESS_MONTHLY", "price_1TAH68P7upMiSmxcuOpvjL9e"),
+    annual: getStripePriceId("VITE_STRIPE_PRICE_BUSINESS_ANNUAL", "price_1TAH6AP7upMiSmxcUrVVDJMs"),
     price: 99,
     annualPrice: 79, // 20% discount
     name: "Business",
   },
 };
+
+/** True only when all 6 Stripe price ID env vars are set (not using placeholders) */
+export const STRIPE_CONFIG_VALID: boolean = [
+  import.meta.env.VITE_STRIPE_PRICE_PRO_MONTHLY,
+  import.meta.env.VITE_STRIPE_PRICE_PRO_ANNUAL,
+  import.meta.env.VITE_STRIPE_PRICE_GROWTH_MONTHLY,
+  import.meta.env.VITE_STRIPE_PRICE_GROWTH_ANNUAL,
+  import.meta.env.VITE_STRIPE_PRICE_BUSINESS_MONTHLY,
+  import.meta.env.VITE_STRIPE_PRICE_BUSINESS_ANNUAL,
+].every(Boolean);
 
 /** Feature access map — consumed by useSubscription.canAccess() and Agent 7 */
 export const PLAN_FEATURES: Record<PlanTier, string[]> = {

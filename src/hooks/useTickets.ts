@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, Database } from "@/integrations/supabase/types";
+import { dispatchWorkflowTrigger } from "@/lib/workflowEngine";
 
 type Ticket = Tables<"tickets">;
 type TicketStatus = Database["public"]["Enums"]["ticket_status"];
@@ -100,6 +101,20 @@ export function useTickets(formId: string) {
       setTickets((prev) =>
         prev.map((t) => (t.id === ticketId ? { ...t, ...updates } : t))
       );
+      // Dispatch workflow trigger when ticket is resolved
+      if (updates.status === "resolved") {
+        const ticket = tickets.find((t) => t.id === ticketId);
+        dispatchWorkflowTrigger(formId, "ticket_resolved", {
+          ticketId,
+          ticket_number: ticket?.ticket_number,
+          subject: ticket?.subject,
+          email: ticket?.submitted_by_email,
+          name: ticket?.submitted_by_name,
+          category: ticket?.category,
+          priority: ticket?.priority,
+          status: "resolved",
+        }).catch(() => {});
+      }
     }
     return { error };
   };
@@ -116,6 +131,22 @@ export function useTickets(formId: string) {
           ticketIds.includes(t.id) ? { ...t, status } : t
         )
       );
+      // Dispatch workflow trigger for each resolved ticket
+      if (status === "resolved") {
+        for (const id of ticketIds) {
+          const ticket = tickets.find((t) => t.id === id);
+          dispatchWorkflowTrigger(formId, "ticket_resolved", {
+            ticketId: id,
+            ticket_number: ticket?.ticket_number,
+            subject: ticket?.subject,
+            email: ticket?.submitted_by_email,
+            name: ticket?.submitted_by_name,
+            category: ticket?.category,
+            priority: ticket?.priority,
+            status: "resolved",
+          }).catch(() => {});
+        }
+      }
     }
     return { error };
   };

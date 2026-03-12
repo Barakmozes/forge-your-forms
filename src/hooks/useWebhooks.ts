@@ -116,6 +116,39 @@ export function useWebhookDeliveries(webhookId: string | undefined) {
     fetchDeliveries();
   }, [fetchDeliveries]);
 
+  // Realtime subscription for live delivery updates
+  useEffect(() => {
+    if (!webhookId) return;
+
+    const channel = supabase
+      .channel(`webhook-deliveries-${webhookId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "webhook_deliveries", filter: `webhook_id=eq.${webhookId}` },
+        (payload) => {
+          const newDelivery = payload.new as WebhookDelivery;
+          setDeliveries((prev) => {
+            // Prepend new delivery, keep max 50
+            const updated = [newDelivery, ...prev];
+            return updated.slice(0, 50);
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "webhook_deliveries", filter: `webhook_id=eq.${webhookId}` },
+        (payload) => {
+          const updated = payload.new as WebhookDelivery;
+          setDeliveries((prev) =>
+            prev.map((d) => (d.id === updated.id ? updated : d))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [webhookId]);
+
   async function retryDelivery(deliveryId: string): Promise<{ error: string | null }> {
     // Re-dispatch by invoking the edge function with stored payload
     const delivery = deliveries.find((d) => d.id === deliveryId);

@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useAuth } from "@/contexts/AuthContext";
 import { sendEmail } from "@/lib/emailTemplates";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Hammer } from "lucide-react";
@@ -25,6 +26,7 @@ export default function OnboardingWizard() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isOnboarded, isLoading, completeOnboarding, skipOnboarding, logActivationEvent } = useOnboarding();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [selectedModes, setSelectedModes] = useState<FormMode[]>([]);
@@ -41,13 +43,25 @@ export default function OnboardingWizard() {
   useEffect(() => {
     if (user && !isLoading && !isOnboarded) {
       logActivationEvent("onboarding_started");
-      // Send welcome email (fire-and-forget)
+      // Send welcome email — non-blocking, but show toast on failure
       const userName = user.user_metadata?.full_name || user.email?.split("@")[0] || "";
       sendEmail("welcome", user.email || "", {
         userName,
         dashboardUrl: window.location.origin,
+      }).then((result) => {
+        if (!result.success) {
+          toast({
+            title: t("onboarding.emailFailedTitle", "Welcome email not sent"),
+            description: t("onboarding.emailFailedDesc", "Don't worry — you can continue setting up your account."),
+            variant: "destructive",
+          });
+        }
       }).catch(() => {
-        // Welcome email is best-effort, don't block onboarding
+        toast({
+          title: t("onboarding.emailFailedTitle", "Welcome email not sent"),
+          description: t("onboarding.emailFailedDesc", "Don't worry — you can continue setting up your account."),
+          variant: "destructive",
+        });
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

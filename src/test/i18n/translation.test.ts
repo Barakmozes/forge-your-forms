@@ -37,9 +37,8 @@ describe("i18n translations", () => {
       console.warn(`Keys missing in he.json (${missingInHe.length}):\n${missingInHe.slice(0, 10).join("\n")}`);
     }
 
-    // Allow up to 10% missing keys (some may be intentionally English-only)
-    const maxMissing = Math.ceil(enKeys.length * 0.1);
-    expect(missingInHe.length).toBeLessThanOrEqual(maxMissing);
+    // All keys must have translations — 0% tolerance
+    expect(missingInHe.length).toBe(0);
   });
 
   it("all he.json keys exist in en.json", () => {
@@ -50,8 +49,8 @@ describe("i18n translations", () => {
       console.warn(`Keys missing in en.json (${missingInEn.length}):\n${missingInEn.slice(0, 10).join("\n")}`);
     }
 
-    const maxMissing = Math.ceil(heKeys.length * 0.1);
-    expect(missingInEn.length).toBeLessThanOrEqual(maxMissing);
+    // All keys must have translations — 0% tolerance
+    expect(missingInEn.length).toBe(0);
   });
 
   it("en.json values are non-empty strings at leaf level", () => {
@@ -87,8 +86,8 @@ describe("i18n translations", () => {
     const missingInHe = [...enSections].filter((s) => !heSections.has(s));
     const missingInEn = [...heSections].filter((s) => !enSections.has(s));
 
-    // Allow at most 2 mismatched sections (some may be added by agents in progress)
-    expect(missingInHe.length).toBeLessThanOrEqual(2);
-    expect(missingInEn.length).toBeLessThanOrEqual(2);
+    // All sections must match exactly
+    expect(missingInHe.length).toBe(0);
+    expect(missingInEn.length).toBe(0);
   });
 });

@@ -3,6 +3,7 @@
 // Agent 15: Visual Workflow Builder
 // ============================================
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Play, Trash2 } from "lucide-react";
+import { Play, Trash2, Info, ChevronDown, ChevronUp } from "lucide-react";
 import {
   ACTION_TYPES,
   type ActionType,
@@ -42,8 +43,16 @@ interface ActionNodeProps {
   index: number;
 }
 
+const TEMPLATE_VARIABLES = [
+  { group: "Common", vars: ["{{email}}", "{{name}}", "{{form_id}}", "{{form_title}}"] },
+  { group: "Feedback / NPS", vars: ["{{nps_score}}", "{{respondent_email}}", "{{respondent_name}}", "{{category}}", "{{follow_up}}", "{{sentiment}}"] },
+  { group: "Support / Tickets", vars: ["{{ticket_number}}", "{{subject}}", "{{description}}", "{{priority}}", "{{status}}"] },
+  { group: "Waitlist", vars: ["{{referral_code}}", "{{position}}", "{{referral_count}}"] },
+];
+
 export default function ActionNode({ action, onChange, onRemove, index }: ActionNodeProps) {
   const { t } = useTranslation();
+  const [showVars, setShowVars] = useState(false);
   const updateConfig = (key: string, value: unknown) => {
     onChange({
       ...action,
@@ -180,15 +189,31 @@ export default function ActionNode({ action, onChange, onRemove, index }: Action
         )}
 
         {action.type === ACTION_TYPES.FIRE_WEBHOOK && (
-          <div>
-            <Label className="text-xs text-muted-foreground">{t("workflows.action.eventType")}</Label>
-            <Input
-              value={String(action.config.eventType ?? "workflow.action")}
-              onChange={(e) => updateConfig("eventType", e.target.value)}
-              placeholder="workflow.action"
-              className="mt-1"
-            />
-          </div>
+          <>
+            <div>
+              <Label className="text-xs text-muted-foreground">{t("workflows.action.webhookUrl")}</Label>
+              <Input
+                value={String(action.config.url ?? "")}
+                onChange={(e) => updateConfig("url", e.target.value)}
+                placeholder="https://example.com/webhook"
+                className="mt-1"
+              />
+              {action.config.url && typeof action.config.url === "string" && !action.config.url.startsWith("https://") && (
+                <p className="mt-1 text-xs text-destructive">
+                  {t("workflows.action.webhookUrlHttpsRequired")}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">{t("workflows.action.eventType")}</Label>
+              <Input
+                value={String(action.config.eventType ?? "workflow.action")}
+                onChange={(e) => updateConfig("eventType", e.target.value)}
+                placeholder="workflow.action"
+                className="mt-1"
+              />
+            </div>
+          </>
         )}
 
         {action.type === ACTION_TYPES.CHANGE_STATUS && (
@@ -221,6 +246,37 @@ export default function ActionNode({ action, onChange, onRemove, index }: Action
               placeholder={t("workflows.action.tagNamePlaceholder")}
               className="mt-1"
             />
+          </div>
+        )}
+        {/* Template variables helper — shown for actions that accept text input */}
+        {(action.type === ACTION_TYPES.SEND_EMAIL ||
+          action.type === ACTION_TYPES.CREATE_TICKET ||
+          action.type === ACTION_TYPES.SLACK_MESSAGE ||
+          action.type === ACTION_TYPES.FIRE_WEBHOOK) && (
+          <div className="rounded-md border border-muted bg-muted/30 p-2">
+            <button
+              type="button"
+              className="flex w-full items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setShowVars(!showVars)}
+            >
+              <Info className="h-3 w-3" />
+              <span>{t("workflows.action.templateVariables")}</span>
+              {showVars ? <ChevronUp className="ml-auto h-3 w-3" /> : <ChevronDown className="ml-auto h-3 w-3" />}
+            </button>
+            {showVars && (
+              <div className="mt-2 space-y-1.5">
+                {TEMPLATE_VARIABLES.map((group) => (
+                  <div key={group.group}>
+                    <p className="text-[10px] font-medium text-muted-foreground">{group.group}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {group.vars.map((v) => (
+                        <code key={v} className="rounded bg-muted px-1 py-0.5 text-[10px]">{v}</code>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

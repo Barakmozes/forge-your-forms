@@ -456,8 +456,8 @@ export default function FormBuilder() {
                     <LayoutTemplate className="h-10 w-10 mx-auto opacity-50" />
                     <p>{t("builder.dragDropHint")}</p>
                     {/* === AGENT 12: AI Generate Fields === */}
-                    <FeatureGate feature="ai-field-generation" requiredPlan="business" fallback={
-                      <Button variant="outline" size="sm" className="gap-2 opacity-60">
+                    <FeatureGate feature="ai" requiredPlan="business" featureName="AI Form Generator" fallback={
+                      <Button variant="outline" size="sm" className="gap-2 opacity-60" disabled>
                         <Sparkles className="h-4 w-4" /> {t("ai.generateWithAi")}
                       </Button>
                     }>

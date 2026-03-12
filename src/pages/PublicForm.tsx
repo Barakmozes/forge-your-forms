@@ -22,6 +22,7 @@ interface FormData {
   mode: FormMode;
   branding: Record<string, string> | null;
   settings: Record<string, unknown> | null;
+  submission_count: number;
 }
 
 export default function PublicForm() {
@@ -39,7 +40,7 @@ export default function PublicForm() {
     if (!id) return;
     supabase
       .from("forms")
-      .select("id, title, description, fields, status, mode, branding, settings, workspace_id")
+      .select("id, title, description, fields, status, mode, branding, settings, workspace_id, submission_count")
       .eq("id", id)
       .maybeSingle()
       .then(async ({ data, error }) => {
@@ -52,6 +53,7 @@ export default function PublicForm() {
             mode: (data.mode ?? "standard") as FormMode,
             branding: data.branding as Record<string, string> | null,
             settings: data.settings as Record<string, unknown> | null,
+            submission_count: data.submission_count ?? 0,
           });
 
           // === AGENT 7: Submission Gate — lightweight limit check ===
@@ -170,6 +172,27 @@ export default function PublicForm() {
   }
   // === END AGENT 7 ===
 
+  // === AGENT 26: closeAfterCount enforcement ===
+  const closeAfterCount = (form.settings as FormSettings | null)?.closeAfterCount;
+  if (closeAfterCount && closeAfterCount > 0 && form.submission_count >= closeAfterCount) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center space-y-4 max-w-sm">
+          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">
+            {t("forms.formClosed")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("forms.formClosedDesc")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // === END AGENT 26 ===
+
   // Mode-specific rendering
   if (form.mode === "waitlist") {
     return (
@@ -251,6 +274,7 @@ export default function PublicForm() {
             isPreview={false}
             settings={form.settings as FormSettings}
             branding={form.branding as FormBranding}
+            submissionCount={form.submission_count}
           />
         )}
         {(form.branding as FormBranding)?.showPoweredBy !== false && (

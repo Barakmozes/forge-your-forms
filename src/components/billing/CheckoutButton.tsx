@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getPriceId, STRIPE_PLANS } from "@/lib/stripe";
+import { getPriceId, STRIPE_PLANS, STRIPE_CONFIG_VALID } from "@/lib/stripe";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,15 @@ export default function CheckoutButton({
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
+    if (!STRIPE_CONFIG_VALID) {
+      toast({
+        title: t("billing.error"),
+        description: t("billing.stripeNotConfigured", "Stripe is not configured. Contact your administrator."),
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!currentWorkspace || !user) {
       toast({
         title: t("billing.error"),

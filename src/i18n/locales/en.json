@@ -859,7 +859,8 @@
     "backToPricing": "Back to Pricing",
     "backToDashboard": "Back to Dashboard",
     "currentPlanBadge": "Current Plan",
-    "billingTab": "Billing"
+    "billingTab": "Billing",
+    "stripeNotConfigured": "Stripe is not configured. Contact your administrator."
   },
   "upgrade": {
     "featureRequiresPlan": "{{feature}} requires an upgrade",

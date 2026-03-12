@@ -127,6 +127,28 @@ export function useCloneTemplate() {
 
     setCloning(true);
     try {
+      // Validate template fields before cloning
+      const fields = template.fields;
+      if (!Array.isArray(fields)) {
+        toast({ title: t("common.error"), description: t("templates.cloneFailed"), variant: "destructive" });
+        setCloning(false);
+        return;
+      }
+
+      // For standard mode templates with fields, verify each field has required properties
+      if (template.mode === "standard" && fields.length > 0) {
+        const invalidField = fields.find((f) => {
+          if (!f || typeof f !== "object") return true;
+          const field = f as Record<string, unknown>;
+          return !field.id || !field.type || !field.label;
+        });
+        if (invalidField) {
+          toast({ title: t("common.error"), description: t("templates.cloneFailed"), variant: "destructive" });
+          setCloning(false);
+          return;
+        }
+      }
+
       // Create new form from template
       const { data: newForm, error: insertError } = await supabase
         .from("forms")
@@ -135,7 +157,7 @@ export function useCloneTemplate() {
           created_by: user.id,
           title: `${template.title} Copy`,
           description: template.description,
-          fields: template.fields as unknown as Record<string, unknown>,
+          fields: fields as unknown as Record<string, unknown>,
           settings: template.settings,
           mode: template.mode,
           branding: template.branding,
@@ -146,15 +168,12 @@ export function useCloneTemplate() {
 
       if (insertError) throw insertError;
 
-      // Increment use_count
-      await supabase.rpc("increment_template_use_count" as never, { template_id: template.id } as never).catch(() => {
-        // Fallback: direct update (RPC may not exist)
-        supabase
-          .from("templates")
-          .update({ use_count: (template.use_count || 0) + 1 })
-          .eq("id", template.id)
-          .then(() => {});
-      });
+      // Increment use_count via direct update
+      supabase
+        .from("templates")
+        .update({ use_count: (template.use_count || 0) + 1 })
+        .eq("id", template.id)
+        .then(() => {});
 
       toast({ title: t("templates.cloned"), description: t("templates.clonedDesc", { title: template.title }) });
 

@@ -16,7 +16,7 @@ export interface ChurnScore {
     ticket_count_30d: number;
     ticket_flag: string | null;
     sentiment_trend: string | null;
-    last_interaction: string | null;
+    last_interaction_at: string | null;
     days_since_interaction: number | null;
   };
   nps_average: number | null;

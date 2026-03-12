@@ -67,12 +67,12 @@ function resolvePlanFromPrice(priceId: string): string {
   // Map price IDs to plan names. These must match STRIPE_PLANS in src/lib/stripe.ts.
   // In production, replace placeholder values with real Stripe price IDs.
   const priceMap: Record<string, string> = {
-    price_pro_monthly_placeholder: "pro",
-    price_pro_annual_placeholder: "pro",
-    price_growth_monthly_placeholder: "growth",
-    price_growth_annual_placeholder: "growth",
-    price_business_monthly_placeholder: "business",
-    price_business_annual_placeholder: "business",
+    price_1TAH5vP7upMiSmxcaxFeD3Rn: "pro",
+    price_1TAH5zP7upMiSmxcxCLv1YIu: "pro",
+    price_1TAH63P7upMiSmxcqTjUetpc: "growth",
+    price_1TAH66P7upMiSmxckzYCNMXF: "growth",
+    price_1TAH68P7upMiSmxcuOpvjL9e: "business",
+    price_1TAH6AP7upMiSmxcUrVVDJMs: "business",
   };
   return priceMap[priceId] ?? "pro";
 }

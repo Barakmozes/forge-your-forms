@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import type { MailchimpConfig } from "@/hooks/useIntegrations";
+import { fetchMailchimpLists } from "@/hooks/useIntegrations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,31 +44,14 @@ export default function MailchimpIntegration({ config, saving, onSave }: Mailchi
   const isValidApiKey = apiKey.length > 0 && apiKey.includes("-");
   const maskedApiKey = apiKey ? `${apiKey.slice(0, 4)}${"*".repeat(Math.max(0, apiKey.length - 8))}${apiKey.slice(-4)}` : "";
 
-  // Fetch Mailchimp lists when API key changes
+  // Fetch Mailchimp lists via edge function proxy (avoids CORS)
   const fetchLists = async () => {
     if (!isValidApiKey) return;
     setFetchingLists(true);
     setListError(null);
 
     try {
-      // Extract datacenter from API key (format: key-dc)
-      const dc = apiKey.split("-").pop();
-      const response = await fetch(`https://${dc}.api.mailchimp.com/3.0/lists?count=100`, {
-        headers: {
-          Authorization: `apikey ${apiKey}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Mailchimp API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const fetchedLists = (data.lists || []).map((l: { id: string; name: string; stats: { member_count: number } }) => ({
-        id: l.id,
-        name: l.name,
-        member_count: l.stats?.member_count || 0,
-      }));
+      const fetchedLists = await fetchMailchimpLists(apiKey);
       setLists(fetchedLists);
 
       if (fetchedLists.length === 0) {
