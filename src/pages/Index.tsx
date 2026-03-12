@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   LayoutTemplate,
 } from "lucide-react";
+import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 11: Featured Templates ===
 import { useTemplates } from "@/hooks/useTemplates";
 import TemplateCard from "@/components/templates/TemplateCard";
@@ -105,6 +106,7 @@ export default function Index() {
             <Link to="/auth">
               <Button variant="ghost" size="sm">{t("landing.signIn")}</Button>
             </Link>
+            <LanguageToggle />
             <Link to="/auth">
               <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
                 {t("landing.getStartedFree")}
