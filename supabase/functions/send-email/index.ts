@@ -5,9 +5,14 @@
 // Secrets: RESEND_API_KEY, FROM_EMAIL
 // ============================================
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "FormForge <noreply@formforge.io>";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // --- HTML sanitization for user-provided template variables ---
 
@@ -35,7 +40,7 @@ function sanitizeVariables(vars: TemplateVariables): TemplateVariables {
 
 // --- Authorization check ---
 
-function isAuthorized(req: Request): boolean {
+async function isAuthorized(req: Request): Promise<boolean> {
   // Accept calls from Supabase service role (internal triggers/workflows)
   const authHeader = req.headers.get("Authorization") ?? "";
   if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` && SUPABASE_SERVICE_ROLE_KEY) {
@@ -45,6 +50,12 @@ function isAuthorized(req: Request): boolean {
   const apiKey = req.headers.get("apikey") ?? "";
   if (apiKey === SUPABASE_SERVICE_ROLE_KEY && SUPABASE_SERVICE_ROLE_KEY) {
     return true;
+  }
+  // Accept calls with a valid user JWT (frontend calls via supabase.functions.invoke)
+  if (authHeader.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (!error && user) return true;
   }
   return false;
 }
@@ -217,8 +228,8 @@ Deno.serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  // Authorize: only internal callers (service role)
-  if (!isAuthorized(req)) {
+  // Authorize: service role OR authenticated user
+  if (!(await isAuthorized(req))) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
