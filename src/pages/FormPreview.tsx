@@ -57,8 +57,13 @@ export default function FormPreview() {
 
   if (!form) return null;
 
+  const pageStyle: React.CSSProperties = {
+    ...(form.branding?.backgroundColor ? { backgroundColor: form.branding.backgroundColor } : {}),
+    ...(form.branding?.font ? { fontFamily: form.branding.font } : {}),
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={pageStyle}>
       {/* Preview Banner */}
       <div className="sticky top-0 z-50 bg-primary text-primary-foreground">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -78,8 +83,21 @@ export default function FormPreview() {
         </div>
       </div>
 
+      {/* Accent Bar */}
+      <div
+        className="h-1 w-full"
+        style={{ backgroundColor: form.branding?.primaryColor ?? "hsl(var(--primary))" }}
+      />
+
       {/* Form Content */}
       <div className="max-w-2xl mx-auto px-4 py-12 sm:py-16">
+        {/* Logo */}
+        {form.branding?.logoUrl && (
+          <div className="mb-6">
+            <img src={form.branding.logoUrl} alt="" className="h-10 object-contain" />
+          </div>
+        )}
+
         {/* Form Header */}
         <div className="mb-10 space-y-3">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
@@ -108,6 +126,15 @@ export default function FormPreview() {
             settings={form.settings}
             branding={form.branding}
           />
+        )}
+
+        {/* Powered By */}
+        {form.branding?.showPoweredBy !== false && (
+          <div className="mt-12 pt-6 border-t text-center">
+            <p className="text-xs text-muted-foreground">
+              {t("common.poweredBy")}
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Zap } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import type { PlanTier } from "@/lib/stripe";
 
 interface UsageBarProps {
@@ -92,7 +93,10 @@ export default function UsageDashboard() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>{t("upgrade.usageTitle")}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {t("upgrade.usageTitle")}
+            <InfoTooltip contentKey="tooltips.usage.info" />
+          </CardTitle>
           {showUpgrade && (
             <Button
               variant="outline"

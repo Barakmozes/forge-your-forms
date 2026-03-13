@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Users, User, CreditCard, Webhook, Code, Plug, ShieldCheck } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -245,7 +246,10 @@ export default function Settings() {
           <TabsContent value="workspace">
             <Card>
               <CardHeader>
-                <CardTitle>{t("settings.workspaceSettings")}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  {t("settings.workspaceSettings")}
+                  <InfoTooltip contentKey="tooltips.settings.workspaceInfo" />
+                </CardTitle>
                 <CardDescription>{t("settings.workspaceDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -262,7 +266,10 @@ export default function Settings() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ws-slug">{t("settings.slug")}</Label>
+                  <Label htmlFor="ws-slug" className="flex items-center gap-2">
+                    {t("settings.slug")}
+                    <InfoTooltip contentKey="tooltips.settings.slugInfo" />
+                  </Label>
                   <Input id="ws-slug" value={workspaceSlug} disabled className="bg-muted" dir="ltr" />
                   <p className="text-xs text-muted-foreground">{t("settings.readOnlyIdentifier")}</p>
                 </div>
@@ -279,7 +286,10 @@ export default function Settings() {
           <TabsContent value="members">
             <Card>
               <CardHeader>
-                <CardTitle>{t("settings.teamMembers")}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  {t("settings.teamMembers")}
+                  <InfoTooltip contentKey="tooltips.settings.membersInfo" />
+                </CardTitle>
                 <CardDescription>{t("settings.teamMembersDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -300,13 +310,15 @@ export default function Settings() {
           {/* === END AGENT 6 === */}
 
           {/* === AGENT 9: Webhooks Tab === */}
-          <TabsContent value="webhooks">
+          <TabsContent value="webhooks" className="space-y-6">
+            <p className="text-sm text-muted-foreground">{t("webhooks.introText")}</p>
             <WebhookManager />
           </TabsContent>
           {/* === END AGENT 9 === */}
 
           {/* === AGENT 9: API Tab === */}
           <TabsContent value="api" className="space-y-6">
+            <p className="text-sm text-muted-foreground">{t("api.introText")}</p>
             <ApiKeyManager />
             <ApiDocs />
           </TabsContent>
@@ -332,7 +344,10 @@ export default function Settings() {
           <TabsContent value="profile">
             <Card>
               <CardHeader>
-                <CardTitle>{t("settings.yourProfile")}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  {t("settings.yourProfile")}
+                  <InfoTooltip contentKey="tooltips.settings.profileInfo" />
+                </CardTitle>
                 <CardDescription>{t("settings.profileDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

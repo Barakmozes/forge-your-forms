@@ -63,7 +63,8 @@
     "signOut": "Sign out",
     "pricing": "Pricing",
     "templates": "Templates",
-    "workflows": "Workflows"
+    "workflows": "Workflows",
+    "atRisk": "At-Risk"
   },
   "auth": {
     "signIn": "Sign In",
@@ -577,6 +578,7 @@
     "enterCategory": "Enter category",
     "assignedTo": "Assigned To",
     "submitter": "Submitter",
+    "sentiment": "Sentiment",
     "noEmail": "No email",
     "tags": "Tags",
     "searchTagsToAdd": "Search tags to add...",
@@ -984,10 +986,12 @@
     "eventFeedback": "Feedback Response Created",
     "eventTicket": "Support Ticket Created",
     "eventTicketResolved": "Support Ticket Resolved",
-    "eventFormCreated": "Form Created"
+    "eventFormCreated": "Form Created",
+    "introText": "Webhooks send real-time HTTP POST requests to your specified URL whenever events occur in FormForge. Each payload is signed with HMAC-SHA256 using your webhook secret, so you can verify authenticity on your server."
   },
   "api": {
     "title": "API",
+    "introText": "The FormForge REST API lets you programmatically manage forms, submissions, waitlists, and tickets. Authenticate requests by including your API key in the X-API-Key header. All responses are returned in JSON format.",
     "apiKeys": "API Keys",
     "apiKeysDescription": "Manage API keys for programmatic access to your workspace.",
     "generateKey": "Generate Key",
@@ -1025,12 +1029,16 @@
     "title": "Integrations",
     "slack": "Slack",
     "slackShortDesc": "Get notified in Slack channels",
+    "slackDetailedDesc": "Receive instant Slack notifications when forms are submitted, users join your waitlist, feedback is received, or support tickets are created/resolved. Route events to specific channels.",
     "zapier": "Zapier",
     "zapierShortDesc": "Automate with 5,000+ apps",
+    "zapierDetailedDesc": "Connect FormForge to 5,000+ apps (Google Sheets, HubSpot, Notion, etc.). Automatically trigger workflows on new submissions, waitlist signups, feedback, or tickets.",
     "mailchimp": "Mailchimp",
     "mailchimpShortDesc": "Sync contacts to email lists",
+    "mailchimpDetailedDesc": "Automatically add form respondents and waitlist signups to your Mailchimp audience lists. Map form fields to Mailchimp merge tags for seamless contact sync.",
     "convertkit": "ConvertKit",
     "convertkitShortDesc": "Sync subscribers",
+    "convertkitDetailedDesc": "Sync new subscribers from forms and waitlists to ConvertKit. Coming soon — use Zapier as a workaround.",
     "noForms": "No Forms Yet",
     "noFormsDesc": "Create a form first, then configure integrations for it.",
     "selectForm": "Select Form",
@@ -1213,7 +1221,8 @@
     "analysisError": "Analysis failed",
     "generateError": "Failed to generate form",
     "analyzeError": "Failed to analyze responses",
-    "tryTemplateInstead": "Browse Templates Instead"
+    "tryTemplateInstead": "Browse Templates Instead",
+    "autoAnalyzing": "Analyzing your data..."
   },
   "predictions": {
     "atRiskCustomers": "At-Risk Customers",
@@ -1262,7 +1271,11 @@
     "acceptSuggestion": "Accept",
     "sentimentPositive": "Positive",
     "sentimentNeutral": "Neutral",
-    "sentimentNegative": "Negative"
+    "sentimentNegative": "Negative",
+    "aiGeneratingSuggestions": "Generating suggestions...",
+    "aiSuggestionsError": "Could not generate suggestions",
+    "suggestionReasoning": "Why this suggestion",
+    "refreshSuggestions": "Refresh"
   },
   "enterprise": {
     "title": "Enterprise",
@@ -1295,7 +1308,8 @@
       "testSuccessDescription": "The metadata URL is reachable",
       "testFailed": "Connection failed",
       "testFailedDescription": "The metadata URL could not be reached",
-      "metadataRequired": "Metadata URL is required"
+      "metadataRequired": "Metadata URL is required",
+      "loadError": "Failed to load SSO settings. Please try again."
     },
     "whiteLabel": {
       "title": "White Label",
@@ -1319,7 +1333,8 @@
       "invalidFile": "Please select an image file",
       "fileTooLarge": "File must be smaller than 2MB",
       "logoUploaded": "Logo uploaded successfully",
-      "uploadFailed": "Failed to upload logo"
+      "uploadFailed": "Failed to upload logo",
+      "loadError": "Failed to load white label settings. Please try again."
     },
     "domains": {
       "title": "Custom Domains",
@@ -1344,7 +1359,8 @@
       "recordType": "Type",
       "recordName": "Name",
       "recordValue": "Value",
-      "verifyDomain": "Verify Domain"
+      "verifyDomain": "Verify Domain",
+      "loadError": "Failed to load custom domains. Please try again."
     }
   },
   "workflows": {
@@ -1633,5 +1649,94 @@
   "errors": {
     "genericTitle": "Error",
     "genericMessage": "Something went wrong. Please try again."
+  },
+  "tooltips": {
+    "common": {
+      "moreInfo": "More information"
+    },
+    "nav": {
+      "settings": "Open workspace and profile settings",
+      "switchWorkspace": "Switch between your workspaces",
+      "yourAccount": "Your account and sign out",
+      "changeLanguage": "Toggle between English and Hebrew",
+      "notifications": "View your notifications",
+      "currentPlan": "Your current subscription plan"
+    },
+    "settings": {
+      "workspaceInfo": "Workspace settings control your organization's name and identifier. Only the workspace owner can make changes.",
+      "membersInfo": "Manage who has access to this workspace. You can invite editors and viewers to collaborate on forms.",
+      "profileInfo": "Your personal profile information. This is visible to other workspace members.",
+      "slugInfo": "The slug is a unique, read-only identifier for your workspace used in URLs.",
+      "saveChanges": "Save your workspace name changes",
+      "changeAvatar": "Upload a new profile picture (max 2MB)",
+      "ownerOnly": "Only the workspace owner can edit this"
+    },
+    "webhooks": {
+      "info": "Webhooks let you send real-time HTTP notifications to external services when events happen in your forms (e.g., new submission, ticket created).",
+      "addWebhook": "Create a new webhook endpoint",
+      "toggleActive": "Enable or disable this webhook",
+      "editWebhook": "Edit this webhook's URL, events, or settings",
+      "deleteWebhook": "Permanently delete this webhook"
+    },
+    "api": {
+      "info": "API keys allow external applications to access your FormForge data programmatically via the REST API. Keep your keys secret.",
+      "generateKey": "Generate a new API key",
+      "revokeKey": "Permanently revoke this API key",
+      "copyKey": "Copy the API key to your clipboard"
+    },
+    "forms": {
+      "newForm": "Create a new form, waitlist, survey, or support portal",
+      "aiCreate": "Use AI to generate a form from a text description",
+      "formMenu": "Duplicate, delete, or manage this form",
+      "viewSubmissions": "View all responses for this form",
+      "modeBadge": {
+        "standard": "Standard form with custom fields",
+        "waitlist": "Email signup waitlist with referral tracking",
+        "feedback": "NPS survey with sentiment analysis",
+        "support": "Support ticket portal with messaging"
+      },
+      "statusBadge": {
+        "draft": "This form is not yet published",
+        "active": "This form is live and accepting responses",
+        "closed": "This form is closed and no longer accepting responses"
+      }
+    },
+    "tickets": {
+      "back": "Go back to the support dashboard",
+      "internalNoteToggle": "Toggle between public reply (visible to customer) and internal note (team only)",
+      "cannedResponse": "Insert a pre-written response template",
+      "sendReply": "Send your reply to the customer",
+      "removeTag": "Remove this tag from the ticket",
+      "tagsInfo": "Tags help you categorize and filter tickets. Tags are shared across all forms in your workspace.",
+      "aiClassificationInfo": "AI automatically analyzes the ticket's subject and description to suggest a category and priority level.",
+      "acceptSuggestion": "Apply the AI-suggested category and priority to this ticket"
+    },
+    "dashboards": {
+      "copyLink": "Copy the public link to share this form",
+      "editSettings": "Edit this form's fields and settings",
+      "viewEntries": "View and manage all waitlist entries",
+      "exportData": "Export data as CSV",
+      "npsInfo": "Net Promoter Score (NPS) measures customer loyalty on a scale from -100 to +100. Scores above 0 are good, above 50 are excellent.",
+      "referralInfo": "The referral leaderboard shows which waitlist members have referred the most new signups through their unique referral links.",
+      "atRiskInfo": "At-risk customers are identified by AI based on low NPS scores, frequent support tickets, and negative sentiment trends.",
+      "aiSummaryInfo": "AI analyzes your submissions to identify common themes, overall sentiment, and suggest actionable improvements.",
+      "slaInfo": "Service Level Agreement (SLA) metrics track response times. Tickets without a first response within 24 hours are flagged as breaching SLA.",
+      "aiSuggestionsInfo": "AI generates tailored reply suggestions based on the ticket's subject, description, and category to help agents respond faster."
+    },
+    "enterprise": {
+      "ssoInfo": "Single Sign-On (SSO) allows your team to log in using your company's identity provider (e.g., Okta, Azure AD) instead of email/password.",
+      "whiteLabelInfo": "White-label branding lets you customize the app's name, logo, and colors to match your brand. Your customers will see your branding instead of FormForge.",
+      "customDomainInfo": "Custom domains allow you to serve your public forms from your own domain (e.g., forms.yourcompany.com) instead of formforge.app."
+    },
+    "integrations": {
+      "info": "Integrations connect FormForge to external tools like Slack, Zapier, and Mailchimp. Configure per-form to automatically sync data when events occur."
+    },
+    "billing": {
+      "info": "View and manage your subscription plan, payment method, and billing history.",
+      "manageBilling": "Open the billing portal to update payment method or cancel"
+    },
+    "usage": {
+      "info": "Track your current usage of submissions, forms, and team members against your plan limits."
+    }
   }
 }

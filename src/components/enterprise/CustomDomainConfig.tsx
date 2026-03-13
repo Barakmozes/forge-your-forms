@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Plus, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Copy } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 interface CustomDomain {
   id: string;
@@ -34,6 +35,7 @@ export default function CustomDomainConfig() {
 
   const [domains, setDomains] = useState<CustomDomain[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newDomain, setNewDomain] = useState("");
   const [adding, setAdding] = useState(false);
   const [verifying, setVerifying] = useState<string | null>(null);
@@ -42,14 +44,18 @@ export default function CustomDomainConfig() {
 
   const fetchDomains = useCallback(async () => {
     if (!workspaceId) return;
-    const { data, error } = await supabase
+    setLoading(true);
+    const { data, error: fetchError } = await supabase
       .from("custom_domains")
       .select("*")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setDomains(data as unknown as CustomDomain[]);
+    if (fetchError) {
+      setError(fetchError.message);
+    } else if (data) {
+      setError(null);
+      setDomains(data as CustomDomain[]);
     }
     setLoading(false);
   }, [workspaceId]);
@@ -77,7 +83,7 @@ export default function CustomDomainConfig() {
         workspace_id: workspaceId,
         domain: newDomain.trim().toLowerCase(),
         verification_token: token,
-      } as Record<string, unknown>);
+      });
 
     if (error) {
       const message = error.message.includes("duplicate")
@@ -102,7 +108,7 @@ export default function CustomDomainConfig() {
       // Mark as verified (in production, this would be done server-side after DNS check)
       const { error } = await supabase
         .from("custom_domains")
-        .update({ verified: true, ssl_status: "active" } as Record<string, unknown>)
+        .update({ verified: true, ssl_status: "active" })
         .eq("id", domain.id);
 
       if (error) throw error;
@@ -145,6 +151,20 @@ export default function CustomDomainConfig() {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm text-destructive">{t("enterprise.domains.loadError")}</p>
+          <Button variant="outline" size="sm" onClick={fetchDomains}>
+            {t("common.retry")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <FeatureGate feature="custom_domain" requiredPlan="growth" featureName={t("enterprise.domains.title")}>
       <Card>
@@ -154,7 +174,10 @@ export default function CustomDomainConfig() {
               <Globe className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle>{t("enterprise.domains.title")}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {t("enterprise.domains.title")}
+                <InfoTooltip contentKey="tooltips.enterprise.customDomainInfo" />
+              </CardTitle>
               <CardDescription>{t("enterprise.domains.description")}</CardDescription>
             </div>
           </div>

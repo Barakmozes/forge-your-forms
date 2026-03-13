@@ -3,22 +3,34 @@
 // Used in dashboard overviews.
 // ============================================
 
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { useAtRiskCustomers } from "@/hooks/useChurnPrediction";
+import { useAtRiskCustomers, useAutoCalculateChurnScores } from "@/hooks/useChurnPrediction";
 import FeatureGate from "@/components/upgrade/FeatureGate";
 import ChurnScoreBadge from "@/components/predictions/ChurnScoreBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, ArrowRight, Shield } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 export default function AtRiskWidget() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? "";
-  const { customers, loading } = useAtRiskCustomers(workspaceId, 5);
+  const { customers, loading, refetch } = useAtRiskCustomers(workspaceId, 5);
+  const { calculating } = useAutoCalculateChurnScores(workspaceId);
+
+  // Refetch only after auto-calculation transitions from true -> false
+  const wasCalculatingRef = useRef(false);
+  useEffect(() => {
+    if (wasCalculatingRef.current && !calculating && workspaceId) {
+      refetch();
+    }
+    wasCalculatingRef.current = calculating;
+  }, [calculating, workspaceId, refetch]);
 
   // Only show customers with score > 40 (medium+ risk)
   const atRisk = customers.filter((c) => c.risk_score > 40);
@@ -33,6 +45,7 @@ export default function AtRiskWidget() {
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             {t("predictions.atRiskCustomers")}
+            <InfoTooltip contentKey="tooltips.dashboards.atRiskInfo" />
           </CardTitle>
           <Button
             variant="ghost"

@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Key, Plus, Trash2, Copy, Check, AlertTriangle, Loader2 } from "lucide-react";
+import { InfoTooltip, ActionTooltip } from "@/components/ui/info-tooltip";
 import { format } from "date-fns";
 
 export default function ApiKeyManager() {
@@ -102,13 +103,16 @@ export default function ApiKeyManager() {
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
               {t("api.apiKeys")}
+              <InfoTooltip contentKey="tooltips.api.info" />
             </CardTitle>
             <CardDescription>{t("api.apiKeysDescription")}</CardDescription>
           </div>
-          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-1">
-            <Plus className="h-4 w-4" />
-            {t("api.generateKey")}
-          </Button>
+          <ActionTooltip contentKey="tooltips.api.generateKey">
+            <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-1">
+              <Plus className="h-4 w-4" />
+              {t("api.generateKey")}
+            </Button>
+          </ActionTooltip>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -158,6 +162,7 @@ export default function ApiKeyManager() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => setRevokingId(key.id)}
+                          title={t("tooltips.api.revokeKey")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -218,7 +223,7 @@ export default function ApiKeyManager() {
                     className="font-mono text-sm bg-muted"
                     onFocus={(e) => e.target.select()}
                   />
-                  <Button variant="outline" size="icon" onClick={handleCopyKey}>
+                  <Button variant="outline" size="icon" onClick={handleCopyKey} title={t("tooltips.api.copyKey")}>
                     {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>

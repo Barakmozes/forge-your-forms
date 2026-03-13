@@ -42,6 +42,10 @@ import {
   Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { useMemo } from "react";
+import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
+import type { AiSubmissionInput } from "@/lib/ai";
 
 interface WaitlistDashboardProps {
   formId: string;
@@ -108,7 +112,7 @@ export default function WaitlistDashboard({
 }: WaitlistDashboardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { stats, dailySignups, leaderboard, sourceBreakdown, loading } =
+  const { stats, dailySignups, leaderboard, sourceBreakdown, loading, entries } =
     useWaitlistAnalytics(formId);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -129,6 +133,20 @@ export default function WaitlistDashboard({
     { name: t('waitlist.direct'), value: sourceBreakdown.direct },
     { name: t('waitlist.referral'), value: sourceBreakdown.referral },
   ];
+
+  const aiSubmissions: AiSubmissionInput[] = useMemo(
+    () =>
+      entries.map((e) => ({
+        id: e.id,
+        text_fields: {
+          ...(e.email ? { email: e.email } : {}),
+          ...(e.name ? { name: e.name } : {}),
+          ...(e.referred_by ? { source: "referral" } : { source: "direct" }),
+          ...(e.metadata && typeof e.metadata === "object" ? { metadata: JSON.stringify(e.metadata) } : {}),
+        },
+      })),
+    [entries]
+  );
 
   const statCards = [
     {
@@ -179,11 +197,12 @@ export default function WaitlistDashboard({
             variant="outline"
             size="sm"
             onClick={() => navigate(`/forms/${formId}/entries`)}
+            title={t("tooltips.dashboards.viewEntries")}
           >
             <List className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {t('waitlist.viewEntries')}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+          <Button variant="outline" size="sm" onClick={handleCopyLink} title={t("tooltips.dashboards.copyLink")}>
             <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {copiedLink ? t('waitlist.copied') : t('waitlist.copyPublicLink')}
           </Button>
@@ -191,6 +210,7 @@ export default function WaitlistDashboard({
             variant="outline"
             size="sm"
             onClick={() => navigate(`/forms/${formId}/edit`)}
+            title={t("tooltips.dashboards.editSettings")}
           >
             <ExternalLink className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {t('waitlist.editSettings')}
@@ -227,6 +247,9 @@ export default function WaitlistDashboard({
           ))}
         </div>
       )}
+
+      {/* AI Summary */}
+      <AiSummaryWidget formId={formId} submissions={aiSubmissions} />
 
       {/* Growth Chart */}
       {loading ? (
@@ -374,8 +397,9 @@ export default function WaitlistDashboard({
           <Card>
             <CardHeader className="flex flex-row items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
-              <CardTitle className="text-base font-semibold">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
                 {t('waitlist.referralLeaderboard')}
+                <InfoTooltip contentKey="tooltips.dashboards.referralInfo" />
               </CardTitle>
             </CardHeader>
             <CardContent>

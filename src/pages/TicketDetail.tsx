@@ -43,6 +43,7 @@ import { useTags } from "@/hooks/useTags";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import AiCannedSuggestions from "@/components/predictions/AiCannedSuggestions";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type Ticket = Tables<"tickets">;
@@ -258,6 +259,7 @@ export default function TicketDetailPage() {
           variant="ghost"
           size="icon"
           onClick={() => navigate(`/forms/${formId}`)}
+          title={t("tooltips.tickets.back")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -392,6 +394,7 @@ export default function TicketDetailPage() {
                       isInternal && "bg-yellow-500 hover:bg-yellow-600"
                     )}
                     onClick={() => setIsInternal(!isInternal)}
+                    title={t("tooltips.tickets.internalNoteToggle")}
                   >
                     <Lock className="h-3 w-3" />
                     {isInternal ? t('support.internalNote') : t('support.publicReply')}
@@ -429,6 +432,7 @@ export default function TicketDetailPage() {
                   onClick={handleSendReply}
                   disabled={sending || !reply.trim()}
                   className="gap-2"
+                  title={t("tooltips.tickets.sendReply")}
                 >
                   <Send className="h-4 w-4" />
                   {sending
@@ -563,6 +567,7 @@ export default function TicketDetailPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Tag className="h-4 w-4" /> {t('support.tags')}
+                <InfoTooltip contentKey="tooltips.tickets.tagsInfo" />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -588,6 +593,7 @@ export default function TicketDetailPage() {
                       <button
                         className="ltr:ml-0.5 rtl:mr-0.5 hover:text-destructive"
                         onClick={() => handleRemoveTag(tag.id)}
+                        title={t("tooltips.tickets.removeTag")}
                       >
                         <X className="h-2.5 w-2.5" />
                       </button>
@@ -636,6 +642,7 @@ export default function TicketDetailPage() {
               formId={formId}
               ticketCategory={ticket.category}
               ticketSubject={ticket.subject}
+              ticketDescription={ticket.description ?? ""}
               onInsertResponse={handleInsertCanned}
             />
           )}
@@ -648,6 +655,7 @@ export default function TicketDetailPage() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />
                   {t("predictions.aiClassification")}
+                  <InfoTooltip contentKey="tooltips.tickets.aiClassificationInfo" />
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -684,6 +692,7 @@ export default function TicketDetailPage() {
                             updateField("category", classification.category);
                             updateField("priority", classification.priority);
                           }}
+                          title={t("tooltips.tickets.acceptSuggestion")}
                         >
                           {t("predictions.acceptSuggestion")}
                         </Button>

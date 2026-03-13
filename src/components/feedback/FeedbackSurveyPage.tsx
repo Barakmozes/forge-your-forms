@@ -201,7 +201,7 @@ export default function FeedbackSurveyPage({
 
   // Extract branding
   const primaryColor = branding?.primaryColor ?? "";
-  const logo = branding?.logo ?? "";
+  const logo = branding?.logoUrl ?? "";
 
   const accentStyle: React.CSSProperties = primaryColor
     ? { backgroundColor: primaryColor }
@@ -643,9 +643,11 @@ export default function FeedbackSurveyPage({
         </Card>
 
         {/* Footer branding */}
-        <p className="text-center text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
-          {t('common.poweredBy')}
-        </p>
+        {branding?.showPoweredBy !== "false" && branding?.showPoweredBy !== false && (
+          <p className="text-center text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
+            {t('common.poweredBy')}
+          </p>
+        )}
       </div>
     </div>
   );

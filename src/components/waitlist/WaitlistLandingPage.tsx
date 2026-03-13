@@ -56,7 +56,7 @@ export default function WaitlistLandingPage({
   const primaryColor = branding?.primaryColor ?? "";
   const backgroundColor = branding?.backgroundColor ?? "";
   const backgroundGradient = branding?.backgroundGradient ?? "";
-  const logo = branding?.logo ?? "";
+  const logo = branding?.logoUrl ?? "";
 
   const referralLink = useMemo(() => {
     if (!entry) return "";
@@ -491,9 +491,11 @@ export default function WaitlistLandingPage({
         </Card>
 
         {/* Footer branding */}
-        <p className="text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
-          {t('common.poweredBy')}
-        </p>
+        {branding?.showPoweredBy !== "false" && branding?.showPoweredBy !== false && (
+          <p className="text-xs text-muted-foreground/60 animate-in fade-in duration-700 delay-500">
+            {t('common.poweredBy')}
+          </p>
+        )}
       </div>
     </div>
   );

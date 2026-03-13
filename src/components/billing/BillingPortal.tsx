@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CreditCard, ExternalLink, Loader2, Calendar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import type { PlanTier } from "@/lib/stripe";
 
 const PLAN_COLORS: Record<PlanTier, string> = {
@@ -86,6 +87,7 @@ export default function BillingPortal() {
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             {t("billing.currentPlan")}
+            <InfoTooltip contentKey="tooltips.billing.info" />
           </CardTitle>
           <CardDescription>{t("billing.currentPlanDescription")}</CardDescription>
         </CardHeader>
@@ -123,6 +125,7 @@ export default function BillingPortal() {
                   onClick={handleManageBilling}
                   disabled={managingBilling}
                   className="gap-2"
+                  title={t("tooltips.billing.manageBilling")}
                 >
                   {managingBilling && <Loader2 className="h-4 w-4 animate-spin" />}
                   <ExternalLink className="h-4 w-4" />

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Shield, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 const SSO_PROVIDER_KEYS = [
   { value: "okta", labelKey: "enterprise.sso.providerOkta" },
@@ -26,7 +27,7 @@ const SSO_PROVIDER_KEYS = [
 
 export default function SsoConfig() {
   const { t } = useTranslation();
-  const { settings, loading, saving, updateSettings } = useEnterprise();
+  const { settings, loading, saving, error, updateSettings, refetch } = useEnterprise();
   const { toast } = useToast();
 
   const [ssoEnabled, setSsoEnabled] = useState(false);
@@ -175,6 +176,20 @@ export default function SsoConfig() {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm text-destructive">{t("enterprise.sso.loadError")}</p>
+          <Button variant="outline" size="sm" onClick={refetch}>
+            {t("common.retry")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <FeatureGate feature="sso" requiredPlan="business" featureName={t("enterprise.sso.title")}>
       <Card>
@@ -184,7 +199,10 @@ export default function SsoConfig() {
               <Shield className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle>{t("enterprise.sso.title")}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {t("enterprise.sso.title")}
+                <InfoTooltip contentKey="tooltips.enterprise.ssoInfo" />
+              </CardTitle>
               <CardDescription>{t("enterprise.sso.description")}</CardDescription>
             </div>
           </div>

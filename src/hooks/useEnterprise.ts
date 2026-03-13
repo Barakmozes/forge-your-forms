@@ -42,6 +42,7 @@ export function useEnterprise() {
   const [settings, setSettings] = useState<EnterpriseSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSettings = useCallback(async () => {
     if (!workspaceId) {
@@ -50,16 +51,18 @@ export function useEnterprise() {
       return;
     }
 
-    const { data, error } = await supabase
+    const { data, error: fetchError } = await supabase
       .from("enterprise_settings")
       .select("*")
       .eq("workspace_id", workspaceId)
       .maybeSingle();
 
-    if (!error && data) {
-      setSettings(data as unknown as EnterpriseSettings);
-    } else {
+    if (fetchError) {
+      setError(fetchError.message);
       setSettings(null);
+    } else {
+      setError(null);
+      setSettings(data as EnterpriseSettings | null);
     }
     setLoading(false);
   }, [workspaceId]);
@@ -108,18 +111,21 @@ export function useEnterprise() {
       // Remove timestamp fields — DB handles them
       const { created_at, updated_at, ...upsertData } = payload as EnterpriseSettings;
 
-      const { data, error } = await supabase
+      const { data, error: upsertError } = await supabase
         .from("enterprise_settings")
-        .upsert(upsertData as Record<string, unknown>, { onConflict: "workspace_id" })
+        .upsert(upsertData, { onConflict: "workspace_id" })
         .select()
         .single();
 
-      if (!error && data) {
-        setSettings(data as unknown as EnterpriseSettings);
+      if (upsertError) {
+        setError(upsertError.message);
+      } else if (data) {
+        setError(null);
+        setSettings(data as EnterpriseSettings);
       }
 
       setSaving(false);
-      return { data, error };
+      return { data, error: upsertError };
     },
     [workspaceId, settings]
   );
@@ -128,6 +134,7 @@ export function useEnterprise() {
     settings,
     loading,
     saving,
+    error,
     updateSettings,
     refetch: fetchSettings,
     // Convenience accessors

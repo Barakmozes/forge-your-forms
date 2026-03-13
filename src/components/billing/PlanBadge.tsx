@@ -30,7 +30,7 @@ export default function PlanBadge({ className, showFree = false }: PlanBadgeProp
   const label = t(`billing.plan${plan.charAt(0).toUpperCase() + plan.slice(1)}`);
 
   return (
-    <Badge variant="secondary" className={cn("text-xs font-medium", PLAN_COLORS[plan], className)}>
+    <Badge variant="secondary" className={cn("text-xs font-medium", PLAN_COLORS[plan], className)} title={t("tooltips.nav.currentPlan")}>
       {label}
     </Badge>
   );

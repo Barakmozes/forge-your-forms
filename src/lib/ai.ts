@@ -69,6 +69,25 @@ export interface AiAnalyzeResponse {
 
 export type AiSentiment = "positive" | "neutral" | "negative";
 
+export interface AiSuggestReplyRequest {
+  ticket_subject: string;
+  ticket_description?: string;
+  ticket_category?: string;
+  form_id: string;
+  workspace_id: string;
+  locale?: string;
+}
+
+export interface AiReplySuggestion {
+  label: string;
+  message: string;
+  reasoning: string;
+}
+
+export interface AiSuggestReplyResponse {
+  suggestions: AiReplySuggestion[];
+}
+
 // ─── API Calls ──────────────────────────────────────────────────────
 
 /**
@@ -135,4 +154,35 @@ export async function analyzeResponses(
   }
 
   return data as AiAnalyzeResponse;
+}
+
+/**
+ * Generate AI-powered reply suggestions for a support ticket.
+ * Calls the `ai-suggest-reply` Edge Function.
+ */
+export async function suggestReplies(
+  request: AiSuggestReplyRequest
+): Promise<AiSuggestReplyResponse> {
+  const { data, error } = await supabase.functions.invoke("ai-suggest-reply", {
+    body: request,
+  });
+
+  if (error) {
+    let message = "AI service is currently unavailable";
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json();
+        if (body?.error) message = body.error;
+      } catch { /* use default */ }
+    } else if (error.message) {
+      message = error.message;
+    }
+    throw new Error(message);
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return data as AiSuggestReplyResponse;
 }

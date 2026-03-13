@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings, LayoutTemplate, Zap } from "lucide-react";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings, LayoutTemplate, Zap, AlertTriangle } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
 import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 6: Plan Badge ===
@@ -43,6 +43,7 @@ export default function Navbar() {
     // === AGENT 15: Workflows Link ===
     { to: "/workflows", label: t("nav.workflows"), icon: Zap },
     // === END AGENT 15 ===
+    { to: "/at-risk", label: t("nav.atRisk"), icon: AlertTriangle },
   ];
 
   return (
@@ -82,7 +83,7 @@ export default function Navbar() {
           {currentWorkspace && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 max-w-[200px]">
+                <Button variant="outline" size="sm" className="gap-2 max-w-[200px]" title={t("tooltips.nav.switchWorkspace")}>
                   <span className="truncate">{currentWorkspace.name}</span>
                   <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
                 </Button>
@@ -111,7 +112,7 @@ export default function Navbar() {
 
           {/* === AGENT 1: Settings link === */}
           <Link to="/settings">
-            <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8">
+            <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" title={t("tooltips.nav.settings")}>
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
@@ -120,7 +121,7 @@ export default function Navbar() {
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="ghost" size="icon" className="rounded-full" title={t("tooltips.nav.yourAccount")}>
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                     {initials}

@@ -2,7 +2,7 @@
 // useChurnPrediction — Churn score hooks (Agent 13)
 // ============================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ChurnScore {
@@ -154,4 +154,51 @@ export function useCalculateChurnScores(workspaceId: string) {
   }, [workspaceId, calculating]);
 
   return { calculate, calculating, result };
+}
+
+// ─── useAutoCalculateChurnScores ──────────────────────────────
+
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export function useAutoCalculateChurnScores(workspaceId: string) {
+  const [calculating, setCalculating] = useState(false);
+  const triggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (!workspaceId || triggeredRef.current) return;
+
+    const checkAndCalculate = async () => {
+      try {
+        // Check the newest last_scored_at
+        const { data } = await supabase
+          .from("churn_scores")
+          .select("last_scored_at")
+          .eq("workspace_id", workspaceId)
+          .order("last_scored_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const isStale =
+          !data?.last_scored_at ||
+          Date.now() - new Date(data.last_scored_at).getTime() > STALE_THRESHOLD_MS;
+
+        if (!isStale) return;
+
+        triggeredRef.current = true;
+        setCalculating(true);
+
+        await supabase.functions.invoke("churn-score", {
+          body: { workspace_id: workspaceId },
+        });
+      } catch (err) {
+        console.error("Auto churn calculation failed:", err);
+      } finally {
+        setCalculating(false);
+      }
+    };
+
+    checkAndCalculate();
+  }, [workspaceId]);
+
+  return { calculating };
 }

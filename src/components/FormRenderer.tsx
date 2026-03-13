@@ -523,10 +523,15 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
 
   const brandingStyle: React.CSSProperties = branding
     ? {
-        ...(branding.primaryColor ? { "--ff-primary": branding.primaryColor } as React.CSSProperties : {}),
-        ...(branding.backgroundColor ? { "--ff-bg": branding.backgroundColor, backgroundColor: branding.backgroundColor } as React.CSSProperties : {}),
-        ...(branding.borderRadius ? { "--ff-radius": branding.borderRadius } as React.CSSProperties : {}),
+        ...(branding.backgroundColor ? { backgroundColor: branding.backgroundColor } : {}),
         ...(branding.font ? { fontFamily: branding.font } : {}),
+      }
+    : {};
+
+  const buttonStyle: React.CSSProperties = branding
+    ? {
+        ...(branding.primaryColor ? { backgroundColor: branding.primaryColor, borderColor: branding.primaryColor } : {}),
+        ...(branding.borderRadius ? { borderRadius: branding.borderRadius } : {}),
       }
     : {};
 
@@ -580,7 +585,8 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
         <Button
           type="submit"
           disabled={submitting}
-          className="w-full h-12 text-base font-semibold mt-4"
+          className={cn("w-full h-12 text-base font-semibold mt-4", branding?.primaryColor && "hover:opacity-90")}
+          style={buttonStyle}
         >
           {submitting ? (
             <>
@@ -598,6 +604,7 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
           type="button"
           disabled
           className="w-full h-12 text-base font-semibold mt-4 opacity-60"
+          style={buttonStyle}
         >
           {t("forms.submitPreview")}
         </Button>

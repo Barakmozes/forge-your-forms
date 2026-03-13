@@ -195,7 +195,7 @@ export default function Forms() {
   const createDialog = (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2" title={t("tooltips.forms.newForm")}>
           <Plus className="h-4 w-4" /> {t("forms.newForm")}
         </Button>
       </DialogTrigger>
@@ -277,7 +277,7 @@ export default function Forms() {
                 <Sparkles className="h-4 w-4" /> {t("ai.createWithAi")}
               </Button>
             }>
-              <Button variant="outline" className="gap-2" onClick={() => setAiDialogOpen(true)}>
+              <Button variant="outline" className="gap-2" onClick={() => setAiDialogOpen(true)} title={t("tooltips.forms.aiCreate")}>
                 <Sparkles className="h-4 w-4" /> {t("ai.createWithAi")}
               </Button>
             </FeatureGate>
@@ -332,6 +332,7 @@ export default function Forms() {
                               size="icon"
                               className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => e.stopPropagation()}
+                              title={t("tooltips.forms.formMenu")}
                             >
                               <MoreVertical className="h-3.5 w-3.5" />
                             </Button>
@@ -372,7 +373,7 @@ export default function Forms() {
                           e.stopPropagation();
                           navigate(`/forms/${form.id}/submissions`);
                         }}
-                        title="View submissions"
+                        title={t("tooltips.forms.viewSubmissions")}
                       >
                         <Inbox className="h-3.5 w-3.5" />
                         <span className="font-medium tabular-nums">

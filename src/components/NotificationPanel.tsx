@@ -77,7 +77,7 @@ export default function NotificationPanel() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-8 w-8">
+        <Button variant="ghost" size="icon" className="relative h-8 w-8" title={t("tooltips.nav.notifications")}>
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 ltr:-right-1 rtl:-left-1 h-4 min-w-4 px-1 text-[10px] font-bold flex items-center justify-center bg-destructive text-destructive-foreground">

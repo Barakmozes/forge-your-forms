@@ -65,6 +65,7 @@ export default function IntegrationManager() {
       key: "slack" as const,
       name: t("integrations.slack"),
       desc: t("integrations.slackShortDesc"),
+      detailedDesc: t("integrations.slackDetailedDesc"),
       icon: Hash,
       color: "bg-[#4A154B]",
       connected: integrations.slack?.enabled ?? false,
@@ -73,6 +74,7 @@ export default function IntegrationManager() {
       key: "zapier" as const,
       name: t("integrations.zapier"),
       desc: t("integrations.zapierShortDesc"),
+      detailedDesc: t("integrations.zapierDetailedDesc"),
       icon: Zap,
       color: "bg-orange-500",
       connected: integrations.zapier?.enabled ?? false,
@@ -81,6 +83,7 @@ export default function IntegrationManager() {
       key: "mailchimp" as const,
       name: t("integrations.mailchimp"),
       desc: t("integrations.mailchimpShortDesc"),
+      detailedDesc: t("integrations.mailchimpDetailedDesc"),
       icon: Mail,
       color: "bg-[#FFE01B]",
       connected: integrations.mailchimp?.enabled && !!integrations.mailchimp?.list_id,
@@ -89,6 +92,7 @@ export default function IntegrationManager() {
       key: "convertkit" as const,
       name: t("integrations.convertkit"),
       desc: t("integrations.convertkitShortDesc"),
+      detailedDesc: t("integrations.convertkitDetailedDesc"),
       icon: Send,
       color: "bg-red-500",
       connected: false,
@@ -155,26 +159,28 @@ export default function IntegrationManager() {
         ) : (
           <>
             {/* Integration Status Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               {integrationCards.map((card) => (
                 <Card key={card.key} className="cursor-default">
-                  <CardContent className="flex items-center gap-3 py-4">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.color}`}>
-                      <card.icon className={`h-5 w-5 ${card.key === "mailchimp" ? "text-black" : "text-white"}`} />
+                  <CardContent className="py-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.color}`}>
+                        <card.icon className={`h-5 w-5 ${card.key === "mailchimp" ? "text-black" : "text-white"}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{card.name}</p>
+                      </div>
+                      {card.connected ? (
+                        <Badge variant="outline" className="shrink-0 text-green-600 border-green-300">
+                          {t("integrations.on")}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="shrink-0 text-muted-foreground">
+                          {t("integrations.off")}
+                        </Badge>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{card.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{card.desc}</p>
-                    </div>
-                    {card.connected ? (
-                      <Badge variant="outline" className="shrink-0 text-green-600 border-green-300 ms-auto">
-                        {t("integrations.on")}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="shrink-0 text-muted-foreground ms-auto">
-                        {t("integrations.off")}
-                      </Badge>
-                    )}
+                    <p className="text-xs text-muted-foreground leading-relaxed">{card.detailedDesc}</p>
                   </CardContent>
                 </Card>
               ))}

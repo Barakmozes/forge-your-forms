@@ -49,6 +49,44 @@ export type Database = {
           },
         ]
       }
+      ai_cache: {
+        Row: {
+          cache_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          input_hash: string
+          output: Json
+          workspace_id: string
+        }
+        Insert: {
+          cache_type: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          input_hash: string
+          output?: Json
+          workspace_id: string
+        }
+        Update: {
+          cache_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          input_hash?: string
+          output?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_cache_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -902,6 +940,22 @@ export type Database = {
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      lookup_profile_for_invite: {
+        Args: { email_input: string }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
+      lookup_profiles_by_ids: {
+        Args: { user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          id: string
+        }[]
       }
     }
     Enums: {

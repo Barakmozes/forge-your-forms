@@ -90,5 +90,5 @@ export function useWaitlistAnalytics(formId: string) {
     return { direct, referral };
   }, [entries]);
 
-  return { stats, dailySignups, leaderboard, sourceBreakdown, loading };
+  return { stats, dailySignups, leaderboard, sourceBreakdown, loading, entries };
 }

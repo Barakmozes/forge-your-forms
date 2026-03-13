@@ -96,9 +96,7 @@ export default function MembersManager() {
 
     const userIds = data.map((m) => m.user_id);
     const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, email, full_name, avatar_url")
-      .in("id", userIds);
+      .rpc("lookup_profiles_by_ids", { user_ids: userIds });
 
     const merged: MemberRow[] = data.map((m) => {
       const profile = profiles?.find((p) => p.id === m.user_id);
@@ -122,9 +120,7 @@ export default function MembersManager() {
     const result = await handleAsync(
       async () => {
         const { data: profile, error: profileErr } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("email", inviteEmail.trim().toLowerCase())
+          .rpc("lookup_profile_for_invite", { email_input: inviteEmail.trim().toLowerCase() })
           .maybeSingle();
 
         if (profileErr) throw profileErr;
@@ -167,7 +163,7 @@ export default function MembersManager() {
       return;
     }
 
-    await handleAsync(
+    const removeResult = await handleAsync(
       async () => {
         const { error } = await supabase
           .from("workspace_members")
@@ -176,6 +172,7 @@ export default function MembersManager() {
           .eq("user_id", memberId);
 
         if (error) throw error;
+        return true;
       },
       {
         context: { component: "MembersManager", action: "removeMember" },
@@ -183,14 +180,16 @@ export default function MembersManager() {
       }
     );
 
-    toast({ title: t("members.memberRemoved") });
-    fetchMembers();
+    if (removeResult) {
+      toast({ title: t("members.memberRemoved") });
+      fetchMembers();
+    }
   }
 
   async function handleRoleChange(memberId: string, newRole: WorkspaceRole) {
     if (!currentWorkspace) return;
 
-    await handleAsync(
+    const roleResult = await handleAsync(
       async () => {
         const { error } = await supabase
           .from("workspace_members")
@@ -199,6 +198,7 @@ export default function MembersManager() {
           .eq("user_id", memberId);
 
         if (error) throw error;
+        return true;
       },
       {
         context: { component: "MembersManager", action: "changeRole" },
@@ -206,8 +206,10 @@ export default function MembersManager() {
       }
     );
 
-    toast({ title: t("members.roleUpdated"), description: t("members.roleChangedTo", { role: newRole }) });
-    fetchMembers();
+    if (roleResult) {
+      toast({ title: t("members.roleUpdated"), description: t("members.roleChangedTo", { role: newRole }) });
+      fetchMembers();
+    }
   }
 
   function getInitials(name: string | null, email: string): string {

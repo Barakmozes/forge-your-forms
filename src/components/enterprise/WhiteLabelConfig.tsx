@@ -14,11 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Paintbrush, Upload, Loader2, Eye } from "lucide-react";
+import { Paintbrush, Upload, Loader2, Eye, AlertCircle } from "lucide-react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 export default function WhiteLabelConfig() {
   const { t } = useTranslation();
-  const { settings, loading, saving, updateSettings } = useEnterprise();
+  const { settings, loading, saving, error, updateSettings, refetch } = useEnterprise();
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
 
@@ -99,6 +100,20 @@ export default function WhiteLabelConfig() {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm text-destructive">{t("enterprise.whiteLabel.loadError")}</p>
+          <Button variant="outline" size="sm" onClick={refetch}>
+            {t("common.retry")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <FeatureGate feature="white_label" requiredPlan="business" featureName={t("enterprise.whiteLabel.title")}>
       <Card>
@@ -108,7 +123,10 @@ export default function WhiteLabelConfig() {
               <Paintbrush className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle>{t("enterprise.whiteLabel.title")}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {t("enterprise.whiteLabel.title")}
+                <InfoTooltip contentKey="tooltips.enterprise.whiteLabelInfo" />
+              </CardTitle>
               <CardDescription>{t("enterprise.whiteLabel.description")}</CardDescription>
             </div>
           </div>

@@ -47,11 +47,13 @@ import {
   BarChart2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 // === AGENT 12: AI Summary ===
 import { useMemo } from "react";
 import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
 import type { AiSubmissionInput } from "@/lib/ai";
 // === END AGENT 12 ===
+import AtRiskWidget from "@/components/predictions/AtRiskWidget";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -381,7 +383,7 @@ export default function FeedbackDashboard({
               </Button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+          <Button variant="outline" size="sm" onClick={handleCopyLink} title={t("tooltips.dashboards.copyLink")}>
             <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {copiedLink ? t('feedback.copied') : t('feedback.copySurveyLink')}
           </Button>
@@ -400,8 +402,9 @@ export default function FeedbackDashboard({
           {/* NPS Score Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                 {t('feedback.npsScore')}
+                <InfoTooltip contentKey="tooltips.dashboards.npsInfo" />
               </CardTitle>
               <div className={`rounded-md p-2 ${getNpsBgColor(npsScore)}`}>
                 <BarChart2 className={`h-4 w-4 ${getNpsColor(npsScore)}`} />
@@ -902,6 +905,9 @@ export default function FeedbackDashboard({
           </Card>
         </div>
       )}
+
+      {/* At-Risk Customers Widget */}
+      <AtRiskWidget />
     </div>
   );
 }

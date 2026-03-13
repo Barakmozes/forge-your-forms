@@ -26,12 +26,26 @@ import {
   Lightbulb,
   Tag,
 } from "lucide-react";
-import type { AiSubmissionInput } from "@/lib/ai";
+import type { AiSubmissionInput, AiSummary, SubmissionSentiment } from "@/lib/ai";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
+
+export interface ExternalAnalysis {
+  summary: AiSummary | null;
+  sentiments: SubmissionSentiment[];
+  isLoading: boolean;
+  error: string | null;
+  lastAnalyzedAt: string | null;
+  analyze: (submissions: AiSubmissionInput[], locale: string) => Promise<unknown>;
+}
 
 interface AiSummaryWidgetProps {
   formId: string;
   /** Pre-extracted text submissions for analysis */
   submissions: AiSubmissionInput[];
+  /** When true, auto-trigger analysis on mount if ≥3 submissions */
+  autoAnalyze?: boolean;
+  /** Supply externally-owned analysis state (for sharing sentiments with parent) */
+  externalAnalysis?: ExternalAnalysis;
 }
 
 const TREND_ICONS: Record<string, React.ElementType> = {
@@ -52,11 +66,24 @@ const SENTIMENT_COLORS: Record<string, string> = {
   negative: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400",
 };
 
-export default function AiSummaryWidget({ formId, submissions }: AiSummaryWidgetProps) {
+export default function AiSummaryWidget({
+  formId,
+  submissions,
+  autoAnalyze = true,
+  externalAnalysis,
+}: AiSummaryWidgetProps) {
   const { t, i18n } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? "";
-  const { analyze, summary, isLoading, error, lastAnalyzedAt } = useAiAnalysis(formId, workspaceId);
+
+  const shouldAutoTrigger = autoAnalyze && submissions.length >= 3;
+  const internalAnalysis = useAiAnalysis(formId, workspaceId, shouldAutoTrigger && !externalAnalysis ? {
+    autoTrigger: true,
+    submissions,
+    locale: i18n.language,
+  } : undefined);
+
+  const { analyze, summary, isLoading, error, lastAnalyzedAt } = externalAnalysis ?? internalAnalysis;
 
   const handleAnalyze = () => {
     if (submissions.length === 0 || !workspaceId) return;
@@ -70,6 +97,7 @@ export default function AiSummaryWidget({ formId, submissions }: AiSummaryWidget
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             {t("ai.summary")}
+            <InfoTooltip contentKey="tooltips.dashboards.aiSummaryInfo" />
           </CardTitle>
           <Button
             variant="ghost"
@@ -100,6 +128,13 @@ export default function AiSummaryWidget({ formId, submissions }: AiSummaryWidget
                   ? t("ai.noDataToAnalyze")
                   : t("ai.clickAnalyze")}
               </p>
+            </div>
+          )}
+
+          {!summary && isLoading && (
+            <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <p className="text-sm">{t("ai.autoAnalyzing")}</p>
             </div>
           )}
 

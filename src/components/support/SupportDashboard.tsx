@@ -78,6 +78,7 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 // === AGENT 12: AI Summary ===
 import AiSummaryWidget from "@/components/ai/AiSummaryWidget";
 // === AGENT 13: At-Risk Widget ===
@@ -85,6 +86,9 @@ import AtRiskWidget from "@/components/predictions/AtRiskWidget";
 // === END AGENT 13 ===
 import type { AiSubmissionInput } from "@/lib/ai";
 // === END AGENT 12 ===
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useAiAnalysis } from "@/hooks/useAiAnalysis";
+import SentimentBadge from "@/components/ai/SentimentBadge";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -424,8 +428,10 @@ export default function SupportDashboard({
   formTitle,
   formStatus,
 }: SupportDashboardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { currentWorkspace } = useWorkspace();
+  const workspaceId = currentWorkspace?.id ?? "";
   const { tickets, loading, updateTicket, bulkUpdateStatus, ticketsByStatus } =
     useTickets(formId);
   const {
@@ -624,6 +630,22 @@ export default function SupportDashboard({
         })),
     [tickets]
   );
+
+  // Lifted AI analysis — shared between widget and sentiment column
+  const aiAnalysis = useAiAnalysis(formId, workspaceId, aiSubmissions.length >= 3 ? {
+    autoTrigger: true,
+    submissions: aiSubmissions,
+    locale: i18n.language,
+  } : undefined);
+
+  // Build sentiment map from analysis results
+  const sentimentMap = useMemo(() => {
+    const map = new Map<string, "positive" | "neutral" | "negative">();
+    for (const s of aiAnalysis.sentiments) {
+      map.set(s.submissionId, s.sentiment);
+    }
+    return map;
+  }, [aiAnalysis.sentiments]);
   // === END AGENT 12 ===
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -631,7 +653,7 @@ export default function SupportDashboard({
   return (
     <div className="space-y-6">
       {/* === AGENT 12: AI Summary === */}
-      <AiSummaryWidget formId={formId} submissions={aiSubmissions} />
+      <AiSummaryWidget formId={formId} submissions={aiSubmissions} externalAnalysis={aiAnalysis} />
       {/* === END AGENT 12 === */}
 
       {/* Top Action Bar */}
@@ -647,7 +669,7 @@ export default function SupportDashboard({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+          <Button variant="outline" size="sm" onClick={handleCopyLink} title={t("tooltips.dashboards.copyLink")}>
             <Copy className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {copyLabel === "copied" ? t('common.copied') : t('support.copySubmitLink')}
           </Button>
@@ -668,10 +690,11 @@ export default function SupportDashboard({
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertDescription>
             <div className="space-y-3">
-              <p className="font-medium text-amber-800 dark:text-amber-300">
+              <p className="font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                 {slaBreaches.length > 1
                   ? t('support.slaOverAlertPlural', { count: slaBreaches.length })
                   : t('support.slaOverAlert', { count: slaBreaches.length })}
+                <InfoTooltip contentKey="tooltips.dashboards.slaInfo" />
               </p>
               <div className="space-y-2">
                 {slaBreaches.slice(0, 5).map((ticket) => (
@@ -1252,6 +1275,9 @@ export default function SupportDashboard({
                             <TableHead>{t('support.subject')}</TableHead>
                             <TableHead className="w-28">{t('support.status')}</TableHead>
                             <TableHead className="w-24">{t('support.priority')}</TableHead>
+                            <TableHead className="hidden md:table-cell w-24">
+                              {t('support.sentiment')}
+                            </TableHead>
                             <TableHead className="hidden md:table-cell w-28">
                               {t('support.category')}
                             </TableHead>
@@ -1310,6 +1336,13 @@ export default function SupportDashboard({
                                 >
                                   {t(`support.${ticket.priority}`)}
                                 </Badge>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {sentimentMap.has(ticket.id) ? (
+                                  <SentimentBadge sentiment={sentimentMap.get(ticket.id)!} size="sm" />
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">—</span>
+                                )}
                               </TableCell>
                               <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                                 {ticket.category ?? "--"}

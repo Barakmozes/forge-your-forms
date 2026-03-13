@@ -32,6 +32,7 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
+import { InfoTooltip, ActionTooltip } from "@/components/ui/info-tooltip";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -133,13 +134,16 @@ export default function WebhookManager() {
             <CardTitle className="flex items-center gap-2">
               <Webhook className="h-5 w-5" />
               {t("webhooks.title")}
+              <InfoTooltip contentKey="tooltips.webhooks.info" />
             </CardTitle>
             <CardDescription>{t("webhooks.subtitle")}</CardDescription>
           </div>
-          <Button onClick={() => setShowForm(true)} size="sm" className="gap-1">
-            <Plus className="h-4 w-4" />
-            {t("webhooks.addWebhook")}
-          </Button>
+          <ActionTooltip contentKey="tooltips.webhooks.addWebhook">
+            <Button onClick={() => setShowForm(true)} size="sm" className="gap-1">
+              <Plus className="h-4 w-4" />
+              {t("webhooks.addWebhook")}
+            </Button>
+          </ActionTooltip>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -198,12 +202,14 @@ export default function WebhookManager() {
                           <Switch
                             checked={wh.active}
                             onCheckedChange={(checked) => handleToggle(wh.id, checked)}
+                            title={t("tooltips.webhooks.toggleActive")}
                           />
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
                             onClick={(e) => { e.stopPropagation(); setEditingWebhook(wh); }}
+                            title={t("tooltips.webhooks.editWebhook")}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -212,6 +218,7 @@ export default function WebhookManager() {
                             size="icon"
                             className={cn("h-8 w-8", "text-destructive hover:text-destructive")}
                             onClick={(e) => { e.stopPropagation(); setDeletingId(wh.id); }}
+                            title={t("tooltips.webhooks.deleteWebhook")}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
