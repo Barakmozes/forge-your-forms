@@ -88,6 +88,26 @@ export interface AiSuggestReplyResponse {
   suggestions: AiReplySuggestion[];
 }
 
+// ─── Auth Helper ────────────────────────────────────────────────────
+
+/**
+ * Get the current session's access token as an Authorization header.
+ * Throws if the user is not signed in.
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  // getUser() forces a server round-trip to validate/refresh the token,
+  // unlike getSession() which may return a stale cached token.
+  const { error } = await supabase.auth.getUser();
+  if (error) {
+    throw new Error("You must be signed in to use AI features. Please sign in and try again.");
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("You must be signed in to use AI features. Please sign in and try again.");
+  }
+  return { Authorization: `Bearer ${session.access_token}` };
+}
+
 // ─── API Calls ──────────────────────────────────────────────────────
 
 /**
@@ -97,8 +117,10 @@ export interface AiSuggestReplyResponse {
 export async function generateForm(
   request: AiGenerateRequest
 ): Promise<AiGenerateResponse> {
+  const headers = await getAuthHeaders();
   const { data, error } = await supabase.functions.invoke("ai-generate", {
     body: request,
+    headers,
   });
 
   if (error) {
@@ -132,8 +154,10 @@ export async function generateForm(
 export async function analyzeResponses(
   request: AiAnalyzeRequest
 ): Promise<AiAnalyzeResponse> {
+  const headers = await getAuthHeaders();
   const { data, error } = await supabase.functions.invoke("ai-analyze", {
     body: request,
+    headers,
   });
 
   if (error) {
@@ -163,8 +187,10 @@ export async function analyzeResponses(
 export async function suggestReplies(
   request: AiSuggestReplyRequest
 ): Promise<AiSuggestReplyResponse> {
+  const headers = await getAuthHeaders();
   const { data, error } = await supabase.functions.invoke("ai-suggest-reply", {
     body: request,
+    headers,
   });
 
   if (error) {

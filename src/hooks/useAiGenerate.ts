@@ -32,7 +32,12 @@ export function useAiGenerate() {
         if (err instanceof Error && (err as Error & { code?: string }).code === "RATE_LIMIT") {
           setRateLimited(true);
         }
-        setError(message);
+        // Detect auth errors — suggest re-login
+        if (message.includes("signed in") || message.includes("Unauthorized")) {
+          setError("Session expired. Please sign out and sign back in, then try again.");
+        } else {
+          setError(message);
+        }
         return null;
       } finally {
         setIsLoading(false);

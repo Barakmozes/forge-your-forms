@@ -11,9 +11,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// Admin client for cache operations (bypasses RLS)
+const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -66,21 +68,26 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Authenticate user
+    // Authenticate user via per-request client
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("ai-analyze: missing Authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    } = await userClient.auth.getUser();
 
     if (authError || !user) {
+      console.error("ai-analyze auth failed:", authError?.message, "Header present:", !!authHeader);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -102,6 +109,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ─── Authorization: verify workspace membership ────────────────
+    const { data: member } = await adminClient
+      .from("workspace_members")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("workspace_id", workspace_id)
+      .maybeSingle();
+
+    if (!member) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (submissions.length === 0) {
       return new Response(
         JSON.stringify({ error: "No submissions to analyze" }),
@@ -116,7 +138,7 @@ Deno.serve(async (req: Request) => {
     const cacheKey = `${form_id}:${limitedSubmissions.length}:${locale}`;
     const inputHash = await hashInput(cacheKey);
 
-    const { data: cached } = await supabase
+    const { data: cached } = await adminClient
       .from("ai_cache")
       .select("output")
       .eq("input_hash", inputHash)
@@ -218,7 +240,7 @@ Deno.serve(async (req: Request) => {
     };
 
     // ─── Cache Result (24h) ───────────────────────────────────────
-    await supabase.from("ai_cache").insert({
+    await adminClient.from("ai_cache").insert({
       workspace_id,
       cache_type: "analysis",
       input_hash: inputHash,
