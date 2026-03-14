@@ -193,7 +193,7 @@ export default function Submissions() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3">
           {preFilterFormId && (
             <Button variant="ghost" size="icon" onClick={() => navigate(`/forms/${preFilterFormId}/edit`)}>
@@ -211,10 +211,10 @@ export default function Submissions() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-2 flex-wrap">
           {!preFilterFormId && (
             <Select value={selectedFormId} onValueChange={setSelectedFormId}>
-              <SelectTrigger className="w-[200px] h-9">
+              <SelectTrigger className="w-full sm:w-[200px] h-9">
                 <SelectValue placeholder={t("submissions.filterByForm")} />
               </SelectTrigger>
               <SelectContent>
@@ -233,7 +233,7 @@ export default function Submissions() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -243,13 +243,13 @@ export default function Submissions() {
             className="ltr:pl-9 rtl:pr-9 h-9"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <Input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 w-36"
+            className="h-9 w-full sm:w-36"
             placeholder="From"
           />
           <span className="text-muted-foreground text-sm">–</span>
@@ -257,7 +257,7 @@ export default function Submissions() {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 w-36"
+            className="h-9 w-full sm:w-36"
             placeholder="To"
           />
           {(dateFrom || dateTo) && (

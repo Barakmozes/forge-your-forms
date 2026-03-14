@@ -160,7 +160,7 @@ export default function ApiKeyManager() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-8 w-8 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
                           onClick={() => setRevokingId(key.id)}
                           title={t("tooltips.api.revokeKey")}
                         >

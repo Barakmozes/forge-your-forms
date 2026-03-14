@@ -199,7 +199,7 @@ export default function Forms() {
           <Plus className="h-4 w-4" /> {t("forms.newForm")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("forms.createNewForm")}</DialogTitle>
         </DialogHeader>

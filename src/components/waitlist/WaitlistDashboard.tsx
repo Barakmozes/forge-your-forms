@@ -510,7 +510,7 @@ export default function WaitlistDashboard({
                   </ResponsiveContainer>
 
                   {/* Legend */}
-                  <div className="flex items-center justify-center gap-6 text-sm">
+                  <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm">
                     <div className="flex items-center gap-2">
                       <span
                         className="inline-block h-3 w-3 rounded-full"

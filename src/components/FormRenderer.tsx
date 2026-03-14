@@ -86,7 +86,7 @@ function FileUploadField({ field, value, onChange, error }: FieldProps) {
           if (dropped) handleFile(dropped);
         }}
         className={cn(
-          "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors",
+          "border-2 border-dashed rounded-xl p-4 sm:p-8 text-center cursor-pointer transition-colors",
           dragging
             ? "border-primary bg-primary/5"
             : error

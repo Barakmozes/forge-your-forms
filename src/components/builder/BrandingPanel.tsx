@@ -168,7 +168,7 @@ export default function BrandingPanel({ branding, onChange, formId }: BrandingPa
                 <span className="text-xs text-muted-foreground flex-1 truncate">
                   {t("builder.logoUploaded")}
                 </span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={removeLogo}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 min-h-[44px] min-w-[44px] shrink-0" onClick={removeLogo}>
                   <X className="h-4 w-4 text-destructive" />
                 </Button>
               </div>

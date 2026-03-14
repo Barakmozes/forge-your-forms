@@ -59,7 +59,7 @@ export default function ConditionalLogic({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 text-destructive/60 hover:text-destructive"
+          className="h-6 w-6 min-h-[44px] min-w-[44px] text-destructive/60 hover:text-destructive"
           onClick={() => onChange(undefined)}
         >
           <Trash2 className="h-3 w-3" />

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, Settings, LayoutTemplate, Zap, AlertTriangle } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, Menu, Settings, LayoutTemplate, Zap, AlertTriangle } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
 import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 6: Plan Badge ===
@@ -26,6 +29,8 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   // === AGENT 14: White Label ===
   const { settings: enterprise, whiteLabelEnabled } = useEnterprise();
   // === END AGENT 14 ===
@@ -59,12 +64,12 @@ export default function Navbar() {
               <Hammer className="h-4 w-4 text-primary-foreground" />
             </div>
           )}
-          <span>{whiteLabelEnabled && enterprise?.custom_app_name ? enterprise.custom_app_name : "FormForge"}</span>
+          <span className="hidden sm:inline">{whiteLabelEnabled && enterprise?.custom_app_name ? enterprise.custom_app_name : "FormForge"}</span>
         </Link>
         {/* === END AGENT 14 === */}
 
         {/* Nav links */}
-        <nav className="ms-6 flex items-center gap-1">
+        <nav className="ms-6 hidden md:flex items-center gap-1">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to;
             return (
@@ -78,45 +83,49 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="ms-auto flex items-center gap-3">
-          {/* Workspace switcher */}
-          {currentWorkspace && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 max-w-[200px]" title={t("tooltips.nav.switchWorkspace")}>
-                  <span className="truncate">{currentWorkspace.name}</span>
-                  <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {workspaces.map((ws) => (
-                  <DropdownMenuItem key={ws.id} onClick={() => setCurrentWorkspace(ws)} className={ws.id === currentWorkspace.id ? "bg-accent" : ""}>
-                    {ws.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+        <div className="ms-auto flex items-center gap-2 sm:gap-3">
+          {/* Desktop-only controls */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Workspace switcher */}
+            {currentWorkspace && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 max-w-[200px]" title={t("tooltips.nav.switchWorkspace")}>
+                    <span className="truncate">{currentWorkspace.name}</span>
+                    <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {workspaces.map((ws) => (
+                    <DropdownMenuItem key={ws.id} onClick={() => setCurrentWorkspace(ws)} className={ws.id === currentWorkspace.id ? "bg-accent" : ""}>
+                      {ws.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
-          {/* === AGENT 6: Plan Badge === */}
-          <PlanBadge />
-          {/* === END AGENT 6 === */}
+            {/* === AGENT 6: Plan Badge === */}
+            <PlanBadge />
+            {/* === END AGENT 6 === */}
 
-          {/* === AGENT 5: Language toggle === */}
-          <LanguageToggle />
-          {/* === END AGENT 5 === */}
+            {/* === AGENT 5: Language toggle === */}
+            <LanguageToggle />
+            {/* === END AGENT 5 === */}
 
+            {/* === AGENT 1: Settings link === */}
+            <Link to="/settings">
+              <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px]" title={t("tooltips.nav.settings")}>
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+            {/* === END AGENT 1 === */}
+          </div>
+
+          {/* Always visible */}
           {/* === AGENT 3: Notifications === */}
           <NotificationPanel />
           {/* === END AGENT 3 === */}
-
-          {/* === AGENT 1: Settings link === */}
-          <Link to="/settings">
-            <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" title={t("tooltips.nav.settings")}>
-              <Settings className="h-4 w-4" />
-            </Button>
-          </Link>
-          {/* === END AGENT 1 === */}
 
           {/* User menu */}
           <DropdownMenu>
@@ -137,8 +146,62 @@ export default function Navbar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Mobile hamburger */}
+          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 min-h-[44px] min-w-[44px]" onClick={() => setMobileMenuOpen(true)}>
+            <Menu className="h-5 w-5" />
+          </Button>
         </div>
       </div>
+
+      {/* Mobile Menu Sheet */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-3/4 sm:max-w-sm p-0">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-start">{whiteLabelEnabled && enterprise?.custom_app_name ? enterprise.custom_app_name : "FormForge"}</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col p-2">
+            {navLinks.map(({ to, label, icon: Icon }) => {
+              const active = location.pathname === to;
+              return (
+                <Link key={to} to={to} onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant={active ? "secondary" : "ghost"} className="w-full justify-start gap-3 min-h-[44px]">
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="border-t p-2 space-y-1">
+            {currentWorkspace && (
+              <div className="px-3 py-2">
+                <p className="text-xs text-muted-foreground mb-1">{t("tooltips.nav.switchWorkspace")}</p>
+                {workspaces.map((ws) => (
+                  <Button
+                    key={ws.id}
+                    variant={ws.id === currentWorkspace.id ? "secondary" : "ghost"}
+                    className="w-full justify-start min-h-[44px]"
+                    onClick={() => { setCurrentWorkspace(ws); setMobileMenuOpen(false); }}
+                  >
+                    {ws.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center justify-between px-3 py-2">
+              <PlanBadge />
+              <LanguageToggle />
+            </div>
+            <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} className="w-full justify-start gap-3 min-h-[44px]">
+                <Settings className="h-4 w-4" />
+                {t("tooltips.nav.settings")}
+              </Button>
+            </Link>
+          </div>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }

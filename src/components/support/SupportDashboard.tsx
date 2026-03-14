@@ -736,7 +736,7 @@ export default function SupportDashboard({
       )}
 
       {/* Filter Bar — applies to Kanban + Table */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -746,13 +746,13 @@ export default function SupportDashboard({
             className="pl-9 h-9"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
           <Select
             value={statusFilter}
             onValueChange={(v) => setStatusFilter(v as TicketStatus | "all")}
           >
-            <SelectTrigger className="h-9 w-36">
+            <SelectTrigger className="h-9 w-full sm:w-36">
               <SelectValue placeholder={t('support.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
@@ -768,7 +768,7 @@ export default function SupportDashboard({
             value={priorityFilter}
             onValueChange={(v) => setPriorityFilter(v as TicketPriority | "all")}
           >
-            <SelectTrigger className="h-9 w-32">
+            <SelectTrigger className="h-9 w-full sm:w-32">
               <SelectValue placeholder={t('support.allPriorities')} />
             </SelectTrigger>
             <SelectContent>
@@ -793,13 +793,13 @@ export default function SupportDashboard({
         <TabsContent value="overview" className="space-y-6">
           {/* Stats Row */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <StatCardSkeleton key={i} />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {statCards.map((card, idx) => (
                 <Card key={idx}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">

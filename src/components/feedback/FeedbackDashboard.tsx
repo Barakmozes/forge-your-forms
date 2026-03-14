@@ -711,7 +711,7 @@ export default function FeedbackDashboard({
                   </BarChart>
                 </ResponsiveContainer>
                 {/* Legend */}
-                <div className="flex items-center justify-center gap-6 mt-3 text-sm">
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-3 text-sm">
                   <div className="flex items-center gap-1.5">
                     <span
                       className="inline-block h-2.5 w-2.5 rounded-full"

@@ -157,7 +157,7 @@ export default function WaitlistEntries() {
                 className="ltr:pl-9 rtl:pr-9"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {selected.size > 0 && (
                 <Button
                   size="sm"
@@ -250,7 +250,7 @@ export default function WaitlistEntries() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive/60 hover:text-destructive"
+                          className="h-8 w-8 min-h-[44px] min-w-[44px] text-destructive/60 hover:text-destructive"
                           onClick={() => handleDelete(entry.id)}
                         >
                           <Trash2 className="h-4 w-4" />

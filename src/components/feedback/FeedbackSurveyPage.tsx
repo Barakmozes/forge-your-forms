@@ -427,7 +427,7 @@ export default function FeedbackSurveyPage({
 
                 <div className="space-y-2">
                   {/* Score buttons */}
-                  <div className="grid grid-cols-11 gap-1 sm:gap-1.5">
+                  <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5">
                     {Array.from({ length: 11 }, (_, i) => i).map((score) => (
                       <button
                         key={score}
@@ -435,7 +435,7 @@ export default function FeedbackSurveyPage({
                         onClick={() => setNpsScore(score)}
                         className={cn(
                           "relative flex items-center justify-center",
-                          "h-10 sm:h-12 rounded-lg border-2 text-sm sm:text-base font-bold",
+                          "h-11 sm:h-12 rounded-lg border-2 text-sm sm:text-base font-bold",
                           "transition-all duration-200 ease-out",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                           getNpsButtonClasses(score, npsScore === score)
@@ -450,10 +450,10 @@ export default function FeedbackSurveyPage({
 
                   {/* Scale labels */}
                   <div className="flex justify-between px-1">
-                    <span className="text-xs sm:text-sm text-muted-foreground">
+                    <span className="text-[11px] sm:text-sm text-muted-foreground">
                       {t('feedback.notLikely')}
                     </span>
-                    <span className="text-xs sm:text-sm text-muted-foreground">
+                    <span className="text-[11px] sm:text-sm text-muted-foreground">
                       {t('feedback.veryLikely')}
                     </span>
                   </div>

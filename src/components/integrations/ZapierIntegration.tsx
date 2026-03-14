@@ -90,7 +90,7 @@ export default function ZapierIntegration({ config, saving, onSave, webhookUrl }
               <p className="text-sm font-medium">{t("integrations.yourWebhookUrl")}</p>
               <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
                 <code className="flex-1 text-xs font-mono break-all" dir="ltr">{webhookUrl}</code>
-                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCopyUrl}>
+                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 min-h-[44px] min-w-[44px]" onClick={handleCopyUrl}>
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>

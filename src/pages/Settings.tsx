@@ -201,46 +201,48 @@ export default function Settings() {
         <h1 className="text-2xl font-bold mb-6">{t("settings.title")}</h1>
 
         <Tabs defaultValue={defaultTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="workspace" className="gap-2">
-              <Building2 className="h-4 w-4" /> {t("settings.workspace")}
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide mb-6">
+          <TabsList className="w-max sm:w-auto inline-flex">
+            <TabsTrigger value="workspace" className="gap-2 whitespace-nowrap">
+              <Building2 className="h-4 w-4" /> <span className="hidden sm:inline">{t("settings.workspace")}</span>
             </TabsTrigger>
-            <TabsTrigger value="members" className="gap-2">
-              <Users className="h-4 w-4" /> {t("settings.members")}
+            <TabsTrigger value="members" className="gap-2 whitespace-nowrap">
+              <Users className="h-4 w-4" /> <span className="hidden sm:inline">{t("settings.members")}</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" /> {t("settings.profile")}
+            <TabsTrigger value="profile" className="gap-2 whitespace-nowrap">
+              <User className="h-4 w-4" /> <span className="hidden sm:inline">{t("settings.profile")}</span>
             </TabsTrigger>
             {/* === AGENT 6: Billing Tab === */}
             {isOwner && (
-              <TabsTrigger value="billing" className="gap-2">
-                <CreditCard className="h-4 w-4" /> {t("billing.billingTab")}
+              <TabsTrigger value="billing" className="gap-2 whitespace-nowrap">
+                <CreditCard className="h-4 w-4" /> <span className="hidden sm:inline">{t("billing.billingTab")}</span>
               </TabsTrigger>
             )}
             {/* === END AGENT 6 === */}
             {/* === AGENT 9: Webhooks Tab === */}
-            <TabsTrigger value="webhooks" className="gap-2">
-              <Webhook className="h-4 w-4" /> {t("webhooks.title")}
+            <TabsTrigger value="webhooks" className="gap-2 whitespace-nowrap">
+              <Webhook className="h-4 w-4" /> <span className="hidden sm:inline">{t("webhooks.title")}</span>
             </TabsTrigger>
             {/* === END AGENT 9 === */}
             {/* === AGENT 9: API Tab === */}
-            <TabsTrigger value="api" className="gap-2">
-              <Code className="h-4 w-4" /> {t("api.title")}
+            <TabsTrigger value="api" className="gap-2 whitespace-nowrap">
+              <Code className="h-4 w-4" /> <span className="hidden sm:inline">{t("api.title")}</span>
             </TabsTrigger>
             {/* === END AGENT 9 === */}
             {/* === AGENT 10: Integrations Tab === */}
-            <TabsTrigger value="integrations" className="gap-2">
-              <Plug className="h-4 w-4" /> {t("integrations.title")}
+            <TabsTrigger value="integrations" className="gap-2 whitespace-nowrap">
+              <Plug className="h-4 w-4" /> <span className="hidden sm:inline">{t("integrations.title")}</span>
             </TabsTrigger>
             {/* === END AGENT 10 === */}
             {/* === AGENT 14: Enterprise Tab === */}
             {isOwner && (
-              <TabsTrigger value="enterprise" className="gap-2">
-                <ShieldCheck className="h-4 w-4" /> {t("enterprise.title")}
+              <TabsTrigger value="enterprise" className="gap-2 whitespace-nowrap">
+                <ShieldCheck className="h-4 w-4" /> <span className="hidden sm:inline">{t("enterprise.title")}</span>
               </TabsTrigger>
             )}
             {/* === END AGENT 14 === */}
           </TabsList>
+          </div>
 
           {/* Workspace Tab */}
           <TabsContent value="workspace">

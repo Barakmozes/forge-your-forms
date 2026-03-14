@@ -96,7 +96,7 @@ export default function Index() {
             </div>
             <span>FormForge</span>
           </Link>
-          <nav className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
+          <nav className="ltr:ml-auto rtl:mr-auto hidden sm:flex items-center gap-2">
             <Link to="/templates">
               <Button variant="ghost" size="sm">Templates</Button>
             </Link>
@@ -113,6 +113,14 @@ export default function Index() {
               </Button>
             </Link>
           </nav>
+          <div className="ltr:ml-auto rtl:mr-auto sm:hidden flex items-center gap-2">
+            <LanguageToggle />
+            <Link to="/auth">
+              <Button size="sm" className="gradient-primary text-primary-foreground shadow-colored">
+                {t("landing.getStartedFree")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -322,7 +330,7 @@ export default function Index() {
       {/* Final CTA */}
       <section className="py-20 sm:py-24">
         <div className="container">
-          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl gradient-primary p-10 text-center shadow-colored sm:p-14">
+          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl gradient-primary p-6 text-center shadow-colored sm:p-10 lg:p-14">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(155_80%_60%/0.3),transparent_50%)]" />
             <div className="relative">
               <h2 className="font-display text-3xl font-bold text-primary-foreground sm:text-4xl">

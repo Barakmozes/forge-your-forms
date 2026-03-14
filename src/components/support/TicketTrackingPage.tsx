@@ -210,8 +210,8 @@ export default function TicketTrackingPage({ formId, initialTicket, initialEmail
                       className={cn(
                         "p-3 rounded-lg text-sm",
                         msg.sender_type === "customer"
-                          ? "bg-muted ltr:ml-8 rtl:mr-8"
-                          : "bg-primary/5 border border-primary/20 ltr:mr-8 rtl:ml-8"
+                          ? "bg-muted ltr:ml-4 ltr:sm:ml-8 rtl:mr-4 rtl:sm:mr-8"
+                          : "bg-primary/5 border border-primary/20 ltr:mr-4 ltr:sm:mr-8 rtl:ml-4 rtl:sm:ml-8"
                       )}
                     >
                       <div className="flex items-center justify-between mb-1">

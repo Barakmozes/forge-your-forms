@@ -17,6 +17,8 @@ import AiFormGenerator from "@/components/ai/AiFormGenerator";
 import FeatureGate from "@/components/upgrade/FeatureGate";
 import type { AiFormField } from "@/lib/ai";
 // === END AGENT 12 ===
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -199,6 +201,10 @@ export default function FormBuilder() {
   const [settings, setSettings] = useState<FormSettings>({});
   const [branding, setBranding] = useState<FormBranding>({});
 
+  const isMobile = useIsMobile();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
+
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -357,12 +363,12 @@ export default function FormBuilder() {
   return (
     <div className="flex flex-col h-screen bg-muted/10">
       {/* Top Bar */}
-      <header className="h-14 border-b bg-background flex items-center justify-between px-4 shrink-0 z-10">
+      <header className="h-14 border-b bg-background flex items-center justify-between px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 z-10">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <BackArrow className="h-4 w-4" />
           </Button>
-          <div className="w-64">
+          <div className="w-full sm:w-64">
             <Input 
               value={title} 
               onChange={(e) => setTitle(e.target.value)} 
@@ -392,13 +398,13 @@ export default function FormBuilder() {
           <BrandingPanel branding={branding} onChange={setBranding} formId={id ?? ""} />
 
           <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => window.open(`/forms/${id}/preview`, '_blank')}>
-            <Eye className="h-4 w-4" /> {t("builder.preview")}
+            <Eye className="h-4 w-4" /> <span className="hidden sm:inline">{t("builder.preview")}</span>
           </Button>
           
           <SharePanel formId={id ?? ""} formTitle={title} />
 
           <Button size="sm" className="h-8 gap-2" onClick={save} disabled={saveStatus === "Saving..."}>
-            <Save className="h-4 w-4" /> {t("common.save")}
+            <Save className="h-4 w-4" /> <span className="hidden sm:inline">{t("common.save")}</span>
           </Button>
         </div>
       </header>
@@ -424,7 +430,7 @@ export default function FormBuilder() {
         <div className="flex flex-1 overflow-hidden">
           
           {/* Left Sidebar - Palette */}
-          <aside className="w-64 border-e bg-background flex flex-col shrink-0 overflow-y-auto">
+          <aside className="hidden md:flex md:w-64 border-e bg-background flex-col shrink-0 overflow-y-auto">
             <div className="p-4 border-b font-medium text-sm">{t("builder.fieldTypes")}</div>
             <div className="p-4 space-y-6">
               {FIELD_CATEGORIES.map((cat) => (
@@ -441,7 +447,7 @@ export default function FormBuilder() {
           </aside>
 
           {/* Center Canvas */}
-          <main className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center">
             {status === "draft" && (
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 w-full max-w-2xl mb-4 flex items-center justify-between shrink-0">
                 <span className="text-sm text-amber-800 dark:text-amber-200">
@@ -491,7 +497,7 @@ export default function FormBuilder() {
                         key={field.id}
                         field={field}
                         activeId={selectedFieldId}
-                        onClick={() => setSelectedFieldId(field.id)}
+                        onClick={() => { setSelectedFieldId(field.id); if (isMobile) setPropertiesOpen(true); }}
                         onRemove={() => removeField(field.id)}
                         t={t}
                       />
@@ -503,7 +509,7 @@ export default function FormBuilder() {
           </main>
 
           {/* Right Sidebar - Properties */}
-          <aside className="w-80 border-s bg-background flex flex-col shrink-0 overflow-y-auto">
+          <aside className="hidden md:flex md:w-80 border-s bg-background flex-col shrink-0 overflow-y-auto">
             <div className="p-4 border-b font-medium text-sm">{t("builder.properties")}</div>
             
             {selectedField ? (
@@ -579,7 +585,7 @@ export default function FormBuilder() {
 
                 {/* Number Validation */}
                 {selectedField.type === 'number' && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t("builder.minValue")}</Label>
                       <Input 
@@ -601,7 +607,7 @@ export default function FormBuilder() {
 
                 {/* Text Validation */}
                 {['text', 'textarea'].includes(selectedField.type) && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>{t("builder.minLength")}</Label>
                       <Input
@@ -703,6 +709,106 @@ export default function FormBuilder() {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+        {/* Mobile: floating add-field button */}
+        <Button className="md:hidden fixed bottom-6 right-6 z-20 h-14 w-14 rounded-full shadow-lg" onClick={() => setPaletteOpen(true)}>
+          <Plus className="h-6 w-6" />
+        </Button>
+
+        {/* Mobile: Field palette sheet */}
+        <Sheet open={paletteOpen} onOpenChange={setPaletteOpen}>
+          <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>{t("builder.fieldTypes")}</SheetTitle>
+            </SheetHeader>
+            <div className="p-4 space-y-6">
+              {FIELD_CATEGORIES.map((cat) => (
+                <div key={cat.name} className="space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t(CATEGORY_KEYS[cat.name])}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {cat.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.type}
+                          className="flex items-center gap-2 p-3 rounded-md border bg-card hover:bg-accent min-h-[44px]"
+                          onClick={() => {
+                            const f = createNewField(item.type as FieldType);
+                            setFields(prev => [...prev, f]);
+                            setSelectedFieldId(f.id);
+                            setPaletteOpen(false);
+                          }}
+                        >
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">{t(FIELD_TYPE_KEYS[item.type])}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Mobile: Properties sheet */}
+        <Sheet open={propertiesOpen} onOpenChange={setPropertiesOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>{t("builder.properties")}</SheetTitle>
+            </SheetHeader>
+            {selectedField ? (
+              <div className="p-4 space-y-6">
+                <div className="space-y-2">
+                  <Label>{t("builder.fieldLabel")}</Label>
+                  <Input value={selectedField.label} onChange={(e) => updateField(selectedField.id, { label: e.target.value })} />
+                </div>
+                {!['section_header', 'paragraph_text'].includes(selectedField.type) && (
+                  <div className="space-y-2">
+                    <Label>{t("builder.placeholder")}</Label>
+                    <Input value={selectedField.placeholder} onChange={(e) => updateField(selectedField.id, { placeholder: e.target.value })} />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>{t("builder.helpText")}</Label>
+                  <Input value={selectedField.helpText} onChange={(e) => updateField(selectedField.id, { helpText: e.target.value })} placeholder={t("builder.helpTextPlaceholder")} />
+                </div>
+                {!['section_header', 'paragraph_text'].includes(selectedField.type) && (
+                  <div className="flex items-center justify-between">
+                    <Label className="cursor-pointer" htmlFor="req-toggle-mobile">{t("builder.requiredField")}</Label>
+                    <Switch id="req-toggle-mobile" checked={selectedField.required} onCheckedChange={(v) => updateField(selectedField.id, { required: v })} />
+                  </div>
+                )}
+                {['select', 'multi_select', 'radio', 'checkbox'].includes(selectedField.type) && (
+                  <div className="space-y-3">
+                    <Label>{t("builder.options")}</Label>
+                    <div className="space-y-2">
+                      {selectedField.options.map((opt, i) => (
+                        <div key={i} className="flex gap-2">
+                          <Input value={opt} onChange={(e) => { const newOpts = [...selectedField.options]; newOpts[i] = e.target.value; updateField(selectedField.id, { options: newOpts }); }} />
+                          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => updateField(selectedField.id, { options: selectedField.options.filter((_, idx) => idx !== i) })}>
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => updateField(selectedField.id, { options: [...selectedField.options, `Option ${selectedField.options.length + 1}`] })}>
+                      <Plus className="h-4 w-4" /> {t("builder.addOption")}
+                    </Button>
+                  </div>
+                )}
+                <Button variant="destructive" size="sm" className="w-full gap-2" onClick={() => { removeField(selectedField.id); setPropertiesOpen(false); }}>
+                  <Trash2 className="h-4 w-4" /> {t("builder.removeField", { defaultValue: "Remove field" })}
+                </Button>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                <p>{t("builder.selectFieldHint")}</p>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
+
         </TabsContent>
       </Tabs>
       {/* === AGENT 12: AI Generate Fields Dialog === */}

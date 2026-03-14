@@ -63,7 +63,7 @@ export default function ConditionNode({ condition, onChange, onRemove, index }: 
             </div>
             {t("workflows.condition.title", { index: index + 1 })}
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onRemove}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-destructive" onClick={onRemove}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>

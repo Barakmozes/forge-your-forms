@@ -62,7 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* === AGENT 7: Usage Banner === */}
       <UsageBanner />
       {/* === END AGENT 7 === */}
-      <main className="container py-6">{children}</main>
+      <main className="container py-4 sm:py-6">{children}</main>
     </div>
   );
 }
