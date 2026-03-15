@@ -28,3 +28,4 @@ dist-ssr
 *.sw?
 .agents/*
 .orchestrator/
+_archive_pre_v4/
