@@ -41,6 +41,7 @@ const DEFAULTS = {
     builder: "claude-opus-4-6",
     agents: "claude-sonnet-4-6",
     verification: "claude-sonnet-4-6",
+    gateFix: "claude-sonnet-4-6",
   },
   budgetPerPhase: 10,
   budgetTotal: 50,
@@ -49,7 +50,11 @@ const DEFAULTS = {
   timeoutMs: 600000, // 10 minutes
   verifyCommands: ["npm run lint", "npx tsc --noEmit", "npm run build"],
   promptFile: PROMPT_FILE_DEFAULT,
+  dimensionsFile: "SCAN-DIMENSIONS.md",
+  templatesFile: "AGENT-TEMPLATES.md",
   agentsDir: ".agents",
+  qualityGates: { enabled: true, autoFixAttempts: 1 },
+  claudeFlags: [],
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -217,7 +222,16 @@ function mergeConfig(fileConfig, flags) {
   if (fileConfig.timeoutMs != null) cfg.timeoutMs = fileConfig.timeoutMs;
   if (fileConfig.verifyCommands) cfg.verifyCommands = fileConfig.verifyCommands;
   if (fileConfig.promptFile) cfg.promptFile = fileConfig.promptFile;
+  if (fileConfig.dimensionsFile) cfg.dimensionsFile = fileConfig.dimensionsFile;
+  if (fileConfig.templatesFile) cfg.templatesFile = fileConfig.templatesFile;
   if (fileConfig.agentsDir) cfg.agentsDir = fileConfig.agentsDir;
+  if (fileConfig.qualityGates) cfg.qualityGates = { ...cfg.qualityGates, ...fileConfig.qualityGates };
+  if (fileConfig.claudeFlags) cfg.claudeFlags = fileConfig.claudeFlags;
+
+  // Detect old config and warn about V4 defaults
+  if (!fileConfig.dimensionsFile && !fileConfig.templatesFile) {
+    log("Config upgraded with V4 defaults (dimensionsFile, templatesFile, qualityGates).", "info");
+  }
 
   // CLI flags override everything
   if (flags.budget) cfg.budgetPerPhase = parseFloat(flags.budget);
@@ -245,7 +259,7 @@ function mergeConfig(fileConfig, flags) {
 // § 6. Prompt Extraction
 // ────────────────────────────────────────────────────────────────────────────
 
-async function extractPrompts(promptFilePath) {
+async function extractPrompts(promptFilePath, cfg) {
   const content = await readFile(join(ROOT, promptFilePath), "utf-8");
   const lines = content.replace(/\r\n/g, "\n").split("\n");
 
@@ -267,9 +281,16 @@ async function extractPrompts(promptFilePath) {
     throw new Error(`Could not find ---START BUILDER--- / ---END BUILDER--- markers in ${promptFilePath}`);
   }
 
+  const dimFile = cfg?.dimensionsFile || DEFAULTS.dimensionsFile;
+  const tplFile = cfg?.templatesFile || DEFAULTS.templatesFile;
+
+  const scannerPrepend = `CRITICAL FIRST STEP: Before starting any scan work, read the file "${dimFile}" from the project root. It contains all dimension output format templates you need for structured scan reports. If this file does not exist, output "ERROR: ${dimFile} not found" and stop immediately.\n\nIf you are RESUMING (scanner-reports/PROJECT-PROFILE.md already exists), read only the dimensions marked [x] in PROJECT-PROFILE.md "Active Scan Dimensions" section — not the entire ${dimFile} file. This saves tokens for actual scanning work.\n\n`;
+
+  const builderPrepend = `CRITICAL FIRST STEP: Verify the file "${tplFile}" exists in the project root. You will read it at Phase 2 (not now) — but confirm it exists before proceeding with any work. If missing, output "ERROR: ${tplFile} not found" and stop immediately.\n\n`;
+
   return {
-    scanner: lines.slice(scannerStart + 1, scannerEnd).join("\n").trim(),
-    builder: lines.slice(builderStart + 1, builderEnd).join("\n").trim(),
+    scanner: scannerPrepend + lines.slice(scannerStart + 1, scannerEnd).join("\n").trim(),
+    builder: builderPrepend + lines.slice(builderStart + 1, builderEnd).join("\n").trim(),
   };
 }
 
@@ -673,7 +694,7 @@ async function runScanner(cfg, state) {
     return true;
   }
 
-  const { scanner: scannerPrompt } = await extractPrompts(cfg.promptFile);
+  const { scanner: scannerPrompt } = await extractPrompts(cfg.promptFile, cfg);
   const maxRestarts = cfg.maxContextRestarts.scanner;
   let crashRetries = 0;
   let rateLimitRetries = 0;
@@ -824,7 +845,7 @@ async function runBuilder(cfg, state) {
     await rename(targetDir, backupDir);
   }
 
-  const { builder: builderPrompt } = await extractPrompts(cfg.promptFile);
+  const { builder: builderPrompt } = await extractPrompts(cfg.promptFile, cfg);
   const maxRestarts = cfg.maxContextRestarts.builder;
   let crashRetries = 0;
   let rateLimitRetries = 0;
@@ -1433,6 +1454,40 @@ async function showStatus() {
 async function dryRun(cfg) {
   logHeader("DRY RUN — No changes will be made");
 
+  // V4: File loading plan
+  const dimFile = cfg.dimensionsFile || DEFAULTS.dimensionsFile;
+  const tplFile = cfg.templatesFile || DEFAULTS.templatesFile;
+  const dimExists = await fileExists(join(ROOT, dimFile));
+  const tplExists = await fileExists(join(ROOT, tplFile));
+
+  console.log(`  ${c.bold}File Plan:${c.reset}`);
+  console.log(`  [DRY-RUN] Scanner will load: ${cfg.promptFile} + ${dimFile}`);
+  console.log(`  [DRY-RUN] Builder will load: ${cfg.promptFile} + ${tplFile}`);
+  if (dimExists) {
+    const dimContent = (await readFile(join(ROOT, dimFile), "utf-8")).replace(/\r\n/g, "\n");
+    console.log(`  [DRY-RUN] ${dimFile}: found (${dimContent.split("\n").length} lines)`);
+  } else {
+    console.log(`  [DRY-RUN] ${c.red}${dimFile}: NOT FOUND — Scanner will fail${c.reset}`);
+  }
+  if (tplExists) {
+    const tplContent = (await readFile(join(ROOT, tplFile), "utf-8")).replace(/\r\n/g, "\n");
+    console.log(`  [DRY-RUN] ${tplFile}: found (${tplContent.split("\n").length} lines)`);
+  } else {
+    console.log(`  [DRY-RUN] ${c.red}${tplFile}: NOT FOUND — Builder will fail${c.reset}`);
+  }
+  console.log("");
+
+  // V4: Quality gate checkpoints
+  if (cfg.qualityGates?.enabled) {
+    console.log(`  ${c.bold}Quality Gates:${c.reset}`);
+    console.log(`  After batch 1: Quality Gate 'Post-Infrastructure' (lint + typecheck)`);
+    console.log(`  After batch 3: Quality Gate 'Post-Bugfix' (build)`);
+    console.log(`  After batch 5: Quality Gate 'Pre-Feature' (build + test)`);
+    console.log(`  After batch 6: Quality Gate 'Post-Feature' (build + test)`);
+    console.log(`  Auto-fix model: ${cfg.models.gateFix || DEFAULTS.models.gateFix}`);
+    console.log("");
+  }
+
   console.log(`  1. ${c.bold}Scanner${c.reset}: Extract prompt (markers in ${cfg.promptFile}), invoke claude -p`);
   console.log(`     Model: ${cfg.models.scanner} | Budget: $${cfg.budgetPerPhase}`);
   console.log(`     Expected: 1-5 sessions for full codebase scan\n`);
@@ -1527,6 +1582,23 @@ async function runPipeline(cfg, entryPhase = "scanner") {
 
   const phases = ["scanner", "builder", "agents", "verify"];
   const startIdx = phases.indexOf(entryPhase);
+
+  // V4: Companion file existence checks
+  const dimFile = cfg.dimensionsFile || DEFAULTS.dimensionsFile;
+  const tplFile = cfg.templatesFile || DEFAULTS.templatesFile;
+
+  if (startIdx <= 0 && !await fileExists(join(ROOT, dimFile))) {
+    log(`${dimFile} not found in project root.`, "error");
+    log(`The Scanner requires this file. Copy it alongside ${cfg.promptFile}.`, "error");
+    log(`Files needed: ${cfg.promptFile}, ${dimFile}, ${tplFile}`, "error");
+    process.exit(1);
+  }
+  if (startIdx <= 1 && !await fileExists(join(ROOT, tplFile))) {
+    log(`${tplFile} not found in project root.`, "error");
+    log(`The Builder requires this file. Copy it alongside ${cfg.promptFile}.`, "error");
+    log(`Files needed: ${cfg.promptFile}, ${dimFile}, ${tplFile}`, "error");
+    process.exit(1);
+  }
 
   // Phase 1: Scanner
   if (startIdx <= 0) {
