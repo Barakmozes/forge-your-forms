@@ -317,68 +317,102 @@ async function parseCommandsFile(agentsDir) {
 }
 
 function parseCommandsContent(content) {
-  const batches = [];
-  let currentBatch = null;
+  // Parse COMMANDS.md with format:
+  //   ## Agent 01 — Name [ROLE]
+  //   **Batch**: 1 (Sequential) | **Dependencies**: ... | **Est. prompts**: N
+  //   ### Bootstrap Prompt
+  //   ```
+  //   (prompt text)
+  //   ```
 
+  const agents = [];
   const lines = content.split("\n").map(l => l.replace(/\r$/, ""));
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Detect batch headers like "## Batch 1 — Sequential" or "## Batch 2 — Parallel"
-    const batchMatch = line.match(/^## Batch (\d+)\s*[—–-]\s*(Sequential|Parallel)/i);
-    if (batchMatch) {
-      currentBatch = {
-        number: parseInt(batchMatch[1], 10),
-        type: batchMatch[2].toLowerCase(),
-        agents: [],
-      };
-      batches.push(currentBatch);
-      continue;
+    // Detect agent headers like "## Agent 01 — Credential & Auth Security [SECURITY_ENGINEER]"
+    const agentMatch = line.match(/^## Agent (\d+)\s*[—–-]\s*(.+?)\s*\[(\w+)\]\s*$/);
+    if (!agentMatch) continue;
+
+    const agentId = parseInt(agentMatch[1], 10);
+    const agentName = agentMatch[2].trim();
+    const agentRole = agentMatch[3].trim();
+
+    // Look for batch info on subsequent lines: "**Batch**: 1 (Sequential)"
+    let batchNumber = 0;
+    let batchType = "sequential";
+    for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+      const batchMatch = lines[j].match(/\*\*Batch\*\*:\s*(\d+)\s*\((Sequential|Parallel)(?:\s*[—–-]\s*\w+)?\)/i);
+      if (batchMatch) {
+        batchNumber = parseInt(batchMatch[1], 10);
+        batchType = batchMatch[2].toLowerCase();
+        break;
+      }
     }
 
-    // Detect agent headers like "### Agent 21: ADMIN Role Bypass"
-    const agentMatch = line.match(/^### Agent (\d+):\s*(.+?)(?:\s*⚡)?$/);
-    if (agentMatch && currentBatch) {
-      const agentId = parseInt(agentMatch[1], 10);
-      const agentName = agentMatch[2].trim();
-
-      // Extract the code block that follows
-      let prompt = "";
-      let inCodeBlock = false;
-      for (let j = i + 1; j < lines.length; j++) {
-        if (lines[j].trim().startsWith("```") && !inCodeBlock) {
-          inCodeBlock = true;
-          continue;
-        }
-        if (lines[j].trim() === "```" && inCodeBlock) {
-          break;
-        }
-        if (inCodeBlock) {
-          prompt += lines[j] + "\n";
-        }
+    // Extract the code block after "### Bootstrap Prompt"
+    let prompt = "";
+    let foundBootstrap = false;
+    let inCodeBlock = false;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].match(/^## Agent \d+/)) break; // next agent section
+      if (lines[j].match(/^### Bootstrap Prompt/i)) {
+        foundBootstrap = true;
+        continue;
       }
+      if (foundBootstrap && !inCodeBlock && lines[j].trim().startsWith("```")) {
+        inCodeBlock = true;
+        continue;
+      }
+      if (inCodeBlock && lines[j].trim() === "```") {
+        break;
+      }
+      if (inCodeBlock) {
+        prompt += lines[j] + "\n";
+      }
+    }
 
-      currentBatch.agents.push({
-        id: agentId,
-        name: agentName,
-        prompt: prompt.trim(),
-        folder: null, // will be resolved from prompt content
+    // Extract folder path from prompt content (e.g., ".agents/agent-01-credential-auth-security/AGENT.md")
+    let folder = null;
+    const folderMatch = prompt.match(/(\.[^\s]+\/agent-\d+-[^\s/]+)\/AGENT\.md/);
+    if (folderMatch) {
+      folder = folderMatch[1];
+    }
+
+    agents.push({
+      id: agentId,
+      name: agentName,
+      role: agentRole,
+      prompt: prompt.trim(),
+      folder,
+      batchNumber,
+      batchType,
+    });
+  }
+
+  // Group agents by batch number
+  const batchMap = new Map();
+  for (const agent of agents) {
+    if (!batchMap.has(agent.batchNumber)) {
+      batchMap.set(agent.batchNumber, {
+        number: agent.batchNumber,
+        type: agent.batchType,
+        agents: [],
       });
     }
+    const batch = batchMap.get(agent.batchNumber);
+    batch.agents.push({
+      id: agent.id,
+      name: agent.name,
+      role: agent.role,
+      prompt: agent.prompt,
+      folder: agent.folder,
+    });
   }
 
-  // Extract folder paths from prompts
-  for (const batch of batches) {
-    for (const agent of batch.agents) {
-      // Look for agent folder path in the prompt (e.g., ".agents-phase-7/feature-00-admin-role/AGENT.md")
-      const folderMatch = agent.prompt.match(/(\.[^\s]+\/[^\s/]+)\/AGENT\.md/);
-      if (folderMatch) {
-        agent.folder = folderMatch[1];
-      }
-    }
-  }
-
-  return batches;
+  // Return batches sorted by batch number
+  return Array.from(batchMap.values()).sort((a, b) => a.number - b.number);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -426,21 +460,32 @@ async function parseMasterContext(agentsDir) {
   try {
     const content = await readFile(path, "utf-8");
 
-    // Check overall status
-    const statusMatch = content.match(/## Status:\s*(\w+)/);
+    // Check overall status — matches "## Status: BUILDER_COMPLETE" or "Status: COMPLETE" etc.
+    const statusMatch = content.match(/##?\s*Status:\s*(\S+)/);
     const status = statusMatch ? statusMatch[1] : "UNKNOWN";
 
-    // Parse agent entries
+    // Parse agent inventory table with format:
+    // | 01 | credential-auth-security | SECURITY_ENGINEER | 1 | CREATED | 2 | 4 | none |
     const agents = [];
     for (const line of content.split("\n").map(l => l.replace(/\r$/, ""))) {
-      // "- feature-00-admin-role: AGENTS_CREATED (Agent 21 — Batch 1)"
-      const match = line.match(/-\s+(\S+):\s+(AWAITING_CREATION|AGENTS_CREATED|CREATED)\s*\(Agent\s+(\d+)\s*[—–-]\s*Batch\s+(\d+)\)/);
+      // Match table rows: | NN | name | ROLE | batch | STATUS | ...
+      const match = line.match(/^\|\s*(\d+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\d+)\s*\|\s*(\S+)\s*\|/);
       if (match) {
+        const agentNum = match[1];
+        const name = match[2];
+        const role = match[3];
+        const batch = parseInt(match[4], 10);
+        const agentStatus = match[5];
+
+        // Skip table header rows (where agentNum matches a header word like "#")
+        if (agentNum === "#" || name === "Agent") continue;
+
         agents.push({
-          folder: match[1],
-          status: match[2],
-          agentId: parseInt(match[3], 10),
-          batch: parseInt(match[4], 10),
+          folder: `agent-${agentNum}-${name}`,
+          status: agentStatus,
+          agentId: parseInt(agentNum, 10),
+          batch,
+          role,
         });
       }
     }
