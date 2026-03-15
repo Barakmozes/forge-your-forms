@@ -12,7 +12,7 @@ The Super Orchestrator (`orchestrator.mjs`) automates the entire codebase audit-
 
 ## 2. Prerequisites
 
-You need three things installed before running the orchestrator.
+You need three things installed before running the orchestrator. Two companion files must also be present: `SCAN-DIMENSIONS.md` (dimension templates for the Scanner) and `AGENT-TEMPLATES.md` (agent templates for the Builder).
 
 ### Node.js (version 18 or higher)
 
@@ -54,7 +54,9 @@ Place these files in the root directory of the project you want to audit (where 
 your-project/
 ├── orchestrator.mjs              <-- the orchestrator
 ├── orchestrator.config.json      <-- configuration (optional but recommended)
-├── DUAL-AUTOMATION-PROMPT.md     <-- the automation prompts
+├── DUAL-AUTOMATION-PROMPT-V4.md  <-- the automation prompts
+├── SCAN-DIMENSIONS.md            <-- dimension templates (Scanner reads this)
+├── AGENT-TEMPLATES.md            <-- agent templates (Builder reads this)
 ├── package.json                  <-- your existing project files
 ├── src/
 └── ...
@@ -72,7 +74,8 @@ Open `orchestrator.config.json` in any editor. Here is every option explained:
     "scanner": "claude-opus-4-6",
     "builder": "claude-opus-4-6",
     "agents": "claude-sonnet-4-6",
-    "verification": "claude-sonnet-4-6"
+    "verification": "claude-sonnet-4-6",
+    "gateFix": "claude-sonnet-4-6"
   },
   "budgetPerPhase": 10,
   "budgetTotal": 50,
@@ -88,8 +91,15 @@ Open `orchestrator.config.json` in any editor. Here is every option explained:
     "npx tsc --noEmit",
     "npm run build"
   ],
-  "promptFile": "DUAL-AUTOMATION-PROMPT.md",
-  "agentsDir": ".agents"
+  "promptFile": "DUAL-AUTOMATION-PROMPT-V4.md",
+  "dimensionsFile": "SCAN-DIMENSIONS.md",
+  "templatesFile": "AGENT-TEMPLATES.md",
+  "agentsDir": ".agents",
+  "qualityGates": {
+    "enabled": true,
+    "autoFixAttempts": 1
+  },
+  "claudeFlags": []
 }
 ```
 
@@ -109,8 +119,14 @@ Open `orchestrator.config.json` in any editor. Here is every option explained:
 | `maxContextRestarts.agent` | Max times a single agent can restart | `10` | Increase for agents with many prompts (6+). |
 | `timeoutMs` | Kill a session if no output for this many milliseconds | `600000` (10 min) | Increase if your project has very large files that take a long time to process. |
 | `verifyCommands` | Commands to run during the verification phase | lint, typecheck, build | **Change this for your project.** See examples below. |
-| `promptFile` | Name of the automation prompt file | `DUAL-AUTOMATION-PROMPT.md` | Only change if you renamed the file. |
+| `models.gateFix` | Which model auto-fixes quality gate failures | `claude-sonnet-4-6` | Rarely needs changing. |
+| `promptFile` | Name of the automation prompt file | `DUAL-AUTOMATION-PROMPT-V4.md` | Only change if you renamed the file. |
+| `dimensionsFile` | Dimension templates file (Scanner reads this) | `SCAN-DIMENSIONS.md` | Only change if you renamed the file. |
+| `templatesFile` | Agent templates file (Builder reads this) | `AGENT-TEMPLATES.md` | Only change if you renamed the file. |
 | `agentsDir` | Where agent folders are created | `.agents` | Only change if you want a custom name like `.agents-v2`. |
+| `qualityGates.enabled` | Enable quality gates between batch groups | `true` | Set to `false` to skip all gate checks. |
+| `qualityGates.autoFixAttempts` | How many times to try auto-fixing a gate failure | `1` | Increase for complex projects. |
+| `claudeFlags` | Extra flags to pass to `claude -p` | `[]` | E.g., `["--effort", "high"]`. Validated at startup. |
 
 ### Step 3: Set the right verify commands for your project
 
@@ -204,6 +220,22 @@ This is the longest phase. The orchestrator runs each agent by batch order. Sequ
 
 After each batch, the orchestrator automatically creates a git commit with all changes from that batch.
 
+**Quality Gates** (between certain batches)
+
+After certain batch groups complete, the orchestrator runs quality checks (lint, build, test). If a check fails, it attempts an automatic fix using Claude. If that also fails, the pipeline pauses with instructions on how to proceed:
+
+```
+Quality gate 'Post-Bugfix' failed after batch 3.
+
+  Options:
+    1. Fix manually, then resume:
+       node orchestrator.mjs resume
+    2. Skip this gate (use with caution):
+       node orchestrator.mjs resume --skip-gate --confirm
+```
+
+Gate checkpoints: Post-Infrastructure (after batch 1), Post-Bugfix (after batch 3), Pre-Feature (after batch 5), Post-Feature (after batch 6).
+
 **Phase 4 — Verification** (typically 1–3 minutes)
 
 The orchestrator runs each command from `verifyCommands`. If a command fails (e.g., lint errors), it uses Claude to auto-fix the issues and reruns the check. You will see:
@@ -282,12 +314,14 @@ Every flag is optional. They override the values in `orchestrator.config.json`.
 | `--budget-total <usd>` | Set the total dollar cap for the entire run (default: 50) | `--budget-total 80` |
 | `--parallelism <n>` | Max agents to run at the same time (default: 3) | `--parallelism 5` |
 | `--model <name>` | Use this model for all phases. Accepts `opus`, `sonnet`, or a full model ID | `--model opus` |
-| `--dry-run` | Print what would happen without actually running anything | |
+| `--dry-run` | Print what would happen without actually running anything (shows gate checkpoints and file loading plan) | |
 | `--verbose` | Show the full output from Claude (useful for debugging) | |
 | `--no-verify` | Skip the verification phase entirely | |
 | `--timeout <ms>` | Kill a session if no output for this many milliseconds (default: 600000) | `--timeout 900000` |
 | `--agents-dir <path>` | Use a different agents directory (default: `.agents`) | `--agents-dir .agents-v2` |
 | `--config <path>` | Use a different config file | `--config my-config.json` |
+| `--skip-gate` | Skip a failed quality gate during resume (requires `--confirm`) | |
+| `--confirm` | Confirm gate skip (required with `--skip-gate`) | |
 
 ### Examples with flags
 
@@ -367,7 +401,9 @@ The orchestrator is fully project-agnostic. You do not need to modify `orchestra
 # 1. Copy the three files to your new project
 cp /path/to/projectA/orchestrator.mjs /path/to/projectB/
 cp /path/to/projectA/orchestrator.config.json /path/to/projectB/
-cp /path/to/projectA/DUAL-AUTOMATION-PROMPT.md /path/to/projectB/
+cp /path/to/projectA/DUAL-AUTOMATION-PROMPT-V4.md /path/to/projectB/
+cp /path/to/projectA/SCAN-DIMENSIONS.md /path/to/projectB/
+cp /path/to/projectA/AGENT-TEMPLATES.md /path/to/projectB/
 
 # 2. Navigate to the new project
 cd /path/to/projectB
@@ -378,7 +414,7 @@ cd /path/to/projectB
 node orchestrator.mjs run
 ```
 
-No changes to `orchestrator.mjs` are needed. It works with any language, framework, or project structure.
+No changes to `orchestrator.mjs` are needed. It works with any language, framework, or project structure. V4 automatically detects your project type (Web, CLI, Library, Mobile, Backend, Service) and activates the relevant scan dimensions. Up to 24 dimensions are available.
 
 ### Config changes for different stacks
 
@@ -450,6 +486,10 @@ node orchestrator.mjs verify
 node orchestrator.mjs run --no-verify
 ```
 
+### Quality gate failed
+
+A quality gate check (lint, build, or test) failed between batches. Check `.orchestrator/logs/gate-N.log` for the full error. Fix the issue manually, then `node orchestrator.mjs resume`. Or skip with `node orchestrator.mjs resume --skip-gate --confirm`.
+
 ### "claude: command not found"
 
 The Claude CLI is not installed or not in your PATH. Install it:
@@ -463,7 +503,7 @@ If not found, install from https://docs.anthropic.com/en/docs/claude-code.
 
 ### "Could not find ---START SCANNER--- markers"
 
-The `DUAL-AUTOMATION-PROMPT.md` file is missing or corrupted. Make sure it exists in your project root and contains the `---START SCANNER---` and `---END SCANNER---` markers.
+The `DUAL-AUTOMATION-PROMPT-V4.md` file is missing or corrupted. Make sure it exists in your project root and contains the `---START SCANNER---` and `---END SCANNER---` markers.
 
 ### Context limit warnings
 
@@ -516,7 +556,13 @@ After the pipeline finishes, the full report is at:
 It contains:
 - Total duration, session count, and phase breakdown
 - Status of every agent (complete or failed, how many sessions each took)
+- Role distribution (how many agents per role type: ENGINEER, SECURITY, etc.)
+- Quality gate results (PASS/FAIL/SKIPPED for each gate)
 - Verification results (pass/fail for each command)
+
+Additional output files (if agents generated them):
+- `PRODUCT-ROADMAP.md` — product opportunities and feature ideas discovered during scanning
+- `FINAL-REPORT.md` — comprehensive verification report from the VERIFIER agent
 
 ### How to review what changed
 
@@ -569,11 +615,12 @@ Every Claude session is logged individually:
 ## 10. Cheat Sheet
 
 ```
- 1.  Copy orchestrator.mjs + orchestrator.config.json + DUAL-AUTOMATION-PROMPT.md to project root
+ 1.  Copy 5 files to project root: orchestrator.mjs, orchestrator.config.json, DUAL-AUTOMATION-PROMPT-V4.md, SCAN-DIMENSIONS.md, AGENT-TEMPLATES.md
  2.  Edit orchestrator.config.json — set verifyCommands for your stack
- 3.  node orchestrator.mjs run --dry-run        ← preview the plan
+ 3.  node orchestrator.mjs run --dry-run        ← preview the plan (shows gate checkpoints)
  4.  node orchestrator.mjs run                  ← run the full pipeline
  5.  ... wait (typically 20-60 minutes) ...
+ 5.5 If gate pauses: node orchestrator.mjs resume (or --skip-gate --confirm)
  6.  node orchestrator.mjs status               ← check progress anytime
  7.  If interrupted: node orchestrator.mjs resume
  8.  Review: git log --oneline -10 && git diff HEAD~5

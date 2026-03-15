@@ -1,6 +1,6 @@
 # User Guide: How to Use the Dual-Automation System
 
-> A plain-language, step-by-step guide for using `DUAL-AUTOMATION-PROMPT.md` on any project.
+> A plain-language, step-by-step guide for using `DUAL-AUTOMATION-PROMPT-V4.md` on any project.
 
 ---
 
@@ -20,14 +20,14 @@ You do not need to configure anything. The system auto-detects your tech stack, 
 
 - A project with source code (any language: JavaScript, TypeScript, Python, Rust, Go, Ruby, Java, etc.)
 - Access to Claude (via Claude Code CLI, Claude.ai, or the API)
-- The file `DUAL-AUTOMATION-PROMPT.md` placed in your project's root folder
+- Three files at project root: `DUAL-AUTOMATION-PROMPT-V4.md`, `SCAN-DIMENSIONS.md`, `AGENT-TEMPLATES.md`
 
 ---
 
 ## Quick Overview of the Full Process
 
 ```
-Step 1:  Copy DUAL-AUTOMATION-PROMPT.md into your project root
+Step 1:  Copy DUAL-AUTOMATION-PROMPT-V4.md into your project root
 Step 2:  Run the Scanner (may take multiple sessions)
 Step 3:  Run the Builder (may take multiple sessions)
 Step 4:  Run the agents batch by batch to fix your code
@@ -42,11 +42,11 @@ Total time depends on project size. A small project might finish in 3–5 sessio
 
 ### 1.1 Copy the file to your project
 
-Take the file `DUAL-AUTOMATION-PROMPT.md` and put it in the root folder of the project you want to audit. The root folder is where your `package.json`, `Cargo.toml`, `go.mod`, or similar config file lives.
+Take the file `DUAL-AUTOMATION-PROMPT-V4.md` and put it in the root folder of the project you want to audit. The root folder is where your `package.json`, `Cargo.toml`, `go.mod`, or similar config file lives.
 
 ```
 your-project/
-├── DUAL-AUTOMATION-PROMPT.md   <-- put it here
+├── DUAL-AUTOMATION-PROMPT-V4.md   <-- put it here
 ├── package.json
 ├── src/
 └── ...
@@ -66,7 +66,7 @@ If you don't have any of these, the Scanner will still work — it just won't ha
 
 ### 1.3 Nothing else to configure
 
-You do not need to edit `DUAL-AUTOMATION-PROMPT.md`. You do not need to tell it what language or framework you use. It figures that out automatically.
+You do not need to edit `DUAL-AUTOMATION-PROMPT-V4.md`. You do not need to tell it what language or framework you use. It figures that out automatically.
 
 ---
 
@@ -83,7 +83,7 @@ Start a fresh Claude conversation. This can be:
 
 ### 2.2 Copy the Scanner Prompt into the session
 
-Open `DUAL-AUTOMATION-PROMPT.md` and find **Section A — The Scanner Prompt**. Copy everything between:
+Open `DUAL-AUTOMATION-PROMPT-V4.md` and find **Section A — The Scanner Prompt**. Copy everything between:
 
 ```
 ---START SCANNER---
@@ -166,7 +166,7 @@ Start a fresh Claude conversation. Do not reuse the Scanner session.
 
 ### 3.2 Copy the Builder Prompt into the session
 
-Open `DUAL-AUTOMATION-PROMPT.md` and find **Section B — The Builder Prompt**. Copy everything between:
+Open `DUAL-AUTOMATION-PROMPT-V4.md` and find **Section B — The Builder Prompt**. Copy everything between:
 
 ```
 ---START BUILDER---
@@ -411,7 +411,7 @@ Undo the agent's changes using `git checkout` for the affected files, then re-ru
 
 ### "I want to add a custom scan dimension"
 
-Read Section C of `DUAL-AUTOMATION-PROMPT.md` (the Mechanics Guide) for instructions on adding custom dimensions. You would edit the Scanner Prompt's conditional dimensions section.
+Read Section C of `DUAL-AUTOMATION-PROMPT-V4.md` (the Mechanics Guide) for instructions on adding custom dimensions. You would edit the Scanner Prompt's conditional dimensions section.
 
 ### "My project uses a language/framework the system doesn't mention"
 
@@ -465,14 +465,18 @@ Run the Scanner and Builder separately for each package. Navigate into each pack
 | **GAP-ANALYSIS** | A file that maps every issue to the agent responsible for fixing it. Ensures nothing is missed. |
 | **Context Limit** | When Claude's conversation memory fills up. The system saves state and resumes in a new session. |
 | **Bootstrap Prompt** | The text you paste into a new Claude session to start an agent. Found in COMMANDS.md. |
+| **Quality Gate** | An automated check (lint, build, test) that runs between batch groups to verify code health. |
+| **Project Type** | Auto-detected classification (Web, CLI, Library, Mobile, Backend, Service) that determines which scan dimensions are active. |
+| **Confidence Score** | Rating (HIGH/MEDIUM/LOW) applied to product opportunities to filter speculative suggestions. |
+| **Role Hierarchy** | Batch ordering system where infrastructure and security roles run before feature-building roles. |
 
 ---
 
 ## Summary Cheat Sheet
 
 ```
-SETUP
-  1. Put DUAL-AUTOMATION-PROMPT.md in your project root
+SETUP (3 files needed — 24 dimensions available, auto-selected by project type)
+  1. Put DUAL-AUTOMATION-PROMPT-V4.md, SCAN-DIMENSIONS.md, and AGENT-TEMPLATES.md in your project root
 
 SCAN (Section A)
   2. New Claude session → paste Scanner Prompt → let it work
