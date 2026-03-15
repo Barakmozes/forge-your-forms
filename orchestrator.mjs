@@ -554,6 +554,7 @@ function invokeClaude(prompt, options = {}) {
     const args = [
       "-p", prompt,
       "--output-format", "stream-json",
+      "--verbose",
       "--dangerously-skip-permissions",
       "--no-session-persistence",
       "--model", model,
