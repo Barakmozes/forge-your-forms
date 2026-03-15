@@ -1,0 +1,32 @@
+{
+  "models": {
+    "scanner": "claude-opus-4-6",
+    "builder": "claude-opus-4-6",
+    "agents": "claude-opus-4-6",
+    "verification": "claude-opus-4-6",
+    "gateFix": "claude-opus-4-6"
+  },
+  "budgetPerPhase": 10,
+  "budgetTotal": 50,
+  "parallelism": 3,
+  "maxContextRestarts": {
+    "scanner": 20,
+    "builder": 15,
+    "agent": 10
+  },
+  "timeoutMs": 600000,
+  "verifyCommands": [
+    "npm run lint",
+    "npx tsc --noEmit",
+    "npm run build"
+  ],
+  "promptFile": "DUAL-AUTOMATION-PROMPT-V3.md",
+  "dimensionsFile": "SCAN-DIMENSIONS.md",
+  "templatesFile": "AGENT-TEMPLATES.md",
+  "agentsDir": ".agents",
+  "qualityGates": {
+    "enabled": true,
+    "autoFixAttempts": 1
+  },
+  "claudeFlags": ["--effort", "high"]
+}
