@@ -1,0 +1,20 @@
+[33md84d1e4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m fix: parseProgress regex to match 3-column PROGRESS.md format
+[33m316c4c4[m fix: parser for COMMANDS.md and MASTER-CONTEXT.md actual format
+[33me4a9c00[m fix: accept BUILDER_COMPLETE status + config update for agents phase
+[33m607b5fe[m fix: pipe prompt via stdin for Windows 8191 char limit
+[33m21e2da4[m fix: add --verbose flag required by claude -p stream-json
+[33mfa69c26[m[33m ([m[1;33mtag: [m[1;33mv4.0-release[m[33m)[m V4 task-11 complete: all 11 verification tests passed
+[33m49528ad[m checkpoint: before task-11 (verification)
+[33m50d327a[m V4 task-10 complete: Windows compatibility verified
+[33mf9b30e4[m checkpoint: before task-10 (windows)
+[33mee31c28[m V4 task-9 complete: user guides updated with V4 features
+[33me03b8b6[m checkpoint: before task-9 (user guides)
+[33m36a9307[m V4 task-8 complete: config schema with backward compat and claudeFlags validation
+[33m2bb56d0[m checkpoint: before task-8 (config)
+[33m4becc60[m V4 task-7 complete: all 11 V3.1 preservation checks passed
+[33mcb65fb1[m checkpoint: before task-7 (V3.1 verification)
+[33m7f2f9cc[m V4 task-6 complete: all signals verified and gate signals integrated
+[33mbd74f7d[m checkpoint: before task-6 (signals)
+[33mb6b5214[m V4 task-5 complete: enhanced summary with roles, gates, roadmap metrics
+[33maec4c81[m checkpoint: before task-5 (summary)
+[33m3190d19[m V4 task-4 complete: 10 roles with colors, 9 batch tiers, project type display
