@@ -145,6 +145,7 @@ function defaultState() {
     },
     agentsDir: null,
     totalSessions: 0,
+    gateHistory: [],
   };
 }
 
@@ -1078,6 +1079,159 @@ async function executeAgent(agent, cfg, state) {
   return { status: "failed", attempts: maxRestarts, error: "MAX_RETRIES" };
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// § 13b. Quality Gates (V4)
+// ────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_GATES = {
+  1: { name: "Post-Infrastructure", commandKeys: ["lint", "typecheck"] },
+  3: { name: "Post-Bugfix", commandKeys: ["build"] },
+  5: { name: "Pre-Feature", commandKeys: ["build", "test"] },
+  6: { name: "Post-Feature", commandKeys: ["build", "test"] },
+};
+
+function resolveGateCommands(commandKeys, verifyCommands) {
+  const map = {
+    lint: verifyCommands[0] || 'echo "No lint configured"',
+    typecheck: verifyCommands[1] || 'echo "No typecheck configured"',
+    build: verifyCommands[2] || 'echo "No build configured"',
+    test: verifyCommands[3] || 'echo "No tests configured"',
+  };
+  return commandKeys.map(k => map[k]).filter(Boolean);
+}
+
+async function runQualityGate(batchNum, cfg, state) {
+  if (!cfg.qualityGates?.enabled) return true;
+
+  const gateDef = DEFAULT_GATES[batchNum];
+  if (!gateDef) return true; // No gate for this batch
+
+  log(`[GATE] Running quality gate '${gateDef.name}' after batch ${batchNum}`);
+
+  const commands = resolveGateCommands(gateDef.commandKeys, cfg.verifyCommands);
+  const maxAttempts = cfg.qualityGates.autoFixAttempts ?? 1;
+
+  for (const cmd of commands) {
+    let passed = false;
+
+    // Try the command
+    try {
+      await runCommandRaw(cmd, { timeout: cfg.timeoutMs });
+      log(`[GATE] Command passed: ${cmd}`, "ok");
+      passed = true;
+    } catch (err) {
+      log(`[GATE] Command failed: ${cmd}`, "error");
+
+      // Auto-fix attempts
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        log(`[GATE] Attempting auto-fix (attempt ${attempt} of ${maxAttempts})...`);
+
+        const errorText = (err.message || "").split("\n").slice(-200).join("\n");
+        const fixPrompt = `Fix the following ${gateDef.commandKeys.includes("lint") ? "lint" : gateDef.commandKeys.includes("build") ? "build" : "test"} error in the project at ${ROOT}.\nMake ONLY the minimal changes needed to fix this specific error.\nDo not refactor, do not add features, do not change unrelated code.\n\nError output:\n${errorText}`;
+
+        try {
+          const fixResult = await invokeClaude(fixPrompt, {
+            model: cfg.models.gateFix || DEFAULTS.models.gateFix,
+            budget: cfg.budgetPerPhase,
+            timeoutMs: cfg.timeoutMs,
+            sessionLogName: `gate-fix-batch${batchNum}`,
+            verbose: cfg.verbose,
+          });
+
+          if (fixResult.exitCode === 0) {
+            log(`[GATE] Auto-fix session completed, re-testing...`);
+          }
+        } catch (fixErr) {
+          log(`[GATE] Auto-fix session failed: ${fixErr.message}`, "warn");
+        }
+
+        // Re-run the failed command
+        try {
+          await runCommandRaw(cmd, { timeout: cfg.timeoutMs });
+          log(`[GATE] Auto-fix succeeded for: ${cmd}`, "ok");
+          passed = true;
+          break;
+        } catch (retryErr) {
+          log(`[GATE] Still failing after auto-fix attempt ${attempt}`, "warn");
+        }
+      }
+    }
+
+    if (!passed) {
+      // Gate failed — persist state and pause
+      const errorSummary = `Command '${cmd}' failed after ${maxAttempts} auto-fix attempt(s)`;
+      const gateLogPath = join(LOGS_DIR, `gate-${batchNum}.log`);
+
+      try {
+        const { stderr: fullError } = await runCommandRaw(cmd, { timeout: cfg.timeoutMs }).catch(e => ({ stderr: e.message }));
+        await writeFile(gateLogPath, `Gate: ${gateDef.name}\nBatch: ${batchNum}\nCommand: ${cmd}\nTimestamp: ${new Date().toISOString()}\n\n${fullError || errorSummary}`);
+      } catch {
+        await writeFile(gateLogPath, `Gate: ${gateDef.name}\nBatch: ${batchNum}\nCommand: ${cmd}\nTimestamp: ${new Date().toISOString()}\n\n${errorSummary}`);
+      }
+
+      if (!state.gateHistory) state.gateHistory = [];
+      state.gateHistory.push({
+        batch: batchNum,
+        gateName: gateDef.name,
+        status: "FAILED",
+        failedCommand: cmd,
+        errorSummary,
+        fullErrorLog: gateLogPath,
+        autoFixAttempted: true,
+        autoFixResult: "FAILED",
+        autoFixSessions: maxAttempts,
+        timestamp: new Date().toISOString(),
+      });
+      await saveState(state);
+
+      log(`[GATE] GATE_FAILED_BATCH_${batchNum}`, "error");
+      appendLog(`[GATE] GATE_FAILED_BATCH_${batchNum} — ${gateDef.name} — ${cmd}`);
+
+      console.log(`
+  ${c.yellow}Quality gate '${gateDef.name}' failed after batch ${batchNum}.${c.reset}
+
+    Failed command: ${cmd}
+    Error summary:  ${errorSummary}
+
+    Options:
+      1. Fix manually, then resume:
+         node orchestrator.mjs resume
+
+      2. Skip this gate (use with caution):
+         node orchestrator.mjs resume --skip-gate --confirm
+
+      3. View full error:
+         cat ${gateLogPath}
+`);
+      return false; // Pause pipeline
+    }
+  }
+
+  // All commands passed
+  if (!state.gateHistory) state.gateHistory = [];
+  state.gateHistory.push({
+    batch: batchNum,
+    gateName: gateDef.name,
+    status: "PASSED",
+    timestamp: new Date().toISOString(),
+  });
+  await saveState(state);
+
+  log(`[GATE] GATE_PASSED_BATCH_${batchNum}`, "ok");
+  appendLog(`[GATE] GATE_PASSED_BATCH_${batchNum} — ${gateDef.name}`);
+
+  // Auto-commit after gate pass
+  try {
+    const { stdout: statusOut } = await runCommand("git", ["status", "--porcelain"]);
+    if (statusOut.trim()) {
+      await runCommand("git", ["add", "-A"]);
+      await runCommand("git", ["commit", "-m", `[orchestrator] gate-${gateDef.name} passed after batch-${batchNum}`]);
+    }
+  } catch { /* non-fatal */ }
+
+  return true;
+}
+
 async function runAgents(cfg, state) {
   logHeader("PHASE 3: AGENTS");
 
@@ -1168,7 +1322,6 @@ async function runAgents(cfg, state) {
     // Auto git commit after batch
     log(`Batch ${batch.number} complete — committing...`);
     try {
-      const agentNames = batch.agents.map(a => a.name).join(", ");
       // Only commit if there are actual changes
       const { stdout: statusOut } = await runCommand("git", ["status", "--porcelain"]);
       if (statusOut.trim()) {
@@ -1181,6 +1334,17 @@ async function runAgents(cfg, state) {
       }
     } catch (err) {
       log(`Git commit failed (non-fatal): ${err.message}`, "warn");
+    }
+
+    // V4: Run quality gate after batch (if configured)
+    const gateOk = await runQualityGate(batch.number, cfg, state);
+    if (!gateOk) {
+      // Gate failed — pipeline paused
+      state.phases.agents.duration = Date.now() - phaseStart;
+      state.phases.agents.status = "gate_paused";
+      state.phases.agents.pausedAtBatch = batch.number;
+      await saveState(state);
+      return false;
     }
   }
 
@@ -1647,8 +1811,64 @@ async function runPipeline(cfg, entryPhase = "scanner") {
   await generateSummary(state);
 }
 
-async function resumePipeline(cfg) {
+async function resumePipeline(cfg, flags = {}) {
   const state = await loadState();
+
+  // V4: Handle gate-paused state
+  if (state.phases.agents.status === "gate_paused") {
+    const lastGate = (state.gateHistory || []).filter(g => g.status === "FAILED").pop();
+
+    if (flags["skip-gate"]) {
+      if (!flags.confirm) {
+        log("ERROR: --skip-gate requires --confirm flag. This skips a quality check and may result in broken code in later batches.", "error");
+        return;
+      }
+      // Skip the failed gate
+      if (lastGate) {
+        lastGate.status = "SKIPPED";
+        log(`[WARN] Gate '${lastGate.gateName}' SKIPPED by user at batch ${lastGate.batch}`, "warn");
+        appendLog(`[GATE] GATE_SKIPPED_BATCH_${lastGate.batch} — ${lastGate.gateName} — skipped by user`);
+      }
+      state.phases.agents.status = "in_progress";
+      delete state.phases.agents.pausedAtBatch;
+      await saveState(state);
+      log("Resuming from Agents phase (gate skipped)");
+      return runPipeline(cfg, "agents");
+    }
+
+    // Re-run the failed gate
+    if (lastGate) {
+      log(`Re-running failed gate '${lastGate.gateName}' at batch ${lastGate.batch}...`);
+      const commands = resolveGateCommands(
+        DEFAULT_GATES[lastGate.batch]?.commandKeys || [],
+        cfg.verifyCommands
+      );
+
+      let allPass = true;
+      for (const cmd of commands) {
+        try {
+          await runCommandRaw(cmd, { timeout: cfg.timeoutMs });
+          log(`[GATE] Command passed: ${cmd}`, "ok");
+        } catch {
+          log(`[GATE] Command still failing: ${cmd}`, "error");
+          console.log(`\n  Fix the issue manually, then run: node orchestrator.mjs resume`);
+          console.log(`  Or skip: node orchestrator.mjs resume --skip-gate --confirm\n`);
+          allPass = false;
+          break;
+        }
+      }
+
+      if (allPass) {
+        lastGate.status = "PASSED";
+        state.phases.agents.status = "in_progress";
+        delete state.phases.agents.pausedAtBatch;
+        await saveState(state);
+        log(`[GATE] Gate '${lastGate.gateName}' now passes — resuming pipeline`, "ok");
+        return runPipeline(cfg, "agents");
+      }
+      return;
+    }
+  }
 
   // Determine entry point from state
   if (state.phases.scanner.status !== "complete") {
@@ -1699,7 +1919,7 @@ async function main() {
     case "resume": {
       const ok = await preflight(cfg);
       if (!ok) process.exit(1);
-      return resumePipeline(cfg);
+      return resumePipeline(cfg, flags);
     }
 
     case "status":
@@ -1751,6 +1971,8 @@ async function main() {
       console.log(`  --timeout <ms>        Output watchdog timeout (default: 600000)`);
       console.log(`  --agents-dir <path>   Agents directory (default: .agents)`);
       console.log(`  --config <path>       Config file path`);
+      console.log(`  --skip-gate           Skip failed quality gate (resume only, requires --confirm)`);
+      console.log(`  --confirm             Confirm gate skip`);
       process.exit(1);
   }
 }
