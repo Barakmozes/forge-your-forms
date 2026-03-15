@@ -1864,6 +1864,24 @@ async function preflight(cfg) {
     }
   } catch { /* not a git repo — that's fine */ }
 
+  // V4: Validate claudeFlags
+  if (cfg.claudeFlags && cfg.claudeFlags.length > 0) {
+    try {
+      const flagTest = cfg.claudeFlags.join(" ");
+      await runCommand("claude", ["-p", "echo test", ...cfg.claudeFlags], { timeout: 15000 });
+      log(`claudeFlags ${JSON.stringify(cfg.claudeFlags)} accepted by claude -p.`);
+    } catch {
+      log(`claudeFlags ${JSON.stringify(cfg.claudeFlags)} not supported by claude -p.`, "warn");
+      log("Falling back to no flags. Set CLAUDE_CODE_EFFORT_LEVEL env var instead.", "warn");
+      if (process.platform === "win32") {
+        log("Example: $env:CLAUDE_CODE_EFFORT_LEVEL=\"high\" (PowerShell)", "warn");
+      } else {
+        log("Example: export CLAUDE_CODE_EFFORT_LEVEL=high (bash/zsh)", "warn");
+      }
+      cfg.claudeFlags = [];
+    }
+  }
+
   if (errors.length > 0) {
     for (const err of errors) log(err, "error");
     return false;
