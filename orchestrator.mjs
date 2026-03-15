@@ -552,7 +552,7 @@ function invokeClaude(prompt, options = {}) {
 
   return new Promise((resolvePromise, rejectPromise) => {
     const args = [
-      "-p", prompt,
+      "-p",
       "--output-format", "stream-json",
       "--verbose",
       "--dangerously-skip-permissions",
@@ -568,9 +568,13 @@ function invokeClaude(prompt, options = {}) {
     const proc = spawn("claude", args, {
       shell: true,
       cwd: ROOT,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env },
     });
+
+    // Pipe prompt via stdin to avoid Windows command-line length limits
+    proc.stdin.write(prompt);
+    proc.stdin.end();
 
     const signals = [];
     let stderrBuf = "";
