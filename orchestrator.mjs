@@ -1485,68 +1485,151 @@ async function generateSummary(state) {
     (state.phases.builder.duration || 0) +
     (state.phases.agents.duration || 0);
 
-  // Count agents
+  // Count agents and roles
   let agentsComplete = 0, agentsFailed = 0;
+  const roleCounts = {};
+  const agentsDir = state.agentsDir || DEFAULTS.agentsDir;
+
   for (const batch of Object.values(state.phases.agents.batches || {})) {
     for (const agent of batch.agents || []) {
       if (agent.status === "complete") agentsComplete++;
       else agentsFailed++;
+
+      // Parse role
+      const agentDirPath = join(ROOT, agentsDir, agent.name || `agent-${String(agent.id).padStart(2, "0")}`);
+      try {
+        const role = await parseAgentRole(agentDirPath);
+        roleCounts[role] = (roleCounts[role] || 0) + 1;
+      } catch { /* skip */ }
     }
   }
   const totalAgents = agentsComplete + agentsFailed;
 
+  // V4: Read project type + dimensions
+  const { projectType, activeCount } = await readProjectType();
+
   // Verification results
   const verifyResults = state.phases.verify.results || {};
-  const verifyLines = Object.entries(verifyResults)
-    .map(([cmd, r]) => {
-      const icon = r.status === "pass" ? `${c.green}PASS${c.reset}` : `${c.red}FAIL${c.reset}`;
-      return `  ${cmd}: ${icon}${r.autoFixed ? " (auto-fixed)" : ""}`;
-    })
-    .join("\n");
+
+  // V4: Gate results
+  const gates = state.gateHistory || [];
+  const gateNames = ["Post-Infrastructure", "Post-Bugfix", "Pre-Feature", "Post-Feature"];
+
+  // V4: Product roadmap counts
+  let featuresBuilt = 0, nextSprintIdeas = 0, futureBacklog = 0;
+  try {
+    const roadmap = (await readFile(join(ROOT, "PRODUCT-ROADMAP.md"), "utf-8")).replace(/\r\n/g, "\n");
+    const sections = roadmap.split(/^## /m);
+    for (const s of sections) {
+      const rowCount = (s.match(/^\|[^|]/gm) || []).length;
+      if (/built|implemented/i.test(s)) featuresBuilt = Math.max(0, rowCount - 1);
+      else if (/next sprint|short.?term/i.test(s)) nextSprintIdeas = Math.max(0, rowCount - 1);
+      else if (/future|backlog|long.?term/i.test(s)) futureBacklog = Math.max(0, rowCount - 1);
+    }
+  } catch { /* no roadmap — that's ok */ }
+
+  const agentSessions = state.totalSessions - (state.phases.scanner.sessions || 0) - (state.phases.builder.sessions || 0);
+  const totalCommits = Object.keys(state.phases.agents.batches || {}).length + gates.filter(g => g.status === "PASSED").length;
 
   const line = "═".repeat(60);
   console.log(`\n${c.bold}${c.green}${line}${c.reset}`);
-  console.log(`${c.bold}  PIPELINE COMPLETE${c.reset}`);
+  console.log(`${c.bold}  PIPELINE COMPLETE — V4 Full Lifecycle${c.reset}`);
   console.log(`${c.bold}${c.green}${line}${c.reset}\n`);
+
+  console.log(`  Project:      ${basename(ROOT)} (${projectType})`);
   console.log(`  Duration:     ${formatDuration(totalDuration)}`);
-  console.log(`  Sessions:     ${state.totalSessions} total (${state.phases.scanner.sessions} scanner, ${state.phases.builder.sessions} builder, ${state.totalSessions - state.phases.scanner.sessions - state.phases.builder.sessions} agents)`);
+  console.log(`  Sessions:     ${state.totalSessions} total (${state.phases.scanner.sessions || 0} scanner, ${state.phases.builder.sessions || 0} builder, ${agentSessions} agents)`);
   console.log(`  Agents:       ${agentsComplete}/${totalAgents} complete`);
-  if (verifyLines) {
-    console.log(`\n  Verification:`);
-    console.log(verifyLines);
+  console.log(`  Dimensions:   ${activeCount}/24 scanned`);
+
+  // By Role
+  if (Object.keys(roleCounts).length > 0) {
+    console.log(`\n  By Role:`);
+    for (const [role, count] of Object.entries(roleCounts)) {
+      const roleColor = ROLE_COLORS[role] || ROLE_COLORS.UNKNOWN;
+      const label = isColorSupported ? `${roleColor}${role}${c.reset}` : role;
+      console.log(`    ${label.padEnd(30)} ${count} agent${count > 1 ? "s" : ""}`);
+    }
   }
-  console.log(`\n  Full report:  .orchestrator/logs/summary.md`);
-  console.log(`  Review:       git log --oneline -10\n`);
+
+  // Quality Gates
+  console.log(`\n  Quality Gates:`);
+  for (const gateName of gateNames) {
+    const gate = gates.find(g => g.gateName === gateName);
+    const status = gate
+      ? (gate.status === "PASSED" ? `${c.green}PASS${c.reset}` :
+         gate.status === "SKIPPED" ? `${c.yellow}SKIP${c.reset}` :
+         `${c.red}FAIL${c.reset}`)
+      : `${c.dim}N/A${c.reset}`;
+    console.log(`    ${gateName.padEnd(24)} ${status}`);
+  }
+
+  // Verification
+  if (Object.keys(verifyResults).length > 0) {
+    console.log(`\n  Verification:`);
+    for (const [cmd, r] of Object.entries(verifyResults)) {
+      const icon = r.status === "pass" ? `${c.green}PASS${c.reset}` : `${c.red}FAIL${c.reset}`;
+      console.log(`    ${cmd}: ${icon}${r.autoFixed ? " (auto-fixed)" : ""}`);
+    }
+  }
+
+  // Product Roadmap
+  if (featuresBuilt > 0 || nextSprintIdeas > 0 || futureBacklog > 0) {
+    console.log(`\n  Product Roadmap:`);
+    console.log(`    Features built:    ${featuresBuilt}`);
+    console.log(`    Next sprint ideas: ${nextSprintIdeas}`);
+    console.log(`    Future backlog:    ${futureBacklog}`);
+  }
+
+  // Reports
+  console.log(`\n  Reports:`);
+  console.log(`    Pipeline report:  .orchestrator/logs/summary.md`);
+  const hasRoadmap = await fileExists(join(ROOT, "PRODUCT-ROADMAP.md"));
+  const hasFinalReport = await fileExists(join(ROOT, "FINAL-REPORT.md"));
+  if (hasRoadmap) console.log(`    Product roadmap:  PRODUCT-ROADMAP.md`);
+  if (hasFinalReport) console.log(`    Final report:     FINAL-REPORT.md`);
+  console.log(`    Review changes:   git log --oneline -${totalCommits + 5}`);
+  console.log(`${c.bold}${c.green}${line}${c.reset}\n`);
 
   // Write summary.md
   const summaryMd = [
-    "# Pipeline Summary",
+    "# Pipeline Summary — V4",
     "",
+    `- **Project**: ${basename(ROOT)} (${projectType})`,
     `- **Started**: ${state.startedAt}`,
     `- **Completed**: ${new Date().toISOString()}`,
     `- **Duration**: ${formatDuration(totalDuration)}`,
     `- **Total Sessions**: ${state.totalSessions}`,
+    `- **Dimensions**: ${activeCount}/24`,
     "",
     "## Phases",
     "",
     `| Phase | Status | Sessions | Duration |`,
     `|-------|--------|----------|----------|`,
-    `| Scanner | ${state.phases.scanner.status} | ${state.phases.scanner.sessions} | ${formatDuration(state.phases.scanner.duration || 0)} |`,
-    `| Builder | ${state.phases.builder.status} | ${state.phases.builder.sessions} | ${formatDuration(state.phases.builder.duration || 0)} |`,
-    `| Agents | ${state.phases.agents.status} | — | ${formatDuration(state.phases.agents.duration || 0)} |`,
+    `| Scanner | ${state.phases.scanner.status} | ${state.phases.scanner.sessions || 0} | ${formatDuration(state.phases.scanner.duration || 0)} |`,
+    `| Builder | ${state.phases.builder.status} | ${state.phases.builder.sessions || 0} | ${formatDuration(state.phases.builder.duration || 0)} |`,
+    `| Agents | ${state.phases.agents.status} | ${agentSessions} | ${formatDuration(state.phases.agents.duration || 0)} |`,
     `| Verify | ${state.phases.verify.status} | — | — |`,
     "",
     "## Agents",
     "",
-    `| Agent | Status | Attempts |`,
-    `|-------|--------|----------|`,
+    `| Agent | Role | Status | Attempts |`,
+    `|-------|------|--------|----------|`,
     ...Object.values(state.phases.agents.batches || {}).flatMap(b =>
-      (b.agents || []).map(a => `| Agent ${a.id} (${a.name}) | ${a.status} | ${a.attempts} |`)
+      (b.agents || []).map(a => `| ${a.name || `Agent ${a.id}`} | — | ${a.status} | ${a.attempts} |`)
     ),
+    "",
+    "## Quality Gates",
+    "",
+    ...gates.map(g => `- **${g.gateName}** (batch ${g.batch}): ${g.status}`),
     "",
     "## Verification",
     "",
     ...Object.entries(verifyResults).map(([cmd, r]) => `- **${cmd}**: ${r.status}${r.autoFixed ? " (auto-fixed)" : ""}`),
+    "",
+    "## Role Distribution",
+    "",
+    ...Object.entries(roleCounts).map(([role, count]) => `- ${role}: ${count}`),
     "",
   ].join("\n");
 
