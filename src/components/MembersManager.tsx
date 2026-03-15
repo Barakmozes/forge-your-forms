@@ -67,6 +67,7 @@ export default function MembersManager() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>("editor");
   const [inviting, setInviting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const isOwner = currentWorkspace?.owner_id === user?.id;
   // === AGENT 7: Member Invite Gate ===
@@ -83,6 +84,7 @@ export default function MembersManager() {
   async function fetchMembers() {
     if (!currentWorkspace) return;
     setLoading(true);
+    setFetchError(null);
 
     const { data, error } = await supabase
       .from("workspace_members")
@@ -90,6 +92,7 @@ export default function MembersManager() {
       .eq("workspace_id", currentWorkspace.id);
 
     if (error || !data) {
+      setFetchError(t("members.failedLoadMembers"));
       setLoading(false);
       return;
     }
@@ -120,7 +123,7 @@ export default function MembersManager() {
     const result = await handleAsync(
       async () => {
         const { data: profile, error: profileErr } = await supabase
-          .rpc("lookup_profile_for_invite", { email_input: inviteEmail.trim().toLowerCase() })
+          .rpc("lookup_profile_for_invite", { email_input: inviteEmail.trim().toLowerCase(), workspace_id_input: currentWorkspace.id })
           .maybeSingle();
 
         if (profileErr) throw profileErr;
@@ -228,6 +231,10 @@ export default function MembersManager() {
 
   if (loading) {
     return <div className="py-8 text-center text-muted-foreground">{t("members.loadingMembers")}</div>;
+  }
+
+  if (fetchError) {
+    return <div className="py-8 text-center text-destructive">{fetchError}</div>;
   }
 
   return (

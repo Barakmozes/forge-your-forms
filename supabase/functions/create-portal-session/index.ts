@@ -90,6 +90,28 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Verify workspace membership and require owner role for billing operations
+    const { data: member, error: memberError } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (member.role !== "owner") {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: only workspace owners can manage billing" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Look up the Stripe customer ID from the subscription
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")

@@ -18,6 +18,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ─── Allowed Price IDs (server-side allowlist) ──────────────────────────────
+// Read from env vars if set, otherwise fall back to hardcoded Stripe price IDs.
+// These must match the IDs in src/lib/stripe.ts and stripe-webhook/index.ts.
+function getAllowedPriceIds(): Set<string> {
+  const ids = [
+    Deno.env.get("STRIPE_PRICE_PRO_MONTHLY")     ?? "price_1TAH5vP7upMiSmxcaxFeD3Rn",
+    Deno.env.get("STRIPE_PRICE_PRO_ANNUAL")       ?? "price_1TAH5zP7upMiSmxcxCLv1YIu",
+    Deno.env.get("STRIPE_PRICE_GROWTH_MONTHLY")   ?? "price_1TAH63P7upMiSmxcqTjUetpc",
+    Deno.env.get("STRIPE_PRICE_GROWTH_ANNUAL")    ?? "price_1TAH66P7upMiSmxckzYCNMXF",
+    Deno.env.get("STRIPE_PRICE_BUSINESS_MONTHLY") ?? "price_1TAH68P7upMiSmxcuOpvjL9e",
+    Deno.env.get("STRIPE_PRICE_BUSINESS_ANNUAL")  ?? "price_1TAH6AP7upMiSmxcUrVVDJMs",
+  ];
+  return new Set(ids);
+}
+
 // ─── Stripe API Helper ─────────────────────────────────────────────
 
 async function stripePost(
@@ -98,6 +113,30 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ error: "Missing required fields: priceId, workspaceId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate price ID against allowlist (prevents arbitrary price ID injection)
+    const allowedPriceIds = getAllowedPriceIds();
+    if (!allowedPriceIds.has(priceId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid price ID" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify workspace membership — any authenticated member can initiate checkout
+    const { data: member, error: memberError } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

@@ -85,6 +85,7 @@
     "fullNamePlaceholder": "Jane Smith",
     "loginFailed": "Login failed",
     "signupFailed": "Signup failed",
+    "weakPassword": "Password too weak",
     "checkEmail": "Check your email",
     "confirmationSent": "We sent you a confirmation link.",
     "checkYourEmail": "Check your email",
@@ -690,7 +691,8 @@
     "alreadyMember": "This user is already a workspace member.",
     "failedInvite": "Failed to invite member.",
     "failedRemove": "Failed to remove member.",
-    "failedUpdateRole": "Failed to update role."
+    "failedUpdateRole": "Failed to update role.",
+    "failedLoadMembers": "Failed to load members. Please refresh."
   },
   "notifications": {
     "title": "Notifications",

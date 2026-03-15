@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { validatePassword } from "@/lib/passwordValidation";
 import { Hammer, Mail, KeyRound } from "lucide-react";
 
 type AuthView = "login" | "signup" | "forgotPassword" | "pendingVerification" | "pendingReset";
@@ -89,6 +90,16 @@ export default function Auth() {
         navigate("/");
       }
     } else if (view === "signup") {
+      const pwValidation = validatePassword(password);
+      if (!pwValidation.valid) {
+        toast({
+          title: t("auth.weakPassword"),
+          description: pwValidation.errors.join(" "),
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -315,7 +326,7 @@ export default function Auth() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">{t("auth.password")}</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} required minLength={6} dir="ltr" />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} required minLength={8} dir="ltr" />
             </div>
             {view === "login" && (
               <div className="text-end">

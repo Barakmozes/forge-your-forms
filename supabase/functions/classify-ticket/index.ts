@@ -99,6 +99,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Verify workspace membership (editor+ role required for AI features)
+    const { data: member, error: memberError } = await supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("workspace_id", workspace_id)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ─── Cache Check ──────────────────────────────────────────────
     const cacheKey = `${subject}:${description ?? ""}:${(categories ?? []).join(",")}`;
     const inputHash = await hashInput(cacheKey);
@@ -137,23 +152,42 @@ Description: "${description ?? "No description provided"}"
 
 ${categoriesList}`;
 
-    const anthropicResponse = await fetch(
-      "https://api.anthropic.com/v1/messages",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 300,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userMessage }],
-        }),
+    // Add 30s timeout to prevent infinite hangs on Anthropic API slowness
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    let anthropicResponse: Response;
+    try {
+      anthropicResponse = await fetch(
+        "https://api.anthropic.com/v1/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 300,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: "user", content: userMessage }],
+          }),
+          signal: controller.signal,
+        }
+      );
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
+        return new Response(
+          JSON.stringify({ error: "AI classification timed out" }),
+          { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-    );
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!anthropicResponse.ok) {
       const errText = await anthropicResponse.text();

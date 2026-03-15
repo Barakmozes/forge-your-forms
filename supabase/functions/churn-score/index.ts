@@ -28,7 +28,7 @@ interface RiskFactors {
   ticket_count_30d: number;
   ticket_flag: string | null;
   sentiment_trend: string | null;
-  last_interaction: string | null;
+  last_interaction_at: string | null;
   days_since_interaction: number | null;
 }
 
@@ -109,6 +109,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Verify workspace membership before processing
+    const { data: member, error: memberError } = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("workspace_id", workspace_id)
+      .maybeSingle();
+
+    if (memberError || !member) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -172,7 +187,40 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ─── Score each customer ─────────────────────────────────────
+    // ─── Batch-fetch all data for all emails at once (eliminates N+1) ────────
+
+    // Fetch all feedback responses for the workspace in one query
+    const { data: allFeedback } = await supabase
+      .from("feedback_responses")
+      .select("respondent_email, nps_score, sentiment, created_at")
+      .in("form_id", formIds)
+      .not("respondent_email", "is", null);
+
+    // Fetch all tickets for the workspace in one query
+    const { data: allTickets } = await supabase
+      .from("tickets")
+      .select("submitted_by_email, created_at, status")
+      .in("form_id", formIds)
+      .not("submitted_by_email", "is", null);
+
+    // Build per-email lookup maps (O(N) construction, O(1) access)
+    const feedbackByEmail = new Map<string, Array<{ nps_score: number | null; sentiment: string | null; created_at: string }>>();
+    allFeedback?.forEach((r: { respondent_email: string | null; nps_score: number | null; sentiment: string | null; created_at: string }) => {
+      if (!r.respondent_email) return;
+      const key = r.respondent_email.toLowerCase();
+      if (!feedbackByEmail.has(key)) feedbackByEmail.set(key, []);
+      feedbackByEmail.get(key)!.push({ nps_score: r.nps_score, sentiment: r.sentiment, created_at: r.created_at });
+    });
+
+    const ticketsByEmail = new Map<string, Array<{ created_at: string }>>();
+    allTickets?.forEach((t: { submitted_by_email: string | null; created_at: string }) => {
+      if (!t.submitted_by_email) return;
+      const key = t.submitted_by_email.toLowerCase();
+      if (!ticketsByEmail.has(key)) ticketsByEmail.set(key, []);
+      ticketsByEmail.get(key)!.push({ created_at: t.created_at });
+    });
+
+    // ─── Score each customer (in-memory only, no more per-email DB queries) ──
     const scores: Array<{
       workspace_id: string;
       customer_email: string;
@@ -186,93 +234,88 @@ Deno.serve(async (req: Request) => {
     }> = [];
 
     for (const email of allEmails) {
-      // Get NPS scores
-      const { data: npsData } = await supabase
-        .from("feedback_responses")
-        .select("nps_score, sentiment, created_at")
-        .in("form_id", formIds)
-        .ilike("respondent_email", email);
+      try {
+        const feedbackRows = feedbackByEmail.get(email) ?? [];
+        const ticketRows = ticketsByEmail.get(email) ?? [];
 
-      const npsScores = npsData
-        ?.map((r: { nps_score: number | null }) => r.nps_score)
-        .filter((s: number | null): s is number => s !== null) ?? [];
-      const npsAverage = npsScores.length > 0
-        ? npsScores.reduce((a: number, b: number) => a + b, 0) / npsScores.length
-        : null;
+        // NPS computation
+        const npsScores = feedbackRows
+          .map((r) => r.nps_score)
+          .filter((s): s is number => s !== null);
+        const npsAverage = npsScores.length > 0
+          ? npsScores.reduce((a, b) => a + b, 0) / npsScores.length
+          : null;
 
-      // Get recent ticket count
-      const { count: ticketCount } = await supabase
-        .from("tickets")
-        .select("id", { count: "exact", head: true })
-        .in("form_id", formIds)
-        .ilike("submitted_by_email", email)
-        .gte("created_at", thirtyDaysAgo);
+        // Recent ticket count (last 30 days)
+        const ticketCount30d = ticketRows.filter((t) => t.created_at >= thirtyDaysAgo).length;
 
-      // Determine sentiment trend from recent feedback
-      const recentSentiments = npsData
-        ?.filter((r: { created_at: string }) => r.created_at >= thirtyDaysAgo)
-        .map((r: { sentiment: string | null }) => r.sentiment) ?? [];
+        // Sentiment trend from recent feedback
+        const recentSentiments = feedbackRows
+          .filter((r) => r.created_at >= thirtyDaysAgo)
+          .map((r) => r.sentiment);
 
-      let sentimentTrend: string | null = null;
-      if (recentSentiments.length > 0) {
-        const detractors = recentSentiments.filter((s: string | null) => s === "detractor").length;
-        const promoters = recentSentiments.filter((s: string | null) => s === "promoter").length;
-        if (detractors > promoters) sentimentTrend = "negative";
-        else if (promoters > detractors) sentimentTrend = "positive";
-        else sentimentTrend = "neutral";
+        let sentimentTrend: string | null = null;
+        if (recentSentiments.length > 0) {
+          const detractors = recentSentiments.filter((s) => s === "detractor").length;
+          const promoters = recentSentiments.filter((s) => s === "promoter").length;
+          if (detractors > promoters) sentimentTrend = "negative";
+          else if (promoters > detractors) sentimentTrend = "positive";
+          else sentimentTrend = "neutral";
+        }
+
+        // Last interaction date (latest across feedback and tickets)
+        const allDates: string[] = [
+          ...feedbackRows.map((r) => r.created_at),
+          ...ticketRows.map((t) => t.created_at),
+        ];
+        const lastInteraction = allDates.length > 0
+          ? allDates.sort().reverse()[0]
+          : null;
+
+        const daysSinceInteraction = lastInteraction
+          ? Math.floor((now.getTime() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        // Build risk factors (field name matches frontend ChurnScore interface)
+        const factors: RiskFactors = {
+          nps_average: npsAverage !== null ? Math.round(npsAverage * 100) / 100 : null,
+          nps_flag: npsAverage !== null
+            ? npsAverage < 5 ? "very_low" : npsAverage < 7 ? "low" : npsAverage >= 9 ? "high" : "neutral"
+            : null,
+          ticket_count_30d: ticketCount30d,
+          ticket_flag: ticketCount30d > 3 ? "high_frequency" : ticketCount30d > 1 ? "moderate" : null,
+          sentiment_trend: sentimentTrend,
+          last_interaction_at: lastInteraction,   // fixed: was last_interaction, now matches frontend interface
+          days_since_interaction: daysSinceInteraction,
+        };
+
+        const riskScore = calculateRiskScore(factors);
+
+        scores.push({
+          workspace_id,
+          customer_email: email,
+          risk_score: riskScore,
+          risk_factors: factors,
+          nps_average: npsAverage !== null ? Math.round(npsAverage * 100) / 100 : null,
+          ticket_count_30d: ticketCount30d,
+          sentiment_trend: sentimentTrend,
+          last_interaction_at: lastInteraction,
+          last_scored_at: now.toISOString(),
+        });
+      } catch (emailErr) {
+        // Per-email error isolation: log and continue to next customer
+        console.error(`churn-score: failed to process email ${email}:`, emailErr);
       }
-
-      // Find last interaction date
-      const dates: string[] = [];
-      npsData?.forEach((r: { created_at: string }) => dates.push(r.created_at));
-
-      const { data: lastTicket } = await supabase
-        .from("tickets")
-        .select("created_at")
-        .in("form_id", formIds)
-        .ilike("submitted_by_email", email)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (lastTicket?.[0]) dates.push(lastTicket[0].created_at);
-
-      const lastInteraction = dates.length > 0
-        ? dates.sort().reverse()[0]
-        : null;
-
-      const daysSinceInteraction = lastInteraction
-        ? Math.floor((now.getTime() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-
-      // Build risk factors
-      const factors: RiskFactors = {
-        nps_average: npsAverage !== null ? Math.round(npsAverage * 100) / 100 : null,
-        nps_flag: npsAverage !== null
-          ? npsAverage < 5 ? "very_low" : npsAverage < 7 ? "low" : npsAverage >= 9 ? "high" : "neutral"
-          : null,
-        ticket_count_30d: ticketCount ?? 0,
-        ticket_flag: (ticketCount ?? 0) > 3 ? "high_frequency" : (ticketCount ?? 0) > 1 ? "moderate" : null,
-        sentiment_trend: sentimentTrend,
-        last_interaction: lastInteraction,
-        days_since_interaction: daysSinceInteraction,
-      };
-
-      const riskScore = calculateRiskScore(factors);
-
-      scores.push({
-        workspace_id,
-        customer_email: email,
-        risk_score: riskScore,
-        risk_factors: factors,
-        nps_average: npsAverage !== null ? Math.round(npsAverage * 100) / 100 : null,
-        ticket_count_30d: ticketCount ?? 0,
-        sentiment_trend: sentimentTrend,
-        last_interaction_at: lastInteraction,
-        last_scored_at: now.toISOString(),
-      });
     }
 
     // ─── Upsert scores ──────────────────────────────────────────
+    if (scores.length === 0) {
+      return new Response(
+        JSON.stringify({ scored: 0, message: "No scores computed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { error: upsertError } = await supabase
       .from("churn_scores")
       .upsert(scores, { onConflict: "workspace_id,customer_email" });

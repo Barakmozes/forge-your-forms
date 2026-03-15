@@ -4,6 +4,13 @@
 // Deploy: supabase functions deploy slack-notify
 // ============================================
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -105,13 +112,51 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { webhook_url, event_type, form_title, data } = await req.json();
+    // Authenticate — only authorized users may trigger Slack notifications
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { webhook_url, event_type, form_title, data, workspace_id } = await req.json();
 
     if (!webhook_url || !event_type) {
       return new Response(
         JSON.stringify({ error: "Missing webhook_url or event_type" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Verify workspace membership if workspace_id is provided
+    if (workspace_id) {
+      const { data: member, error: memberError } = await supabase
+        .from("workspace_members")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("workspace_id", workspace_id)
+        .maybeSingle();
+
+      if (memberError || !member) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: not a member of this workspace" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // SSRF protection: only allow Slack webhook URLs

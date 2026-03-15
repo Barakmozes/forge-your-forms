@@ -51,7 +51,17 @@ async function verifyStripeSignature(
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  return computedSig === expectedSig;
+  // Use constant-time comparison to prevent timing attacks.
+  // Both strings are hex-encoded ASCII — safe to encode as UTF-8.
+  // Reuse the encoder already declared above.
+  const aBytes = encoder.encode(computedSig);
+  const bBytes = encoder.encode(expectedSig);
+  if (aBytes.length !== bBytes.length) return false;
+  let diff = 0;
+  for (let i = 0; i < aBytes.length; i++) {
+    diff |= aBytes[i] ^ bBytes[i];
+  }
+  return diff === 0;
 }
 
 // --- Stripe API helper ---
@@ -268,14 +278,23 @@ Deno.serve(async (req: Request) => {
         await handleSubscriptionDeleted(event.data.object);
         break;
       default:
+        // Unknown event types — acknowledge to Stripe so it stops retrying
         console.log(`Unhandled event type: ${event.type}`);
+        return new Response(JSON.stringify({ received: true, handled: false }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
     }
   } catch (err) {
     console.error(`Error handling ${event.type}:`, err);
-    // Return 200 even on processing errors to prevent Stripe retries for bad data
+    // Return 500 so Stripe will retry transient failures (DB errors, network issues).
+    return new Response(
+      JSON.stringify({ error: `Failed to process ${event.type}` }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 
-  // Always return 200 for handled events
+  // Return 200 only for successfully processed events
   return new Response(JSON.stringify({ received: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },

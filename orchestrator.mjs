@@ -507,10 +507,10 @@ async function parseProgress(progressPath) {
     // Parse prompt table
     const prompts = [];
     for (const line of content.split("\n").map(l => l.replace(/\r$/, ""))) {
-      // "| 21.0 | ✅ Complete | ... |" or "| 21.1 | NOT_STARTED | ... |"
-      const match = line.match(/\|\s*(\d+\.\d+)\s*\|\s*(✅\s*Complete|COMPLETE|IN_PROGRESS|NOT_STARTED|⏳[^|]*|❌[^|]*)\s*\|/i);
+      // "| 1.0 | Description | COMPLETE | 2026-03-15T10:00 |"
+      const match = line.match(/\|\s*(\d+\.\d+)\s*\|[^|]*\|\s*(✅\s*Complete|COMPLETE|SKIPPED|IN_PROGRESS|NOT_STARTED|BLOCKED|⏳[^|]*|❌[^|]*)\s*\|/i);
       if (match) {
-        const isComplete = /complete|✅/i.test(match[2]);
+        const isComplete = /complete|skipped|✅/i.test(match[2]);
         prompts.push({ id: match[1], status: match[2].trim(), complete: isComplete });
       }
     }

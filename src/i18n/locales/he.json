@@ -85,6 +85,7 @@
     "fullNamePlaceholder": "ישראל ישראלי",
     "loginFailed": "ההתחברות נכשלה",
     "signupFailed": "ההרשמה נכשלה",
+    "weakPassword": "הסיסמה חלשה מדי",
     "checkEmail": "בדוק את האימייל שלך",
     "confirmationSent": "שלחנו לך קישור לאימות.",
     "checkYourEmail": "בדוק את האימייל שלך",
@@ -690,7 +691,8 @@
     "alreadyMember": "משתמש זה כבר חבר בסביבת העבודה.",
     "failedInvite": "הזמנת חבר צוות נכשלה.",
     "failedRemove": "הסרת חבר צוות נכשלה.",
-    "failedUpdateRole": "עדכון התפקיד נכשל."
+    "failedUpdateRole": "עדכון התפקיד נכשל.",
+    "failedLoadMembers": "טעינת חברי הצוות נכשלה. נסה לרענן."
   },
   "notifications": {
     "title": "התראות",

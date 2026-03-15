@@ -941,13 +941,21 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
-      lookup_profile_for_invite: {
-        Args: { email_input: string }
-        Returns: {
-          email: string
-          id: string
-        }[]
-      }
+      lookup_profile_for_invite:
+        | {
+            Args: { email_input: string }
+            Returns: {
+              email: string
+              id: string
+            }[]
+          }
+        | {
+            Args: { email_input: string; workspace_id_input: string }
+            Returns: {
+              email: string
+              id: string
+            }[]
+          }
       lookup_profiles_by_ids: {
         Args: { user_ids: string[] }
         Returns: {
