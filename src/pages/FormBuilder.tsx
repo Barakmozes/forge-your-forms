@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,33 +27,14 @@ import { CSS } from "@dnd-kit/utilities";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import FormResponsesTab from "@/components/FormResponsesTab";
 import FormSettingsPanel, { type FormSettings } from "@/components/builder/FormSettingsPanel";
-import ConditionalLogic, { type FieldCondition } from "@/components/builder/ConditionalLogic";
+import ConditionalLogic from "@/components/builder/ConditionalLogic";
 import SharePanel from "@/components/embed/SharePanel";
 import BrandingPanel, { type FormBranding } from "@/components/builder/BrandingPanel";
 import type { Database } from "@/integrations/supabase/types";
+// Import canonical types from single source of truth
+import type { FieldType, FormField } from "@/types/forms";
 
 type FormMode = Database["public"]["Enums"]["form_mode"];
-type FieldType = "text" | "textarea" | "number" | "email" | "phone" | "date" | "select" | "multi_select" | "checkbox" | "radio" | "file_upload" | "section_header" | "paragraph_text";
-
-interface FormField {
-  id: string;
-  type: FieldType;
-  label: string;
-  placeholder: string;
-  helpText: string;
-  required: boolean;
-  options: string[];
-  validation: {
-    min?: number;
-    max?: number;
-    minLength?: number;
-    maxLength?: number;
-    phonePattern?: string;
-    maxFileSize?: number;
-    allowedFileTypes?: string[];
-  };
-  condition?: FieldCondition;
-}
 
 const FIELD_CATEGORIES = [
   {
@@ -186,6 +168,7 @@ function SortableFieldItem({ field, activeId, onClick, onRemove, t }: { field: F
 }
 
 export default function FormBuilder() {
+  useDocumentTitle("Form Builder");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -250,11 +233,11 @@ export default function FormBuilder() {
         setSettings((data.settings as FormSettings) ?? {});
         setBranding((data.branding as FormBranding) ?? {});
         setLoading(false);
-        setTimeout(() => { isInitialLoad.current = false; }, 500);
+        isInitialLoad.current = false;
       });
   }, [id, navigate]);
 
-  const save = async () => {
+  const save = useCallback(async () => {
     if (!id) return;
     setSaveStatus("Saving...");
     const { error } = await supabase
@@ -263,21 +246,22 @@ export default function FormBuilder() {
         title,
         description: description || null,
         status: status as Database["public"]["Enums"]["form_status"],
+        mode,
         fields: fields as unknown as Database["public"]["Tables"]["forms"]["Update"]["fields"],
         settings: settings as unknown as Database["public"]["Tables"]["forms"]["Update"]["settings"],
         branding: branding as unknown as Database["public"]["Tables"]["forms"]["Update"]["branding"],
       })
       .eq("id", id);
-    
+
     if (error) {
       setSaveStatus("Unsaved");
       toast({ title: t("builder.saveFailed"), description: error.message, variant: "destructive" });
     } else {
       setSaveStatus("Saved");
     }
-  };
+  }, [id, title, description, status, mode, fields, settings, branding, toast, t]);
 
-  // Auto-save
+  // Auto-save — depends on `save` (which captures all state) so adding save to deps is sufficient
   useEffect(() => {
     if (isInitialLoad.current || loading) return;
     setSaveStatus("Unsaved");
@@ -288,7 +272,7 @@ export default function FormBuilder() {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [fields, title, description, status, settings, branding]);
+  }, [save, loading]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

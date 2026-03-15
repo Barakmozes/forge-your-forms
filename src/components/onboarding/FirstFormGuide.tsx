@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Users, MessageSquare, Headphones, Check, Loader2 } from "lucide-react";
@@ -57,6 +58,7 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
   const { t } = useTranslation();
   const { user } = useAuth();
   const { currentWorkspace, loading: workspaceLoading } = useWorkspace();
+  const { toast } = useToast();
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(false);
 
@@ -96,6 +98,12 @@ export default function FirstFormGuide({ selectedModes, onFormCreated }: FirstFo
     if (!error && data) {
       setCreated(true);
       onFormCreated(data.id);
+    } else if (error) {
+      toast({
+        title: t("common.error"),
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 

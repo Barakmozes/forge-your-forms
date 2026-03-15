@@ -9,8 +9,10 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  error: string | null;
   lastEvent: AuthChangeEvent | null;
   signOut: () => Promise<void>;
+  retry: () => void;
   /* === AGENT 14: SSO Auth Flow === */
   signInWithSSO: (workspaceSlug: string) => Promise<{ error?: string }>;
   /* === END AGENT 14 === */
@@ -20,8 +22,10 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   loading: true,
+  error: null,
   lastEvent: null,
   signOut: async () => {},
+  retry: () => {},
   /* === AGENT 14: SSO Auth Flow === */
   signInWithSSO: async () => ({}),
   /* === END AGENT 14 === */
@@ -32,8 +36,33 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastEvent, setLastEvent] = useState<AuthChangeEvent | null>(null);
   const { handleAsync } = useErrorHandler();
+
+  const loadSession = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Auth session error:", sessionError.message);
+        logError(sessionError, { component: "AuthProvider", action: "getSession" });
+        setError("Failed to restore session. Please refresh the page.");
+      }
+      setSession(session);
+    } catch (err) {
+      console.error("Auth connection error:", err);
+      logError(err, { component: "AuthProvider", action: "getSession" });
+      setError("Unable to connect to authentication service. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const retry = () => {
+    loadSession();
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,10 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    loadSession();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -77,10 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: msg };
       }
 
-      // Check if SSO is enabled for this workspace
+      // Check if SSO is enabled for this workspace and get the configured email domain
       const { data: enterprise, error: entError } = await supabase
         .from("enterprise_settings")
-        .select("sso_enabled, sso_provider")
+        .select("sso_enabled, sso_provider, sso_domain")
         .eq("workspace_id", workspace.id)
         .maybeSingle();
 
@@ -97,12 +123,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: msg };
       }
 
+      // sso_domain is the company email domain (e.g. "acme.com") registered
+      // in the Supabase Auth SSO provider — NOT the workspace slug.
+      if (!enterprise?.sso_domain) {
+        const msg = "SSO login domain is not configured. Ask your workspace owner to add the company email domain in Settings > Enterprise > SSO.";
+        toast({ title: "SSO Not Configured", description: msg, variant: "destructive" });
+        return { error: msg };
+      }
+
       // Supabase Auth SSO — requires Supabase project to have SSO configured
-      // via `supabase.auth.signInWithSSO({ providerId })`.
-      // The providerId must be registered in the Supabase dashboard.
-      // For now, this is a ready-to-activate integration point.
+      // via the Supabase dashboard. The domain must match the registered provider.
       const { data, error: ssoError } = await supabase.auth.signInWithSSO({
-        domain: workspaceSlug,
+        domain: enterprise.sso_domain,
       });
 
       if (ssoError) {
@@ -134,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* === END AGENT 14 === */
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, lastEvent, signOut, signInWithSSO }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, error, lastEvent, signOut, retry, signInWithSSO }}>
       {children}
     </AuthContext.Provider>
   );

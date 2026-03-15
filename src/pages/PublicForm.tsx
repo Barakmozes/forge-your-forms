@@ -32,6 +32,23 @@ export default function PublicForm() {
   const [form, setForm] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // === AGENT 16: Dynamic meta tags for public forms (P1 #92, #93) ===
+  useEffect(() => {
+    if (form) {
+      document.title = `${form.title} | FormForge`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", form.description ?? "");
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute("content", form.title);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute("content", form.description ?? "");
+    }
+    return () => {
+      document.title = "FormForge — Forms, Waitlists, Feedback & Support in One Platform";
+    };
+  }, [form]);
+  // === END AGENT 16 ===
   // === AGENT 7: Submission Gate ===
   const [submissionLimitReached, setSubmissionLimitReached] = useState(false);
   // === END AGENT 7 ===

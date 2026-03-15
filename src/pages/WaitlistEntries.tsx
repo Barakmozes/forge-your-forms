@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, FileText, Mail, Search, Trash2, Users } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Download, FileText, Mail, Search, Trash2, Users } from "lucide-react";
 import { useWaitlist } from "@/hooks/useWaitlist";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,7 +38,7 @@ export default function WaitlistEntries() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { entries, loading, totalCount, bulkInvite, deleteEntry, exportCSV, exportEmailsOnly } = useWaitlist(id ?? "");
+  const { entries, loading, totalCount, page, setPage, PAGE_SIZE, totalPages, bulkInvite, deleteEntry, exportCSV, exportEmailsOnly } = useWaitlist(id ?? "");
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
@@ -263,6 +263,40 @@ export default function WaitlistEntries() {
             </div>
           )}
         </CardContent>
+
+        {/* Pagination controls — only shown when there are multiple pages */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t">
+            <p className="text-sm text-muted-foreground">
+              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount.toLocaleString()}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="gap-1"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Invite Selected Dialog */}

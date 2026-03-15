@@ -7,19 +7,34 @@ type Notification = Tables<"notifications">;
 export function useNotifications(userId: string) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    setError(null);
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    setNotifications(data ?? []);
-    setLoading(false);
+      if (fetchError) {
+        setError(fetchError.message);
+        return;
+      }
+
+      setNotifications(data ?? []);
+    } catch (err) {
+      setError("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => {
@@ -80,52 +95,59 @@ export function useNotifications(userId: string) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAsRead = async (id: string) => {
-    const { error } = await supabase
+  const markAsRead = async (id: string): Promise<{ success: boolean; error: string | null }> => {
+    const { error: updateError } = await supabase
       .from("notifications")
       .update({ read: true })
       .eq("id", id);
 
-    if (!error) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-      );
+    if (updateError) {
+      return { success: false, error: updateError.message };
     }
-    return { error };
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    return { success: true, error: null };
   };
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (): Promise<{ success: boolean; error: string | null }> => {
     const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
-    if (unreadIds.length === 0) return { error: null };
+    if (unreadIds.length === 0) return { success: true, error: null };
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("notifications")
       .update({ read: true })
       .in("id", unreadIds);
 
-    if (!error) {
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true }))
-      );
+    if (updateError) {
+      return { success: false, error: updateError.message };
     }
-    return { error };
+
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+    return { success: true, error: null };
   };
 
-  const deleteNotification = async (id: string) => {
-    const { error } = await supabase
+  const deleteNotification = async (id: string): Promise<{ success: boolean; error: string | null }> => {
+    const { error: deleteError } = await supabase
       .from("notifications")
       .delete()
       .eq("id", id);
 
-    if (!error) {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (deleteError) {
+      return { success: false, error: deleteError.message };
     }
-    return { error };
+
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    return { success: true, error: null };
   };
 
   return {
     notifications,
     loading,
+    error,
     unreadCount,
     markAsRead,
     markAllAsRead,

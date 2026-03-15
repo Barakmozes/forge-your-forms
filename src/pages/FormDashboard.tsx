@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface FormMeta {
 }
 
 export default function FormDashboard() {
+  useDocumentTitle("Dashboard");
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -84,9 +86,8 @@ export default function FormDashboard() {
       case "support":
         return <SupportDashboard formId={form.id} formTitle={form.title} formStatus={form.status} />;
       default:
-        // Standard forms go to builder
-        navigate(`/forms/${form.id}/edit`);
-        return null;
+        // Standard forms go to builder — use <Navigate> instead of navigate() to avoid side-effect during render
+        return <Navigate to={`/forms/${form.id}/edit`} replace />;
     }
   };
 

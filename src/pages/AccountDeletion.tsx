@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Trash2, CreditCard } from "lucide-react";
 
 export default function AccountDeletion() {
   const { t } = useTranslation();
@@ -31,47 +31,48 @@ export default function AccountDeletion() {
   const navigate = useNavigate();
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const confirmPhrase = "DELETE MY ACCOUNT";
+
+  // Check for active Stripe subscriptions to warn the user
+  useEffect(() => {
+    async function checkSubscriptions() {
+      if (!user || !workspaces.length) return;
+      const ownedIds = workspaces
+        .filter((w) => w.owner_id === user.id)
+        .map((w) => w.id);
+      if (!ownedIds.length) return;
+
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .in("workspace_id", ownedIds)
+        .in("status", ["active", "trialing"]);
+
+      setHasActiveSubscription(!!(data && data.length > 0));
+    }
+    checkSubscriptions();
+  }, [user, workspaces]);
 
   async function handleDeleteAccount() {
     if (!user || confirmText !== confirmPhrase) return;
     setDeleting(true);
 
     try {
-      // 1. Delete all workspaces owned by the user (CASCADE handles forms, submissions, etc.)
-      const ownedWorkspaces = workspaces.filter((w) => w.owner_id === user.id);
-      for (const workspace of ownedWorkspaces) {
-        const { error } = await supabase
-          .from("workspaces")
-          .delete()
-          .eq("id", workspace.id);
-        if (error) {
-          console.error("Failed to delete workspace:", error);
-        }
+      // Call the delete-account edge function — atomically deletes all data and auth.users record
+      // The function uses service_role to: delete owned workspaces (CASCADE), memberships,
+      // notifications, profile, then auth.users via admin API.
+      const { error } = await supabase.functions.invoke("delete-account");
+
+      if (error) {
+        throw new Error(error.message || t("gdpr.accountDeletion.failedDescription"));
       }
 
-      // 2. Remove workspace memberships for workspaces not owned by user
-      await supabase
-        .from("workspace_members")
-        .delete()
-        .eq("user_id", user.id);
-
-      // 3. Delete notifications
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("user_id", user.id);
-
-      // 4. Delete profile
-      await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
-
-      // 5. Sign out (auth user deletion requires service_role — handled server-side or manually)
+      // Sign out locally (auth session is now invalid)
       await signOut();
 
+      // Only show success after all steps completed
       toast({
         title: t("gdpr.accountDeletion.success"),
         description: t("gdpr.accountDeletion.successDescription"),
@@ -79,12 +80,13 @@ export default function AccountDeletion() {
 
       navigate("/auth", { replace: true });
     } catch (err) {
-      console.error("Account deletion failed:", err);
+      const message = err instanceof Error ? err.message : t("gdpr.accountDeletion.failedDescription");
       toast({
         title: t("gdpr.accountDeletion.failed"),
-        description: t("gdpr.accountDeletion.failedDescription"),
+        description: message,
         variant: "destructive",
       });
+      // Do NOT navigate away — user needs to see the error and retry
     } finally {
       setDeleting(false);
     }
@@ -94,6 +96,31 @@ export default function AccountDeletion() {
     <AppLayout>
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-bold mb-6">{t("gdpr.accountDeletion.title")}</h1>
+
+        {/* Active subscription warning */}
+        {hasActiveSubscription && (
+          <Card className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <CreditCard className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    {t("gdpr.accountDeletion.activeSubscriptionWarning")}
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    {t("gdpr.accountDeletion.activeSubscriptionDescription")}{" "}
+                    <Link
+                      to="/settings?tab=billing"
+                      className="underline hover:text-amber-900 dark:hover:text-amber-100"
+                    >
+                      {t("gdpr.accountDeletion.cancelSubscriptionLink")}
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-destructive/50">
           <CardHeader>

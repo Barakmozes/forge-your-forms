@@ -55,6 +55,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* === AGENT 16: Skip-to-content link (WCAG 2.4.1) === */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+      {/* === END AGENT 16 === */}
       <Navbar />
       {/* === AGENT 6: Subscription status banner === */}
       <SubscriptionStatus />
@@ -62,7 +70,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* === AGENT 7: Usage Banner === */}
       <UsageBanner />
       {/* === END AGENT 7 === */}
-      <main className="container py-4 sm:py-6">{children}</main>
+      <main id="main-content" tabIndex={-1} className="container py-4 sm:py-6">{children}</main>
     </div>
   );
 }

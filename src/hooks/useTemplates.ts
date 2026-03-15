@@ -35,9 +35,11 @@ interface UseTemplatesFilters {
 export function useTemplates(filters: UseTemplatesFilters = {}) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
+    setError(null);
     let query = supabase
       .from("templates")
       .select("*")
@@ -57,8 +59,10 @@ export function useTemplates(filters: UseTemplatesFilters = {}) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
     }
 
-    const { data, error } = await query;
-    if (!error && data) {
+    const { data, error: fetchError } = await query;
+    if (fetchError) {
+      setError(fetchError.message);
+    } else if (data) {
       setTemplates(data as Template[]);
     }
     setLoading(false);
@@ -68,7 +72,7 @@ export function useTemplates(filters: UseTemplatesFilters = {}) {
     fetchTemplates();
   }, [fetchTemplates]);
 
-  return { templates, loading, refetch: fetchTemplates };
+  return { templates, loading, error, refetch: fetchTemplates };
 }
 
 export function useTemplate(slug: string) {

@@ -57,9 +57,9 @@ function UsageBar({ label, used, max, t }: UsageBarProps) {
 const PLAN_COMPARE: { feature: string; free: string; pro: string; growth: string; business: string }[] = [
   { feature: "upgrade.submissions", free: "100", pro: "5,000", growth: "25,000", business: "∞" },
   { feature: "upgrade.forms", free: "3", pro: "∞", growth: "∞", business: "∞" },
-  { feature: "upgrade.members", free: "1", pro: "3", growth: "10", business: "∞" },
+  { feature: "upgrade.members", free: "1", pro: "5", growth: "15", business: "∞" },
   { feature: "upgrade.feedbackMode", free: "—", pro: "✓", growth: "✓", business: "✓" },
-  { feature: "upgrade.supportMode", free: "—", pro: "—", growth: "✓", business: "✓" },
+  { feature: "upgrade.supportMode", free: "—", pro: "✓", growth: "✓", business: "✓" },
 ];
 
 export default function UsageDashboard() {

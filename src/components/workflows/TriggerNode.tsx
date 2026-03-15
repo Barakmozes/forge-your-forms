@@ -14,11 +14,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
   TRIGGER_TYPES,
-  TRIGGER_LABELS,
-  TRIGGER_DESCRIPTIONS,
   type TriggerType,
   type WorkflowTriggerConfig,
 } from "@/lib/workflowEngine";
+
+// nps_below_threshold is excluded: FeedbackSurveyPage never dispatches it,
+// so workflows using that trigger would never fire (Issue #68).
+// Re-enable by adding a dispatchWorkflowTrigger("nps_below_threshold", ...) call
+// in FeedbackSurveyPage.tsx and removing this filter.
+const AVAILABLE_TRIGGER_TYPES = Object.values(TRIGGER_TYPES).filter(
+  (type) => type !== TRIGGER_TYPES.NPS_BELOW_THRESHOLD
+) as TriggerType[];
 
 interface TriggerNodeProps {
   config: WorkflowTriggerConfig;
@@ -92,7 +98,7 @@ export default function TriggerNode({ config, onChange }: TriggerNodeProps) {
               <SelectValue placeholder={t("workflows.trigger.selectTrigger")} />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(TRIGGER_TYPES).map((type) => (
+              {AVAILABLE_TRIGGER_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {t(TRIGGER_LABEL_KEYS[type])}
                 </SelectItem>

@@ -15,28 +15,52 @@ import type {
   TicketSenderType,
   WaitlistEntryStatus,
 } from "@/types/database";
+import type { FieldCondition } from "@/components/builder/ConditionalLogic";
 
 // Re-export enums for convenience
 export type { FormMode, FormStatus, WorkspaceRole };
 
-// ── Form Fields ───────────────────────────────────────────────
+// ── Form Field Types ───────────────────────────────────────────
+
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "email"
+  | "phone"
+  | "date"
+  | "select"
+  | "multi_select"
+  | "checkbox"
+  | "radio"
+  | "file_upload"
+  | "section_header"
+  | "paragraph_text";
 
 export interface FormFieldValidation {
   min?: number;
   max?: number;
+  minLength?: number;
+  maxLength?: number;
+  /** @deprecated phonePattern is stored but NOT used in validation — safe hardcoded regex is used instead (ReDoS prevention) */
+  phonePattern?: string;
+  maxFileSize?: number;
+  allowedFileTypes?: string[];
   pattern?: string;
   customMessage?: string;
 }
 
+/** Canonical FormField definition — single source of truth for all form field data. */
 export interface FormField {
   id: string;
-  type: string;
+  type: FieldType;
   label: string;
+  placeholder: string;
+  helpText: string;
   required: boolean;
-  options?: string[];
-  placeholder?: string;
-  helpText?: string;
-  validation?: FormFieldValidation;
+  options: string[];
+  validation: FormFieldValidation;
+  condition?: FieldCondition;
 }
 
 // ── Core Models ───────────────────────────────────────────────

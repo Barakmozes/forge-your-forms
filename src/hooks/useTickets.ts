@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, Database } from "@/integrations/supabase/types";
 import { dispatchWorkflowTrigger } from "@/lib/workflowEngine";
@@ -7,9 +7,21 @@ type Ticket = Tables<"tickets">;
 type TicketStatus = Database["public"]["Enums"]["ticket_status"];
 type TicketPriority = Database["public"]["Enums"]["ticket_priority"];
 
+// Page size for client-side pagination of the tickets table.
+const PAGE_SIZE = 25;
+
+// NOTE (P1 #39): generate_ticket_number() in the DB trigger uses MAX(ticket_number)
+// without advisory locking. Concurrent inserts could theoretically produce duplicate
+// numbers; the UNIQUE constraint catches duplicates but there is no retry logic.
+// A proper fix requires either pg_advisory_lock or a dedicated sequence in a migration
+// (Agent 02's domain).
+
 export function useTickets(formId: string) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  // Ref prevents auto-close from firing DB writes on every refetch / realtime event.
+  const autoCloseRanRef = useRef(false);
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -21,19 +33,23 @@ export function useTickets(formId: string) {
 
     const fetched = data ?? [];
 
-    // Auto-close: resolved tickets older than 7 days → closed
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const toClose = fetched.filter(
-      (t) =>
-        t.status === "resolved" &&
-        t.resolved_at &&
-        new Date(t.resolved_at).getTime() < sevenDaysAgo
-    );
-    if (toClose.length > 0) {
-      const ids = toClose.map((t) => t.id);
-      await supabase.from("tickets").update({ status: "closed" }).in("id", ids);
-      for (const t of fetched) {
-        if (ids.includes(t.id)) t.status = "closed";
+    // Auto-close: resolved tickets older than 7 days → closed.
+    // Guard with ref so this only runs once per component mount, not on every realtime refetch.
+    if (!autoCloseRanRef.current) {
+      autoCloseRanRef.current = true;
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const toClose = fetched.filter(
+        (t) =>
+          t.status === "resolved" &&
+          t.resolved_at &&
+          new Date(t.resolved_at).getTime() < sevenDaysAgo
+      );
+      if (toClose.length > 0) {
+        const ids = toClose.map((t) => t.id);
+        await supabase.from("tickets").update({ status: "closed" }).in("id", ids);
+        for (const t of fetched) {
+          if (ids.includes(t.id)) t.status = "closed";
+        }
       }
     }
 
@@ -154,8 +170,19 @@ export function useTickets(formId: string) {
   const ticketsByStatus = (status: TicketStatus) =>
     tickets.filter((t) => t.status === status);
 
+  const totalPages = Math.ceil(tickets.length / PAGE_SIZE);
+  // paginatedTickets is a convenience slice of the full list.
+  // SupportDashboard applies its own filters before paginating, so it computes
+  // its own paginatedFilteredTickets from filteredTickets instead.
+  const paginatedTickets = tickets.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return {
     tickets,
+    paginatedTickets,
+    page,
+    setPage,
+    PAGE_SIZE,
+    totalPages,
     loading,
     createTicket,
     updateTicket,

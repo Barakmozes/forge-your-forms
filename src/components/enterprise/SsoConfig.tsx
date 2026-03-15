@@ -32,6 +32,7 @@ export default function SsoConfig() {
 
   const [ssoEnabled, setSsoEnabled] = useState(false);
   const [provider, setProvider] = useState<string>("");
+  const [ssoDomain, setSsoDomain] = useState("");
   const [metadataUrl, setMetadataUrl] = useState("");
   const [certificate, setCertificate] = useState("");
   const [entityId, setEntityId] = useState("");
@@ -43,6 +44,7 @@ export default function SsoConfig() {
     if (settings) {
       setSsoEnabled(settings.sso_enabled);
       setProvider(settings.sso_provider ?? "");
+      setSsoDomain(settings.sso_domain ?? "");
       setMetadataUrl(settings.sso_metadata_url ?? "");
       setCertificate(settings.sso_certificate ?? "");
       setEntityId(settings.sso_entity_id ?? "");
@@ -53,6 +55,7 @@ export default function SsoConfig() {
     const { error } = await updateSettings({
       sso_enabled: ssoEnabled,
       sso_provider: provider || null,
+      sso_domain: ssoDomain.trim() || null,
       sso_metadata_url: metadataUrl.trim() || null,
       sso_certificate: certificate.trim() || null,
       sso_entity_id: entityId.trim() || null,
@@ -234,6 +237,20 @@ export default function SsoConfig() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* SSO Login Domain */}
+              <div className="space-y-2">
+                <Label htmlFor="sso-domain">{t("enterprise.sso.domainLabel")}</Label>
+                <Input
+                  id="sso-domain"
+                  type="text"
+                  placeholder={t("enterprise.sso.domainPlaceholder")}
+                  value={ssoDomain}
+                  onChange={(e) => setSsoDomain(e.target.value)}
+                  dir="ltr"
+                />
+                <p className="text-xs text-muted-foreground">{t("enterprise.sso.domainHint")}</p>
               </div>
 
               {/* SAML Metadata URL */}

@@ -16,17 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Plus, Trash2, CheckCircle2, Clock, AlertCircle, Loader2, Copy } from "lucide-react";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
-
-interface CustomDomain {
-  id: string;
-  workspace_id: string;
-  domain: string;
-  verified: boolean;
-  verification_token: string;
-  ssl_status: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { CustomDomain } from "@/types/enterprise";
 
 export default function CustomDomainConfig() {
   const { t } = useTranslation();
@@ -98,35 +88,30 @@ export default function CustomDomainConfig() {
     setAdding(false);
   }
 
-  async function handleVerifyDomain(domain: CustomDomain) {
-    setVerifying(domain.id);
+  async function handleVerifyDomain(_domain: CustomDomain) {
+    setVerifying(_domain.id);
 
-    // In a production environment, this would call a server-side function
-    // to verify DNS TXT records. For now, we simulate the check.
-    // The actual verification requires a Supabase Edge Function or backend API.
-    try {
-      // Mark as verified (in production, this would be done server-side after DNS check)
-      const { error } = await supabase
-        .from("custom_domains")
-        .update({ verified: true, ssl_status: "active" })
-        .eq("id", domain.id);
+    // DNS TXT record verification requires a server-side Edge Function to query
+    // actual DNS resolvers. Client-side code cannot verify DNS records.
+    // This button informs the user and keeps the domain in "pending" state until
+    // a server-side verification confirms the TXT record exists.
+    // TODO: Implement `verify-domain` Supabase Edge Function (see HANDOFF.md).
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
-      if (error) throw error;
+    toast({
+      title: t("enterprise.domains.verificationInitiated"),
+      description: t("enterprise.domains.verificationDescription"),
+    });
 
-      toast({ title: t("enterprise.domains.verified") });
-      fetchDomains();
-    } catch {
-      toast({ title: t("enterprise.domains.verifyFailed"), variant: "destructive" });
-    } finally {
-      setVerifying(null);
-    }
+    setVerifying(null);
   }
 
   async function handleDeleteDomain(domainId: string) {
     const { error } = await supabase
       .from("custom_domains")
       .delete()
-      .eq("id", domainId);
+      .eq("id", domainId)
+      .eq("workspace_id", workspaceId ?? "");
 
     if (error) {
       toast({ title: t("enterprise.domains.deleteFailed"), variant: "destructive" });

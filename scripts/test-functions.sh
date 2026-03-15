@@ -105,6 +105,12 @@ test_endpoint "POST without auth → 401" \
   POST "$BASE_URL/ai-analyze" "401" '{"submissions":[],"form_id":"test","workspace_id":"test"}'
 echo ""
 
+# --- ai-suggest-reply ---
+echo "[ai-suggest-reply]"
+test_endpoint "POST without auth → 401" \
+  POST "$BASE_URL/ai-suggest-reply" "401" '{"ticket_subject":"test","form_id":"test","workspace_id":"test"}'
+echo ""
+
 # --- classify-ticket ---
 echo "[classify-ticket]"
 test_endpoint "POST without auth → 401" \

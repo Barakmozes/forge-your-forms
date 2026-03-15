@@ -366,6 +366,9 @@ export default function Index() {
               <Link to="/templates" className="hover:text-foreground transition-colors">Templates</Link>
               <a href="#how-it-works" className="hover:text-foreground transition-colors">{t("landing.features")}</a>
               <Link to="/auth" className="hover:text-foreground transition-colors">{t("landing.signIn")}</Link>
+              {/* === AGENT 04: Privacy Policy link === */}
+              <Link to="/privacy" className="hover:text-foreground transition-colors">{t("landing.privacy")}</Link>
+              {/* === END AGENT 04 === */}
             </nav>
             <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} FormForge. {t("landing.allRightsReserved")}

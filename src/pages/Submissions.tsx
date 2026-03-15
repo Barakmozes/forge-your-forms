@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useSubmissions } from "@/hooks/useSubmissions";
@@ -40,6 +41,7 @@ function formatValue(value: unknown, type?: string, t?: (key: string) => string)
 const PAGE_SIZE = 25;
 
 export default function Submissions() {
+  useDocumentTitle("Submissions");
   const { t } = useTranslation();
   const { id: preFilterFormId } = useParams<{ id?: string }>();
   const { currentWorkspace } = useWorkspace();
@@ -81,8 +83,8 @@ export default function Submissions() {
   const { submissions, totalCount, isLoading: subsLoading, refetch } = useSubmissions(
     effectiveFormId,
     formIds,
-    1, // We fetch all for the current filter, paginate client-side after filtering
-    1000 // Large page to get all, then client-side paginate after search/date filter
+    1,
+    200 // Fetch up to 200; search/date filters apply to loaded data only
   );
 
   // Client-side filtering (search + date range)
@@ -207,6 +209,7 @@ export default function Submissions() {
             <p className="text-muted-foreground text-sm mt-1">
               {filtered.length} {filtered.length === 1 ? t("forms.response") : t("forms.responses")}
               {submissions.length !== filtered.length ? ` ${t("submissions.filteredFrom", { count: submissions.length })}` : ""}
+              {totalCount > submissions.length ? ` · ${t("submissions.showingFirst", { count: submissions.length, total: totalCount, defaultValue: `Showing first ${submissions.length} of ${totalCount}` })}` : ""}
             </p>
           </div>
         </div>
@@ -231,6 +234,13 @@ export default function Submissions() {
           </Button>
         </div>
       </div>
+
+      {/* Warning when results are capped */}
+      {totalCount > submissions.length && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
+          Showing the most recent {submissions.length.toLocaleString()} of {totalCount.toLocaleString()} total submissions. Use date filters to view older records.
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">

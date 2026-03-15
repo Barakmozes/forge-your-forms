@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { generateReferralCode } from "@/lib/referralCode";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification, syncToMailchimp } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack + Mailchimp import === */
 import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
+import { PrivacyNotice } from "@/components/gdpr/PrivacyNotice"; /* === AGENT 04: GDPR === */
 
 interface WaitlistLandingPageProps {
   formId: string;
@@ -44,6 +45,7 @@ export default function WaitlistLandingPage({
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  // totalSignups: set after a successful signup; anon count query is blocked by RLS (migration 025)
   const [totalSignups, setTotalSignups] = useState<number | null>(null);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [entry, setEntry] = useState<WaitlistEntry | null>(null);
@@ -63,21 +65,6 @@ export default function WaitlistLandingPage({
     return `${window.location.origin}/f/${formId}?ref=${entry.referral_code}`;
   }, [entry, formId]);
 
-  const fetchTotalSignups = useCallback(async () => {
-    const { count, error } = await supabase
-      .from("waitlist_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("form_id", formId);
-
-    if (!error && count !== null) {
-      setTotalSignups(count);
-    }
-  }, [formId]);
-
-  useEffect(() => {
-    fetchTotalSignups();
-  }, [fetchTotalSignups]);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -95,28 +82,12 @@ export default function WaitlistLandingPage({
     setSubmitState("submitting");
 
     try {
-      // Check for duplicate entry
-      const { data: existing, error: lookupError } = await supabase
-        .from("waitlist_entries")
-        .select("id, email, name, position, referral_code, referral_count")
-        .eq("form_id", formId)
-        .eq("email", trimmedEmail)
-        .maybeSingle();
-
-      if (lookupError) {
-        throw lookupError;
-      }
-
-      if (existing) {
-        setEntry(existing);
-        setSubmitState("duplicate");
-        toast.info(t('waitlist.alreadyOnWaitlist'));
-        return;
-      }
-
       const newReferralCode = generateReferralCode();
 
-      // Position is auto-assigned by the DB trigger (handle_waitlist_position)
+      // Attempt INSERT directly. DB triggers handle position assignment and referral tracking.
+      // Duplicate detection uses the unique constraint on (form_id, email): PostgreSQL error code 23505.
+      // A pre-flight SELECT is avoided because anonymous users cannot SELECT from waitlist_entries
+      // after migration 025 dropped the permissive anon SELECT policy (waitlist_entries_select_own).
       const { data: inserted, error: insertError } = await supabase
         .from("waitlist_entries")
         .insert({
@@ -130,24 +101,21 @@ export default function WaitlistLandingPage({
         .single();
 
       if (insertError) {
+        if (insertError.code === "23505") {
+          // Duplicate email — unique constraint violation on (form_id, email).
+          // Cannot retrieve existing entry data (anon SELECT blocked by RLS), show simplified message.
+          setEntry(null);
+          setSubmitState("duplicate");
+          toast.info(t('waitlist.alreadyOnWaitlist'));
+          return;
+        }
         throw insertError;
-      }
-
-      // If referred by someone, increment their referral_count
-      if (referralCode) {
-        await supabase.rpc("increment_referral_count" as never, {
-          _referral_code: referralCode,
-          _form_id: formId,
-        } as never).then(() => {
-          // Best-effort: we don't block on referral count updates
-        }).catch(() => {
-          // Silently ignore if the RPC doesn't exist
-        });
       }
 
       setEntry(inserted);
       setSubmitState("success");
-      setTotalSignups((prev) => (prev !== null ? prev + 1 : 1));
+      // Use inserted.position as a proxy for total count when the anon count query is blocked by RLS.
+      setTotalSignups((prev) => (prev !== null ? prev + 1 : inserted.position));
       toast.success(t('waitlist.youAreOnList'));
 
       /* === AGENT 9: Webhook Trigger === */
@@ -255,7 +223,7 @@ export default function WaitlistLandingPage({
             </p>
           )}
 
-          {/* Live signup counter */}
+          {/* Live signup counter — visible only after a successful signup on this page load */}
           {showCount && totalSignups !== null && totalSignups > 0 && (
             <div className="flex items-center justify-center gap-2 pt-2 animate-in fade-in duration-500 delay-300">
               <Badge
@@ -489,6 +457,15 @@ export default function WaitlistLandingPage({
             )}
           </CardContent>
         </Card>
+
+        {/* GDPR Privacy Notice */}
+        {/* === AGENT 04: Privacy notice for GDPR Articles 13-14 === */}
+        <PrivacyNotice
+          dataCollected={["email", "name"]}
+          purpose="to manage your waitlist position and send you updates"
+          className="max-w-sm w-full text-center"
+        />
+        {/* === END AGENT 04 === */}
 
         {/* Footer branding */}
         {branding?.showPoweredBy !== "false" && branding?.showPoweredBy !== false && (

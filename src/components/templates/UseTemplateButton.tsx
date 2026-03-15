@@ -6,6 +6,8 @@ import { useCloneTemplate, type Template } from "@/hooks/useTemplates";
 import { Button } from "@/components/ui/button";
 import { Copy, LogIn } from "lucide-react";
 
+export const TEMPLATE_REDIRECT_KEY = "formforge_template_redirect";
+
 interface UseTemplateButtonProps {
   template: Template;
   slug: string;
@@ -19,6 +21,14 @@ export default function UseTemplateButton({ template, slug }: UseTemplateButtonP
 
   const handleClick = () => {
     if (!user) {
+      sessionStorage.setItem(
+        TEMPLATE_REDIRECT_KEY,
+        JSON.stringify({
+          templateSlug: slug,
+          returnPath: `/templates/${slug}`,
+          timestamp: Date.now(),
+        })
+      );
       navigate(`/auth?redirect=/templates/${slug}`);
       return;
     }

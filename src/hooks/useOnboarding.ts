@@ -79,10 +79,12 @@ export function useOnboarding(): UseOnboardingReturn {
   const markOnboardingComplete = useCallback(async () => {
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({ onboarding_completed: true })
       .eq("id", user.id);
+
+    if (error) throw error;
 
     setIsOnboarded(true);
   }, [user]);

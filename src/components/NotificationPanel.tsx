@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,8 +45,11 @@ export default function NotificationPanel() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const {
     notifications,
+    loading,
+    error,
     unreadCount,
     markAsRead,
     markAllAsRead,
@@ -62,7 +66,14 @@ export default function NotificationPanel() {
 
   const handleClick = async (notif: (typeof notifications)[0]) => {
     if (!notif.read) {
-      await markAsRead(notif.id);
+      const result = await markAsRead(notif.id);
+      if (!result.success) {
+        toast({
+          title: "Failed to mark as read",
+          description: result.error ?? "Please try again.",
+          variant: "destructive",
+        });
+      }
     }
     if (notif.link) {
       setOpen(false);
@@ -71,13 +82,31 @@ export default function NotificationPanel() {
   };
 
   const handleMarkAllRead = async () => {
-    await markAllAsRead();
+    const result = await markAllAsRead();
+    if (!result.success) {
+      toast({
+        title: "Failed to mark all as read",
+        description: result.error ?? "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await deleteNotification(id);
+    if (!result.success) {
+      toast({
+        title: "Failed to delete notification",
+        description: result.error ?? "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-8 w-8 min-h-[44px] min-w-[44px]" title={t("tooltips.nav.notifications")}>
+        <Button variant="ghost" size="icon" className="relative h-8 w-8 min-h-[44px] min-w-[44px]" title={t("tooltips.nav.notifications")} aria-label={t("tooltips.nav.notifications")}>
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 ltr:-right-1 rtl:-left-1 h-4 min-w-4 px-1 text-[10px] font-bold flex items-center justify-center bg-destructive text-destructive-foreground">
@@ -112,7 +141,15 @@ export default function NotificationPanel() {
 
         {/* List */}
         <div className="max-h-80 overflow-y-auto">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <p className="text-sm">Loading...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <p className="text-sm text-destructive">Failed to load notifications. Please try again.</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Inbox className="h-6 w-6 mb-2 opacity-40" />
               <p className="text-sm">
@@ -127,11 +164,20 @@ export default function NotificationPanel() {
               return (
                 <div
                   key={notif.id}
+                  role="button"
+                  tabIndex={0}
                   className={cn(
-                    "flex items-start gap-3 px-4 py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors",
+                    "flex items-start gap-3 px-4 py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                     !notif.read && "bg-primary/5"
                   )}
                   onClick={() => handleClick(notif)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleClick(notif);
+                    }
+                  }}
+                  aria-label={`${t("notifications.notification")}: ${notif.title}`}
                 >
                   <div
                     className={cn(
@@ -163,8 +209,9 @@ export default function NotificationPanel() {
                     className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteNotification(notif.id);
+                      handleDelete(notif.id);
                     }}
+                    aria-label={t("notifications.deleteNotification")}
                   >
                     <X className="h-3 w-3" />
                   </button>

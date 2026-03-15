@@ -16,9 +16,16 @@ interface ExportData {
   workspaces: Record<string, unknown>[];
   forms: Record<string, unknown>[];
   submissions: Record<string, unknown>[];
+  notifications: Record<string, unknown>[];
   waitlistEntries: Record<string, unknown>[];
+  waitlistInvites: Record<string, unknown>[];
   feedbackResponses: Record<string, unknown>[];
+  feedbackAlerts: Record<string, unknown>[];
   tickets: Record<string, unknown>[];
+  ticketMessages: Record<string, unknown>[];
+  cannedResponses: Record<string, unknown>[];
+  tags: Record<string, unknown>[];
+  ticketTags: Record<string, unknown>[];
 }
 
 export default function DataExport() {
@@ -36,7 +43,7 @@ export default function DataExport() {
 
     try {
       // 1. Profile
-      setProgress(10);
+      setProgress(5);
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
@@ -44,57 +51,108 @@ export default function DataExport() {
         .single();
 
       // 2. Workspaces
-      setProgress(20);
+      setProgress(10);
       const workspaceIds = workspaces.map((w) => w.id);
-      const { data: workspaceData } = await supabase
-        .from("workspaces")
-        .select("*")
-        .in("id", workspaceIds);
+      const { data: workspaceData } = workspaceIds.length > 0
+        ? await supabase.from("workspaces").select("*").in("id", workspaceIds)
+        : { data: [] };
 
       // 3. Forms
-      setProgress(35);
-      const { data: forms } = await supabase
-        .from("forms")
-        .select("*")
-        .in("workspace_id", workspaceIds);
+      setProgress(20);
+      const { data: forms } = workspaceIds.length > 0
+        ? await supabase.from("forms").select("*").in("workspace_id", workspaceIds)
+        : { data: [] };
 
       const formIds = (forms || []).map((f) => f.id);
 
       // 4. Submissions
-      setProgress(50);
+      setProgress(28);
       const { data: submissions } = formIds.length > 0
         ? await supabase.from("submissions").select("*").in("form_id", formIds)
         : { data: [] };
 
-      // 5. Waitlist entries
-      setProgress(65);
+      // 5. Notifications
+      setProgress(35);
+      const { data: notifications } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id);
+
+      // 6. Waitlist entries
+      setProgress(42);
       const { data: waitlistEntries } = formIds.length > 0
         ? await supabase.from("waitlist_entries").select("*").in("form_id", formIds)
         : { data: [] };
 
-      // 6. Feedback responses
-      setProgress(80);
+      // 7. Waitlist invites (via entry IDs)
+      setProgress(48);
+      const waitlistEntryIds = (waitlistEntries || []).map((e) => e.id);
+      const { data: waitlistInvites } = waitlistEntryIds.length > 0
+        ? await supabase.from("waitlist_invites").select("*").in("entry_id", waitlistEntryIds)
+        : { data: [] };
+
+      // 8. Feedback responses
+      setProgress(55);
       const { data: feedbackResponses } = formIds.length > 0
         ? await supabase.from("feedback_responses").select("*").in("form_id", formIds)
         : { data: [] };
 
-      // 7. Tickets
-      setProgress(90);
+      // 9. Feedback alerts
+      setProgress(61);
+      const feedbackResponseIds = (feedbackResponses || []).map((r) => r.id);
+      const { data: feedbackAlerts } = feedbackResponseIds.length > 0
+        ? await supabase.from("feedback_alerts").select("*").in("response_id", feedbackResponseIds)
+        : { data: [] };
+
+      // 10. Tickets
+      setProgress(68);
       const { data: tickets } = formIds.length > 0
         ? await supabase.from("tickets").select("*").in("form_id", formIds)
         : { data: [] };
 
+      // 11. Ticket messages
+      setProgress(74);
+      const ticketIds = (tickets || []).map((tk) => tk.id);
+      const { data: ticketMessages } = ticketIds.length > 0
+        ? await supabase.from("ticket_messages").select("*").in("ticket_id", ticketIds)
+        : { data: [] };
+
+      // 12. Canned responses
+      setProgress(80);
+      const { data: cannedResponses } = workspaceIds.length > 0
+        ? await supabase.from("canned_responses").select("*").in("workspace_id", workspaceIds)
+        : { data: [] };
+
+      // 13. Tags
+      setProgress(86);
+      const { data: tags } = workspaceIds.length > 0
+        ? await supabase.from("tags").select("*").in("workspace_id", workspaceIds)
+        : { data: [] };
+
+      // 14. Ticket tags
+      setProgress(92);
+      const { data: ticketTags } = ticketIds.length > 0
+        ? await supabase.from("ticket_tags").select("*").in("ticket_id", ticketIds)
+        : { data: [] };
+
       // Package export
-      setProgress(95);
+      setProgress(97);
       const exportData: ExportData = {
         exportedAt: new Date().toISOString(),
         profile: profile || null,
         workspaces: workspaceData || [],
         forms: forms || [],
         submissions: submissions || [],
+        notifications: notifications || [],
         waitlistEntries: waitlistEntries || [],
+        waitlistInvites: waitlistInvites || [],
         feedbackResponses: feedbackResponses || [],
+        feedbackAlerts: feedbackAlerts || [],
         tickets: tickets || [],
+        ticketMessages: ticketMessages || [],
+        cannedResponses: cannedResponses || [],
+        tags: tags || [],
+        ticketTags: ticketTags || [],
       };
 
       // Trigger download
@@ -111,8 +169,8 @@ export default function DataExport() {
       setProgress(100);
       toast({ title: t("gdpr.dataExport.success"), description: t("gdpr.dataExport.downloaded") });
     } catch (err) {
-      console.error("Export failed:", err);
-      toast({ title: t("gdpr.dataExport.failed"), description: t("gdpr.dataExport.tryAgain"), variant: "destructive" });
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: t("gdpr.dataExport.failed"), description: message, variant: "destructive" });
     } finally {
       setExporting(false);
     }
@@ -141,9 +199,13 @@ export default function DataExport() {
                 <li>{t("gdpr.dataExport.workspaceData")}</li>
                 <li>{t("gdpr.dataExport.formData")}</li>
                 <li>{t("gdpr.dataExport.submissionData")}</li>
+                <li>{t("gdpr.dataExport.notificationData")}</li>
                 <li>{t("gdpr.dataExport.waitlistData")}</li>
                 <li>{t("gdpr.dataExport.feedbackData")}</li>
                 <li>{t("gdpr.dataExport.ticketData")}</li>
+                <li>{t("gdpr.dataExport.ticketMessagesData")}</li>
+                <li>{t("gdpr.dataExport.cannedResponsesData")}</li>
+                <li>{t("gdpr.dataExport.tagsData")}</li>
               </ul>
             </div>
 

@@ -1,7 +1,10 @@
 // === AGENT 11: Template Browser Component ===
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTemplates } from "@/hooks/useTemplates";
+import { TEMPLATE_REDIRECT_KEY } from "@/components/templates/UseTemplateButton";
 import TemplateCard from "@/components/templates/TemplateCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,12 +32,30 @@ const MODE_KEYS = [
 
 export default function TemplateBrowser() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [category, setCategory] = useState("All");
   const [mode, setMode] = useState("all");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  const { templates, loading } = useTemplates({ category, mode, search });
+  const { templates, loading, error } = useTemplates({ category, mode, search });
+
+  // Restore template context after auth redirect
+  useEffect(() => {
+    if (!user) return;
+    const stored = sessionStorage.getItem(TEMPLATE_REDIRECT_KEY);
+    if (!stored) return;
+    try {
+      const context = JSON.parse(stored);
+      sessionStorage.removeItem(TEMPLATE_REDIRECT_KEY);
+      if (Date.now() - context.timestamp < 30 * 60 * 1000 && context.returnPath) {
+        navigate(context.returnPath);
+      }
+    } catch {
+      sessionStorage.removeItem(TEMPLATE_REDIRECT_KEY);
+    }
+  }, [user, navigate]);
 
   const handleSearch = () => {
     setSearch(searchInput);
@@ -90,7 +111,14 @@ export default function TemplateBrowser() {
       </div>
 
       {/* Grid */}
-      {loading ? (
+      {error ? (
+        <div className="py-16 text-center">
+          <p className="text-destructive text-sm">{t("common.unexpectedError")}</p>
+          <Button variant="link" onClick={() => window.location.reload()}>
+            {t("common.retry", "Retry")}
+          </Button>
+        </div>
+      ) : loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-44 rounded-lg bg-muted animate-pulse" />

@@ -12,7 +12,7 @@ import { sendEmail } from "@/lib/emailTemplates";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Hammer } from "lucide-react";
+import { ArrowLeft, ArrowRight, Hammer, Loader2 } from "lucide-react";
 import ModeSelector from "@/components/onboarding/ModeSelector";
 import FirstFormGuide from "@/components/onboarding/FirstFormGuide";
 import GuidedTour from "@/components/onboarding/GuidedTour";
@@ -31,6 +31,7 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(1);
   const [selectedModes, setSelectedModes] = useState<FormMode[]>([]);
   const [createdFormId, setCreatedFormId] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
 
   // Redirect if already onboarded
   useEffect(() => {
@@ -79,12 +80,30 @@ export default function OnboardingWizard() {
   };
 
   const handleFinish = async () => {
-    await completeOnboarding();
-    navigate("/", { replace: true });
+    setCompleting(true);
+    try {
+      await completeOnboarding();
+      navigate("/", { replace: true });
+    } catch {
+      toast({
+        title: t("onboarding.completionFailedTitle", "Could not complete onboarding"),
+        description: t("onboarding.completionFailedDesc", "Something went wrong. Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setCompleting(false);
+    }
   };
 
   const handleSkip = async () => {
-    await skipOnboarding();
+    setCompleting(true);
+    try {
+      await skipOnboarding();
+    } catch {
+      // Skip failure is non-critical — navigate regardless
+    } finally {
+      setCompleting(false);
+    }
     navigate("/", { replace: true });
   };
 
@@ -120,7 +139,8 @@ export default function OnboardingWizard() {
             </div>
             <button
               onClick={handleSkip}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              disabled={completing}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t("onboarding.skip")}
             </button>
@@ -168,8 +188,15 @@ export default function OnboardingWizard() {
                 <ArrowRight className="h-4 w-4 ms-1" />
               </Button>
             ) : (
-              <Button size="sm" onClick={handleFinish}>
-                {t("onboarding.finish")}
+              <Button size="sm" onClick={handleFinish} disabled={completing}>
+                {completing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 me-1 animate-spin" />
+                    {t("common.loading")}
+                  </>
+                ) : (
+                  t("onboarding.finish")
+                )}
               </Button>
             )}
           </div>

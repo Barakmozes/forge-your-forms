@@ -12,47 +12,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { UploadCloud, X, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { evaluateCondition, type FieldCondition } from "@/components/builder/ConditionalLogic";
+import { evaluateCondition } from "@/components/builder/ConditionalLogic";
 import type { FormSettings } from "@/components/builder/FormSettingsPanel";
 import type { FormBranding } from "@/components/builder/BrandingPanel";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
-
-export type FieldType =
-  | "text"
-  | "textarea"
-  | "number"
-  | "email"
-  | "phone"
-  | "date"
-  | "select"
-  | "multi_select"
-  | "checkbox"
-  | "radio"
-  | "file_upload"
-  | "section_header"
-  | "paragraph_text";
-
-export interface FormField {
-  id: string;
-  type: FieldType;
-  label: string;
-  placeholder: string;
-  helpText: string;
-  required: boolean;
-  options: string[];
-  validation: {
-    min?: number;
-    max?: number;
-    minLength?: number;
-    maxLength?: number;
-    phonePattern?: string;
-    maxFileSize?: number;
-    allowedFileTypes?: string[];
-  };
-  condition?: FieldCondition;
-}
+import { PrivacyNotice } from "@/components/gdpr/PrivacyNotice"; /* === AGENT 04: GDPR === */
+// Import canonical FormField type from single source of truth
+import type { FieldType, FormField } from "@/types/forms";
+// Re-export for backward compatibility (FormPreview and others import from here)
+export type { FieldType, FormField };
 
 export type FormValues = Record<string, string | string[] | File | null>;
 
@@ -346,13 +316,11 @@ export function validateFields(
     }
 
     if (!isEmpty && field.type === "phone" && typeof value === "string") {
-      const pattern = field.validation.phonePattern || "^[+]?[\\d\\s()-]{7,20}$";
-      try {
-        if (!new RegExp(pattern).test(value)) {
-          errors[field.id] = i18n.t("forms.validationPhone");
-        }
-      } catch {
-        // Invalid regex — skip validation
+      // SECURITY: Do NOT use field.validation.phonePattern (user-supplied regex) — ReDoS risk.
+      // Use a safe hardcoded pattern that covers international formats without catastrophic backtracking.
+      const SAFE_PHONE_RE = /^[+]?[\d\s\-(). ]{7,20}$/;
+      if (!SAFE_PHONE_RE.test(value)) {
+        errors[field.id] = i18n.t("forms.validationPhone");
       }
     }
 
@@ -490,14 +458,25 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
       /* === END AGENT 15 === */
 
       if (settings?.redirectUrl) {
-        window.location.href = settings.redirectUrl;
+        // SECURITY: Only allow http/https redirects — block javascript: and data: URLs
+        const redirectUrl = settings.redirectUrl.trim();
+        if (redirectUrl.startsWith("https://") || redirectUrl.startsWith("http://")) {
+          window.location.href = redirectUrl;
+        }
         return;
       }
       setSubmitted(true);
       onSubmitSuccess?.();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong.";
-      setErrors({ _form: message });
+      // Log the real error for debugging but never expose Supabase internals to users
+      console.error("Form submission error:", err);
+      const pgCode = (err as { code?: string })?.code;
+      const userMessage =
+        pgCode === "23505" ? i18n.t("forms.errorDuplicate", { defaultValue: "This information has already been submitted." }) :
+        pgCode === "42501" ? i18n.t("forms.errorPermission", { defaultValue: "You do not have permission to submit this form." }) :
+        pgCode === "23503" ? i18n.t("forms.errorInvalidForm", { defaultValue: "This form is no longer available." }) :
+        i18n.t("forms.errorGeneric", { defaultValue: "Something went wrong. Please try again." });
+      setErrors({ _form: userMessage });
     } finally {
       setSubmitting(false);
     }
@@ -609,6 +588,16 @@ export function FormRenderer({ fields, formId, isPreview = false, settings, bran
           {t("forms.submitPreview")}
         </Button>
       )}
+
+      {/* GDPR Privacy Notice — shown only on live public forms, not in preview */}
+      {/* === AGENT 04: Privacy notice for GDPR Articles 13-14 === */}
+      {!isPreview && interactiveFields.length > 0 && (
+        <PrivacyNotice
+          dataCollected={["your submitted data"]}
+          purpose="as described in this form"
+        />
+      )}
+      {/* === END AGENT 04 === */}
     </form>
   );
 }

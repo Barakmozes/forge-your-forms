@@ -45,8 +45,10 @@ import {
   Copy,
   Users,
   BarChart2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 // === AGENT 12: AI Summary ===
 import { useMemo } from "react";
@@ -235,11 +237,14 @@ export default function FeedbackDashboard({
 }: FeedbackDashboardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { responses, alerts, loading, toggleFlag, markAlertRead } =
+  const { toast } = useToast();
+  const { responses, analyticsData, alerts, loading, toggleFlag, markAlertRead, page, setPage, totalPages, totalCount } =
     useFeedback(formId);
 
   const [dateRange, setDateRange] = useState<DateRange>("all");
 
+  // Pass analyticsData (all responses, lightweight) to analytics hook so NPS/trends
+  // reflect the full dataset — not just the current page of paginated responses.
   const {
     npsScore,
     npsDelta,
@@ -249,7 +254,7 @@ export default function FeedbackDashboard({
     categoryBreakdown,
     atRiskClients,
     totalResponses,
-  } = useFeedbackAnalytics(responses, dateRange);
+  } = useFeedbackAnalytics(analyticsData, dateRange);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(
@@ -268,19 +273,19 @@ export default function FeedbackDashboard({
     try {
       await navigator.clipboard.writeText(publicLink);
       setCopiedLink(true);
-      toast.success(t('feedback.surveyLinkCopied'));
+      toast({ title: t('feedback.surveyLinkCopied') });
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      toast.error(t('feedback.failedCopy'));
+      toast({ title: t('common.error'), description: t('feedback.failedCopy'), variant: "destructive" });
     }
   }
 
   async function handleToggleFlag(responseId: string, currentFlagged: boolean) {
     const { error } = await toggleFlag(responseId, !currentFlagged);
     if (error) {
-      toast.error(t('feedback.failedUpdateFlag'));
+      toast({ title: t('common.error'), description: t('feedback.failedUpdateFlag'), variant: "destructive" });
     } else {
-      toast.success(currentFlagged ? t('feedback.flagRemoved') : t('feedback.responseFlagged'));
+      toast({ title: currentFlagged ? t('feedback.flagRemoved') : t('feedback.responseFlagged') });
     }
   }
 
@@ -389,6 +394,40 @@ export default function FeedbackDashboard({
           </Button>
         </div>
       </div>
+
+      {/* Pagination Controls — visible when data spans multiple pages */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-2.5 text-sm">
+          <span className="text-muted-foreground">
+            {t('common.showing')} {responses.length} {t('common.of')} {totalCount.toLocaleString()} {t('feedback.responses')}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              title={t('common.previous')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-2 tabular-nums text-muted-foreground">
+              {page + 1} / {totalPages}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              title={t('common.next')}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Row (3 cards) */}
       {loading ? (
@@ -903,6 +942,39 @@ export default function FeedbackDashboard({
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-sm text-muted-foreground">
+            {t('feedback.pageOf', {
+              current: page + 1,
+              total: totalPages,
+              count: totalCount.toLocaleString(),
+            }) || `Page ${page + 1} of ${totalPages} (${totalCount.toLocaleString()} responses)`}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 

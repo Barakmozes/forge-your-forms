@@ -15,8 +15,8 @@ describe("usePlanLimits — getRequiredPlanForMode", () => {
     expect(getRequiredPlanForMode("feedback")).toBe("pro");
   });
 
-  it("support mode requires growth plan", () => {
-    expect(getRequiredPlanForMode("support")).toBe("growth");
+  it("support mode requires pro plan", () => {
+    expect(getRequiredPlanForMode("support")).toBe("pro");
   });
 });
 
@@ -47,14 +47,14 @@ describe("usePlanLimits — isPlanAtLeast gating", () => {
     expect(isPlanAtLeast("pro", required)).toBe(true);
   });
 
-  it("Free cannot access support (requires growth)", () => {
+  it("Free cannot access support (requires pro)", () => {
     const required = getRequiredPlanForMode("support");
     expect(isPlanAtLeast("free", required)).toBe(false);
   });
 
-  it("Pro cannot access support (requires growth)", () => {
+  it("Pro can access support (requires pro)", () => {
     const required = getRequiredPlanForMode("support");
-    expect(isPlanAtLeast("pro", required)).toBe(false);
+    expect(isPlanAtLeast("pro", required)).toBe(true);
   });
 
   it("Growth can access support", () => {

@@ -38,6 +38,8 @@ function getStripePriceId(envVar: string, fallback: string): string {
   return fallback;
 }
 
+// IMPORTANT: The price IDs below are mirrored in supabase/functions/stripe-webhook/index.ts (priceMap).
+// Whenever price IDs change, update BOTH files in sync to prevent plan resolution errors.
 export const STRIPE_PLANS: Record<Exclude<PlanTier, "free">, StripePlan> = {
   pro: {
     monthly: getStripePriceId("VITE_STRIPE_PRICE_PRO_MONTHLY", "price_1TAH5vP7upMiSmxcaxFeD3Rn"),
@@ -61,6 +63,26 @@ export const STRIPE_PLANS: Record<Exclude<PlanTier, "free">, StripePlan> = {
     name: "Business",
   },
 };
+
+/**
+ * Client-side price-to-plan mapping derived from STRIPE_PLANS.
+ * Single source of truth for resolving a price ID to a plan tier on the client.
+ * Note: supabase/functions/stripe-webhook/index.ts has its own copy (priceMap) that
+ * must be kept in sync manually — Deno edge functions cannot import from this module.
+ */
+export const PRICE_TO_PLAN: Record<string, Exclude<PlanTier, "free">> = (
+  Object.entries(STRIPE_PLANS) as [Exclude<PlanTier, "free">, StripePlan][]
+).reduce(
+  (acc, [tier, plan]) => {
+    acc[plan.monthly] = tier;
+    acc[plan.annual] = tier;
+    return acc;
+  },
+  {} as Record<string, Exclude<PlanTier, "free">>
+);
+
+/** Set of all valid Stripe price IDs — use for client-side price ID validation */
+export const VALID_PRICE_IDS: ReadonlySet<string> = new Set(Object.keys(PRICE_TO_PLAN));
 
 /** True only when all 6 Stripe price ID env vars are set (not using placeholders) */
 export const STRIPE_CONFIG_VALID: boolean = [

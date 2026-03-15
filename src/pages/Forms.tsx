@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 // === AGENT 7: Plan Limits ===
 import { usePlanLimits, getRequiredPlanForMode } from "@/hooks/usePlanLimits";
 import PaywallModal from "@/components/upgrade/PaywallModal";
@@ -59,6 +61,7 @@ function ModeBadge({ mode }: { mode: FormMode }) {
 }
 
 export default function Forms() {
+  useDocumentTitle("Forms");
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();

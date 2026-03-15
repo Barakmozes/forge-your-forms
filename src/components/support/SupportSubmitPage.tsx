@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
+import { PrivacyNotice } from "@/components/gdpr/PrivacyNotice"; /* === AGENT 04: GDPR === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,10 @@ export default function SupportSubmitPage({
 
   // ─── AI Classification (fire-and-forget) ────────────────────────────────────
   /* === AGENT 29: classify-ticket edge function === */
+  // TODO: Agent 03 will update classify-ticket to accept anon calls or use service role.
+  // This function is called from an unauthenticated public page; supabase.functions.invoke
+  // uses the anon key. If the edge function enforces auth, it returns 401, which is caught
+  // silently below so ticket submission is never blocked.
 
   function classifyTicket(
     ticketId: string,
@@ -107,6 +112,9 @@ export default function SupportSubmitPage({
 
         if (!formData?.workspace_id) return;
 
+        // TODO: Agent 03 will update classify-ticket to accept anon calls or use service role.
+        // This page is public (unauthenticated), so the function may return 401.
+        // We gracefully degrade — classification failure never blocks ticket submission.
         const { data, error } = await supabase.functions.invoke("classify-ticket", {
           body: {
             subject: ticketSubject,
@@ -118,6 +126,7 @@ export default function SupportSubmitPage({
         });
 
         if (error) {
+          // 401 from unauthenticated call — expected until Agent 03 fixes auth
           console.warn("[classify-ticket] Classification skipped:", error.message);
           return;
         }
@@ -199,7 +208,7 @@ export default function SupportSubmitPage({
           ticket_number: "",
           subject: subject.trim(),
           description: ticketDescription.trim(),
-          submitted_by_email: email.trim(),
+          submitted_by_email: email.trim().toLowerCase(),
           submitted_by_name: name.trim(),
           category: category || null,
           priority,
@@ -216,7 +225,7 @@ export default function SupportSubmitPage({
           ticket_id: ticketData.id,
           sender_type: "customer",
           sender_name: name.trim(),
-          sender_email: email.trim(),
+          sender_email: email.trim().toLowerCase(),
           message: ticketDescription.trim(),
         });
 
@@ -601,6 +610,15 @@ export default function SupportSubmitPage({
             </form>
           </CardContent>
         </Card>
+
+        {/* GDPR Privacy Notice */}
+        {/* === AGENT 04: Privacy notice for GDPR Articles 13-14 === */}
+        <PrivacyNotice
+          dataCollected={["email", "name"]}
+          purpose="to process your support request and keep you updated on its status"
+          className="max-w-lg w-full"
+        />
+        {/* === END AGENT 04 === */}
 
         {/* Footer branding */}
         {branding?.showPoweredBy !== "false" && branding?.showPoweredBy !== false && (

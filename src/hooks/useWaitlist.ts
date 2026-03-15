@@ -1,13 +1,28 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type WaitlistEntry = Tables<"waitlist_entries">;
 
+const PAGE_SIZE = 50;
+
+/** Sanitize a CSV cell value to prevent formula injection in Excel/Sheets. */
+function sanitizeCSVValue(value: string): string {
+  let sanitized = String(value);
+  // Prefix values starting with formula characters to prevent execution
+  if (/^[=+\-@\t\r]/.test(sanitized)) {
+    sanitized = "'" + sanitized;
+  }
+  // Escape internal double quotes and wrap the whole value in double quotes
+  sanitized = sanitized.replace(/"/g, '""');
+  return `"${sanitized}"`;
+}
+
 export function useWaitlist(formId: string) {
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -15,56 +30,50 @@ export function useWaitlist(formId: string) {
       .from("waitlist_entries")
       .select("*", { count: "exact" })
       .eq("form_id", formId)
-      .order("position", { ascending: true });
+      .order("position", { ascending: true })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     setEntries(data ?? []);
     setTotalCount(count ?? 0);
     setLoading(false);
-  }, [formId]);
+  }, [formId, page]);
 
+  // Keep a stable ref so the realtime subscription always calls the latest fetchEntries
+  const fetchEntriesRef = useRef(fetchEntries);
+  useEffect(() => {
+    fetchEntriesRef.current = fetchEntries;
+  }, [fetchEntries]);
+
+  // Re-fetch when page or formId changes
   useEffect(() => {
     fetchEntries();
+  }, [fetchEntries]);
 
-    // Real-time subscription
+  // Realtime subscription — only recreated when formId changes (page-independent)
+  useEffect(() => {
     const channel = supabase
       .channel(`waitlist-${formId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
-        (payload) => {
-          const newEntry = payload.new as WaitlistEntry;
-          setEntries((prev) => {
-            if (prev.some((e) => e.id === newEntry.id)) return prev;
-            return [...prev, newEntry];
-          });
-          setTotalCount((prev) => prev + 1);
-        }
+        () => { fetchEntriesRef.current(); }
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
-        (payload) => {
-          const updated = payload.new as WaitlistEntry;
-          setEntries((prev) =>
-            prev.map((e) => (e.id === updated.id ? updated : e))
-          );
-        }
+        () => { fetchEntriesRef.current(); }
       )
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "waitlist_entries", filter: `form_id=eq.${formId}` },
-        (payload) => {
-          const deletedId = (payload.old as { id: string }).id;
-          setEntries((prev) => prev.filter((e) => e.id !== deletedId));
-          setTotalCount((prev) => Math.max(0, prev - 1));
-        }
+        () => { fetchEntriesRef.current(); }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [formId, fetchEntries]);
+  }, [formId]);
 
   const addEntry = async (email: string, name?: string, referredBy?: string) => {
     // Check for duplicate
@@ -159,16 +168,19 @@ export function useWaitlist(formId: string) {
     const data = filteredEntries ?? entries;
     const headers = ["Position", "Email", "Name", "Referral Code", "Referral Count", "Status", "Joined"];
     const rows = data.map((e) => [
-      e.position,
+      String(e.position),
       e.email,
       e.name ?? "",
       e.referral_code,
-      e.referral_count,
+      String(e.referral_count),
       e.status,
       new Date(e.created_at).toISOString(),
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    // UTF-8 BOM ensures correct encoding in Excel; sanitizeCSVValue prevents formula injection
+    const headerRow = headers.map(sanitizeCSVValue).join(",");
+    const dataRows = rows.map((r) => r.map(sanitizeCSVValue).join(","));
+    const csv = "\uFEFF" + [headerRow, ...dataRows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -179,8 +191,10 @@ export function useWaitlist(formId: string) {
 
   const exportEmailsOnly = (filteredEntries?: WaitlistEntry[]) => {
     const data = filteredEntries ?? entries;
-    const emails = data.map((e) => e.email).join("\n");
-    const blob = new Blob([emails], { type: "text/plain" });
+    // sanitizeCSVValue wraps values in quotes and escapes formula-injection prefixes
+    const emails = data.map((e) => sanitizeCSVValue(e.email)).join("\n");
+    // UTF-8 BOM ensures correct encoding when opened in Excel
+    const blob = new Blob(["\uFEFF" + emails], { type: "text/plain;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -189,10 +203,16 @@ export function useWaitlist(formId: string) {
     URL.revokeObjectURL(url);
   };
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
   return {
     entries,
     loading,
     totalCount,
+    page,
+    setPage,
+    PAGE_SIZE,
+    totalPages,
     addEntry,
     updateEntryStatus,
     bulkInvite,

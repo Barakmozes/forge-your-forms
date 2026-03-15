@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Hammer, ChevronDown, FileText, Inbox, LogOut, Menu, Settings, LayoutTemplate, Zap, AlertTriangle } from "lucide-react";
+import { Hammer, ChevronDown, FileText, Inbox, LogOut, Menu, Settings, LayoutTemplate, Zap, AlertTriangle, Download, Trash2, Sun, Moon } from "lucide-react";
 import NotificationPanel from "@/components/NotificationPanel";
 import LanguageToggle from "@/components/LanguageToggle";
 // === AGENT 6: Plan Badge ===
@@ -34,6 +35,11 @@ export default function Navbar() {
   // === AGENT 14: White Label ===
   const { settings: enterprise, whiteLabelEnabled } = useEnterprise();
   // === END AGENT 14 ===
+  // === AGENT 16: Dark mode toggle ===
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // === END AGENT 16 ===
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase()
@@ -69,7 +75,7 @@ export default function Navbar() {
         {/* === END AGENT 14 === */}
 
         {/* Nav links */}
-        <nav className="ms-6 hidden md:flex items-center gap-1">
+        <nav className="ms-6 hidden md:flex items-center gap-1" aria-label={t("nav.mainNavigation")}>
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to;
             return (
@@ -113,6 +119,20 @@ export default function Navbar() {
             <LanguageToggle />
             {/* === END AGENT 5 === */}
 
+            {/* === AGENT 16: Dark mode toggle === */}
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 min-h-[44px] min-w-[44px]"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={theme === "dark" ? t("nav.switchToLightMode") : t("nav.switchToDarkMode")}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            )}
+            {/* === END AGENT 16 === */}
+
             {/* === AGENT 1: Settings link === */}
             <Link to="/settings">
               <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px]" title={t("tooltips.nav.settings")}>
@@ -138,8 +158,21 @@ export default function Navbar() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5 text-sm font-medium truncate">{user?.email}</div>
+              <DropdownMenuSeparator />
+              {/* === AGENT 04: GDPR Links === */}
+              <DropdownMenuItem asChild>
+                <Link to="/data-export" className="cursor-pointer">
+                  <Download className="me-2 h-4 w-4" /> {t("nav.exportData")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
+                <Link to="/delete-account" className="cursor-pointer">
+                  <Trash2 className="me-2 h-4 w-4" /> {t("nav.deleteAccount")}
+                </Link>
+              </DropdownMenuItem>
+              {/* === END AGENT 04 === */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="me-2 h-4 w-4" /> {t("nav.signOut")}
@@ -148,7 +181,15 @@ export default function Navbar() {
           </DropdownMenu>
 
           {/* Mobile hamburger */}
-          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 min-h-[44px] min-w-[44px]" onClick={() => setMobileMenuOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-8 w-8 min-h-[44px] min-w-[44px]"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-sheet"
+          >
             <Menu className="h-5 w-5" />
           </Button>
         </div>
@@ -156,11 +197,11 @@ export default function Navbar() {
 
       {/* Mobile Menu Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-3/4 sm:max-w-sm p-0">
+        <SheetContent id="mobile-nav-sheet" side="left" className="w-3/4 sm:max-w-sm p-0">
           <SheetHeader className="p-4 border-b">
             <SheetTitle className="text-start">{whiteLabelEnabled && enterprise?.custom_app_name ? enterprise.custom_app_name : "FormForge"}</SheetTitle>
           </SheetHeader>
-          <nav className="flex flex-col p-2">
+          <nav className="flex flex-col p-2" aria-label={t("nav.mobileNavigation")}>
             {navLinks.map(({ to, label, icon: Icon }) => {
               const active = location.pathname === to;
               return (
@@ -191,7 +232,22 @@ export default function Navbar() {
             )}
             <div className="flex items-center justify-between px-3 py-2">
               <PlanBadge />
-              <LanguageToggle />
+              <div className="flex items-center gap-2">
+                <LanguageToggle />
+                {/* === AGENT 16: Mobile dark mode toggle === */}
+                {mounted && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    aria-label={theme === "dark" ? t("nav.switchToLightMode") : t("nav.switchToDarkMode")}
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                )}
+                {/* === END AGENT 16 === */}
+              </div>
             </div>
             <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
               <Button variant={location.pathname === "/settings" ? "secondary" : "ghost"} className="w-full justify-start gap-3 min-h-[44px]">

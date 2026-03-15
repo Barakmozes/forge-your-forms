@@ -6,6 +6,7 @@ import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useErrorHandler } from "@/hooks/useErrorHandler";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import AppLayout from "@/components/AppLayout";
 import MembersManager from "@/components/MembersManager";
 // === AGENT 6: Billing Tab ===
@@ -35,10 +36,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Building2, Users, User, CreditCard, Webhook, Code, Plug, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Building2, Users, User, CreditCard, Webhook, Code, Plug, ShieldCheck, Plus } from "lucide-react";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 export default function Settings() {
+  useDocumentTitle("Settings");
   const { t } = useTranslation();
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
@@ -60,6 +63,17 @@ export default function Settings() {
   const [profileEmail, setProfileEmail] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // === AGENT 16: Email change state ===
+  const [newEmail, setNewEmail] = useState("");
+  const [changingEmail, setChangingEmail] = useState(false);
+  // === END AGENT 16 ===
+
+  // === AGENT 16: Create workspace state ===
+  const [createWsOpen, setCreateWsOpen] = useState(false);
+  const [newWsName, setNewWsName] = useState("");
+  const [creatingWs, setCreatingWs] = useState(false);
+  // === END AGENT 16 ===
 
   useEffect(() => {
     if (currentWorkspace) {
@@ -191,6 +205,48 @@ export default function Settings() {
     setUploadingAvatar(false);
   }
 
+  // === AGENT 16: Email change handler ===
+  async function handleChangeEmail() {
+    if (!newEmail.trim() || !newEmail.includes("@")) {
+      toast({ title: t("settings.invalidEmail"), description: t("settings.enterValidEmail"), variant: "destructive" });
+      return;
+    }
+    setChangingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    if (error) {
+      toast({ title: t("settings.emailChangeFailed"), description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: t("settings.emailChangeRequested"), description: t("settings.checkInboxConfirm", { email: newEmail.trim() }) });
+      setNewEmail("");
+    }
+    setChangingEmail(false);
+  }
+  // === END AGENT 16 ===
+
+  // === AGENT 16: Create workspace handler ===
+  async function handleCreateWorkspace() {
+    if (!newWsName.trim() || !user) return;
+    setCreatingWs(true);
+    const slug = newWsName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const { data, error } = await supabase
+      .from("workspaces")
+      .insert({ name: newWsName.trim(), slug, owner_id: user.id })
+      .select()
+      .single();
+    if (error) {
+      toast({ title: t("settings.createWorkspaceFailed"), description: error.message, variant: "destructive" });
+    } else if (data) {
+      await supabase.from("workspace_members").insert({ user_id: user.id, workspace_id: data.id, role: "owner" });
+      toast({ title: t("settings.workspaceCreated"), description: t("settings.workspaceCreatedDesc", { name: data.name }) });
+      setCreateWsOpen(false);
+      setNewWsName("");
+      // Reload page to refresh workspace list
+      window.location.reload();
+    }
+    setCreatingWs(false);
+  }
+  // === END AGENT 16 ===
+
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : profileEmail.charAt(0).toUpperCase();
@@ -201,7 +257,9 @@ export default function Settings() {
         <h1 className="text-2xl font-bold mb-6">{t("settings.title")}</h1>
 
         <Tabs defaultValue={defaultTab}>
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide mb-6">
+          {/* === AGENT 16: Scroll indicator for Settings tabs (P1 #85) === */}
+          <div className="relative mb-6">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
           <TabsList className="w-max sm:w-auto inline-flex">
             <TabsTrigger value="workspace" className="gap-2 whitespace-nowrap">
               <Building2 className="h-4 w-4" /> <span className="hidden sm:inline">{t("settings.workspace")}</span>
@@ -243,6 +301,9 @@ export default function Settings() {
             {/* === END AGENT 14 === */}
           </TabsList>
           </div>
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" aria-hidden="true" />
+          </div>
+          {/* === END AGENT 16 === */}
 
           {/* Workspace Tab */}
           <TabsContent value="workspace">
@@ -282,6 +343,51 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+
+            {/* === AGENT 16: Create Workspace Dialog === */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>{t("settings.createWorkspace")}</CardTitle>
+                <CardDescription>{t("settings.createWorkspaceDescription")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Dialog open={createWsOpen} onOpenChange={setCreateWsOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      {t("settings.createWorkspace")}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t("settings.createWorkspace")}</DialogTitle>
+                      <DialogDescription>{t("settings.createWorkspaceDialogDesc")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-ws-name">{t("settings.workspaceName")}</Label>
+                        <Input
+                          id="new-ws-name"
+                          value={newWsName}
+                          onChange={(e) => setNewWsName(e.target.value)}
+                          placeholder={t("settings.workspaceNamePlaceholder")}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleCreateWorkspace(); }}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateWsOpen(false)}>
+                        {t("common.cancel")}
+                      </Button>
+                      <Button onClick={handleCreateWorkspace} disabled={creatingWs || !newWsName.trim()}>
+                        {creatingWs ? t("common.creating") : t("common.create")}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+            {/* === END AGENT 16 === */}
           </TabsContent>
 
           {/* Members Tab */}
@@ -388,11 +494,37 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label htmlFor="profile-email">{t("settings.emailLabel")}</Label>
                   <Input id="profile-email" value={profileEmail} disabled className="bg-muted" dir="ltr" />
-                  <p className="text-xs text-muted-foreground">{t("settings.emailCannotChange")}</p>
                 </div>
                 <Button onClick={handleSaveProfile} disabled={savingProfile}>
                   {savingProfile ? t("common.saving") : t("settings.saveProfile")}
                 </Button>
+
+                {/* === AGENT 16: Email change section (P1 #6) === */}
+                <div className="border-t pt-4 mt-2 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">{t("settings.changeEmail")}</p>
+                    <p className="text-xs text-muted-foreground">{t("settings.changeEmailDesc")}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-email">{t("settings.newEmail")}</Label>
+                    <Input
+                      id="new-email"
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder={t("settings.newEmailPlaceholder")}
+                      dir="ltr"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleChangeEmail}
+                    disabled={changingEmail || !newEmail.trim()}
+                  >
+                    {changingEmail ? t("common.sending") : t("settings.sendConfirmation")}
+                  </Button>
+                </div>
+                {/* === END AGENT 16 === */}
               </CardContent>
             </Card>
           </TabsContent>

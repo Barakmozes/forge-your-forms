@@ -27,19 +27,25 @@ const CHOICE_TYPES = ["select", "radio", "multi_select", "checkbox"];
 const TEXT_TYPES = ["text", "textarea", "email", "phone"];
 const NUMBER_TYPES = ["number"];
 
+const ANALYTICS_LIMIT = 500;
+
 export default function FormResponsesTab({ formId, fields }: Props) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [truncated, setTruncated] = useState(false);
 
   useEffect(() => {
     if (!formId) return;
     supabase
       .from("submissions")
-      .select("data, submitted_at")
+      .select("data, submitted_at", { count: "exact" })
       .eq("form_id", formId)
       .order("submitted_at", { ascending: false })
-      .then(({ data }) => {
-        setSubmissions((data ?? []).map((s) => ({ ...s, data: (s.data as Record<string, unknown>) ?? {} })));
+      .limit(ANALYTICS_LIMIT)
+      .then(({ data, count }) => {
+        const rows = (data ?? []).map((s) => ({ ...s, data: (s.data as Record<string, unknown>) ?? {} }));
+        setSubmissions(rows);
+        setTruncated((count ?? 0) > ANALYTICS_LIMIT);
         setLoading(false);
       });
 
@@ -72,6 +78,12 @@ export default function FormResponsesTab({ formId, fields }: Props) {
 
   return (
     <div className="p-6 space-y-6 overflow-y-auto h-full">
+      {/* Truncation warning */}
+      {truncated && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-2 text-sm text-amber-800 dark:text-amber-200">
+          Charts show the most recent {ANALYTICS_LIMIT} submissions. Older responses are not included in these totals.
+        </div>
+      )}
       {/* Summary card */}
       <div className="grid grid-cols-2 gap-4">
         <Card>

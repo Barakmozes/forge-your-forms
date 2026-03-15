@@ -1,4 +1,5 @@
 import { lazy, Suspense, useRef, useEffect } from "react";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -171,6 +172,9 @@ const AppRoutes = () => (
 );
 
 const App = () => (
+  // === AGENT 16: ThemeProvider for dark mode (next-themes) ===
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  {/* === END AGENT 16 === */}
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -196,6 +200,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

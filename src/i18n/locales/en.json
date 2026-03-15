@@ -9,6 +9,7 @@
     "export": "Export",
     "back": "Back",
     "next": "Next",
+    "previous": "Previous",
     "submit": "Submit",
     "close": "Close",
     "confirm": "Confirm",
@@ -49,9 +50,12 @@
     "somethingWentWrong": "Something went wrong",
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "saving": "Saving...",
+    "sending": "Sending...",
+    "creating": "Creating...",
     "saveChanges": "Save Changes",
     "done": "Done",
     "continue": "Continue",
+    "previous": "Previous",
     "backToHome": "Back to Home",
     "refresh": "Refresh Page",
     "errorPersists": "If the problem persists, please contact support."
@@ -64,7 +68,15 @@
     "pricing": "Pricing",
     "templates": "Templates",
     "workflows": "Workflows",
-    "atRisk": "At-Risk"
+    "atRisk": "At-Risk",
+    "exportData": "Export My Data",
+    "deleteAccount": "Delete Account",
+    "switchToDarkMode": "Switch to dark mode",
+    "switchToLightMode": "Switch to light mode",
+    "mainNavigation": "Main navigation",
+    "mobileNavigation": "Mobile navigation",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu"
   },
   "auth": {
     "signIn": "Sign In",
@@ -123,7 +135,9 @@
     "passwordUpdateFailed": "Failed to update password",
     "invalidResetSession": "Invalid or expired link",
     "invalidResetSessionDescription": "This password reset link is invalid or has expired. Please request a new one.",
-    "requestNewResetLink": "Request a new reset link"
+    "requestNewResetLink": "Request a new reset link",
+    "consentRequired": "Privacy consent required",
+    "consentRequiredDescription": "You must agree to the Privacy Policy to create an account."
   },
   "dashboard": {
     "greetingMorning": "Good morning",
@@ -566,6 +580,7 @@
     "slaOverAlertPlural": "{{count}} tickets over SLA — no first response within 24 hours",
     "viewTicket": "View Ticket",
     "andMore": "And {{count}} more...",
+    "page": "Page {{page}} of {{total}}",
     "dropTicketsHere": "Drop tickets here",
     "tickets": "tickets",
     "ticket": "ticket",
@@ -629,7 +644,8 @@
     "changeStatus": "Change status",
     "apply": "Apply",
     "selected": "{{count}} selected",
-    "failedCopyLink": "Failed to copy link"
+    "failedCopyLink": "Failed to copy link",
+    "page": "Page {{page}} of {{total}}"
   },
   "settings": {
     "title": "Settings",
@@ -665,7 +681,24 @@
     "fileTooLarge": "File too large",
     "maxSizeIs": "Maximum size is 2MB.",
     "failedSaveProfile": "Failed to save profile.",
-    "failedUploadAvatar": "Failed to upload avatar."
+    "failedUploadAvatar": "Failed to upload avatar.",
+    "changeEmail": "Change Email",
+    "changeEmailDesc": "A confirmation email will be sent to your new address.",
+    "newEmail": "New Email Address",
+    "newEmailPlaceholder": "new@example.com",
+    "sendConfirmation": "Send Confirmation Email",
+    "invalidEmail": "Invalid email",
+    "enterValidEmail": "Please enter a valid email address.",
+    "emailChangeFailed": "Email change failed",
+    "emailChangeRequested": "Confirmation email sent",
+    "checkInboxConfirm": "Check your inbox at {{email}} to confirm the change.",
+    "createWorkspace": "Create Workspace",
+    "createWorkspaceDescription": "Create an additional workspace for a different project or team.",
+    "createWorkspaceDialogDesc": "Enter a name for your new workspace.",
+    "workspaceNamePlaceholder": "My New Workspace",
+    "createWorkspaceFailed": "Failed to create workspace",
+    "workspaceCreated": "Workspace created",
+    "workspaceCreatedDesc": "\"{{name}}\" has been created successfully."
   },
   "members": {
     "inviteMember": "Invite Member",
@@ -704,7 +737,9 @@
     "justNow": "just now",
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
-    "daysAgo": "{{count}}d ago"
+    "daysAgo": "{{count}}d ago",
+    "notification": "Notification",
+    "deleteNotification": "Delete notification"
   },
   "landing": {
     "pricing": "Pricing",
@@ -753,6 +788,7 @@
     "readyToSimplify": "Ready to simplify your stack?",
     "readySubtitle": "Join {{count}}+ teams who replaced their patchwork of tools with FormForge. Start free — no credit card needed.",
     "features": "Features",
+    "privacy": "Privacy Policy",
     "allRightsReserved": "All rights reserved."
   },
   "pricing": {
@@ -1311,6 +1347,11 @@
       "testFailed": "Connection failed",
       "testFailedDescription": "The metadata URL could not be reached",
       "metadataRequired": "Metadata URL is required",
+      "domainLabel": "Company Email Domain",
+      "domainPlaceholder": "acme.com",
+      "domainHint": "Enter your company's email domain (e.g. acme.com). This must match the domain configured in your SSO identity provider.",
+      "domainRequired": "Email domain is required",
+      "domainInvalid": "Please enter a valid domain (e.g. acme.com)",
       "loadError": "Failed to load SSO settings. Please try again."
     },
     "whiteLabel": {
@@ -1362,6 +1403,11 @@
       "recordName": "Name",
       "recordValue": "Value",
       "verifyDomain": "Verify Domain",
+      "verificationInitiated": "Verification check initiated",
+      "verificationDescription": "DNS records can take up to 48 hours to propagate. Once you've added the TXT record, click this button to check — we'll confirm automatically once DNS is verified on the server side.",
+      "ssoLoginDomain": "Company Email Domain",
+      "ssoLoginDomainPlaceholder": "acme.com",
+      "ssoLoginDomainHint": "Enter your company's email domain (e.g. acme.com). This must match the domain configured in your SSO identity provider.",
       "loadError": "Failed to load custom domains. Please try again."
     }
   },
@@ -1513,7 +1559,9 @@
       "changeStatus": "Change Status",
       "changeStatusDesc": "Change the status of a ticket or entry",
       "addTag": "Add Tag",
-      "addTagDesc": "Add a tag to the associated ticket"
+      "addTagDesc": "Add a tag to the associated ticket",
+      "webhookUrlHttpsRequired": "Webhook URL must use HTTPS for secure delivery",
+      "templateVariables": "Available Template Variables"
     },
     "template": {
       "npsAlertPipeline": "NPS Alert Pipeline",
@@ -1614,9 +1662,13 @@
       "workspaceData": "Workspace settings",
       "formData": "All forms and their configurations",
       "submissionData": "Form submissions",
-      "waitlistData": "Waitlist entries",
-      "feedbackData": "Feedback responses",
+      "notificationData": "Notifications",
+      "waitlistData": "Waitlist entries and invites",
+      "feedbackData": "Feedback responses and alerts",
       "ticketData": "Support tickets",
+      "ticketMessagesData": "Ticket messages and conversations",
+      "cannedResponsesData": "Canned responses",
+      "tagsData": "Tags and ticket tags",
       "exporting": "Exporting your data...",
       "exportButton": "Export My Data (JSON)",
       "success": "Export complete",
@@ -1645,7 +1697,10 @@
       "success": "Account deleted",
       "successDescription": "Your account and data have been permanently deleted.",
       "failed": "Deletion failed",
-      "failedDescription": "Some data could not be deleted. Please contact support."
+      "failedDescription": "Some data could not be deleted. Please contact support.",
+      "activeSubscriptionWarning": "You have an active subscription",
+      "activeSubscriptionDescription": "Your Stripe subscription will not be automatically cancelled when you delete your account. Please cancel it first via the billing portal.",
+      "cancelSubscriptionLink": "Go to Billing Settings"
     }
   },
   "errors": {

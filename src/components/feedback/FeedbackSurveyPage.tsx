@@ -22,6 +22,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhookEvents"; /* === AGENT 9: Webhook import === */
 import { dispatchSlackNotification } from "@/hooks/useIntegrations"; /* === AGENT 10: Slack import === */
 import { dispatchWorkflowTrigger } from "@/lib/workflowEngine"; /* === AGENT 15: Workflow import === */
+import { PrivacyNotice } from "@/components/gdpr/PrivacyNotice"; /* === AGENT 04: GDPR === */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -641,6 +642,15 @@ export default function FeedbackSurveyPage({
             </form>
           </CardContent>
         </Card>
+
+        {/* GDPR Privacy Notice */}
+        {/* === AGENT 04: Privacy notice for GDPR Articles 13-14 === */}
+        <PrivacyNotice
+          dataCollected={["email", "name", "feedback score"]}
+          purpose="to process your feedback and improve our service"
+          className="max-w-lg w-full"
+        />
+        {/* === END AGENT 04 === */}
 
         {/* Footer branding */}
         {branding?.showPoweredBy !== "false" && branding?.showPoweredBy !== false && (

@@ -9,6 +9,7 @@
     "export": "ייצוא",
     "back": "חזרה",
     "next": "הבא",
+    "previous": "הקודם",
     "submit": "שליחה",
     "close": "סגור",
     "confirm": "אישור",
@@ -49,9 +50,12 @@
     "somethingWentWrong": "משהו השתבש",
     "unexpectedError": "אירעה שגיאה בלתי צפויה. נסה שוב.",
     "saving": "שומר...",
+    "sending": "שולח...",
+    "creating": "יוצר...",
     "saveChanges": "שמור שינויים",
     "done": "סיום",
     "continue": "המשך",
+    "previous": "הקודם",
     "backToHome": "חזרה לדף הבית",
     "refresh": "רענן עמוד",
     "errorPersists": "אם הבעיה נמשכת, אנא פנו לתמיכה."
@@ -64,7 +68,15 @@
     "pricing": "תמחור",
     "templates": "תבניות",
     "workflows": "תהליכי עבודה",
-    "atRisk": "בסיכון"
+    "atRisk": "בסיכון",
+    "exportData": "ייצוא הנתונים שלי",
+    "deleteAccount": "מחיקת חשבון",
+    "switchToDarkMode": "מעבר למצב כהה",
+    "switchToLightMode": "מעבר למצב בהיר",
+    "mainNavigation": "ניווט ראשי",
+    "mobileNavigation": "ניווט נייד",
+    "openMenu": "פתיחת תפריט ניווט",
+    "closeMenu": "סגירת תפריט ניווט"
   },
   "auth": {
     "signIn": "התחברות",
@@ -123,7 +135,9 @@
     "passwordUpdateFailed": "עדכון הסיסמה נכשל",
     "invalidResetSession": "קישור לא תקין או שפג תוקפו",
     "invalidResetSessionDescription": "קישור איפוס הסיסמה אינו תקין או שפג תוקפו. בקש קישור חדש.",
-    "requestNewResetLink": "בקש קישור איפוס חדש"
+    "requestNewResetLink": "בקש קישור איפוס חדש",
+    "consentRequired": "נדרשת הסכמה למדיניות הפרטיות",
+    "consentRequiredDescription": "עליך להסכים למדיניות הפרטיות כדי ליצור חשבון."
   },
   "dashboard": {
     "greetingMorning": "בוקר טוב",
@@ -566,6 +580,7 @@
     "slaOverAlertPlural": "{{count}} פניות חרגו מ-SLA — ללא תגובה ראשונה תוך 24 שעות",
     "viewTicket": "צפה בפנייה",
     "andMore": "ועוד {{count}}...",
+    "page": "עמוד {{page}} מתוך {{total}}",
     "dropTicketsHere": "גרור פניות לכאן",
     "tickets": "פניות",
     "ticket": "פנייה",
@@ -629,7 +644,8 @@
     "changeStatus": "שנה סטטוס",
     "apply": "החל",
     "selected": "{{count}} נבחרו",
-    "failedCopyLink": "העתקת הקישור נכשלה"
+    "failedCopyLink": "העתקת הקישור נכשלה",
+    "page": "עמוד {{page}} מתוך {{total}}"
   },
   "settings": {
     "title": "הגדרות",
@@ -665,7 +681,24 @@
     "fileTooLarge": "הקובץ גדול מדי",
     "maxSizeIs": "הגודל המרבי הוא 2MB.",
     "failedSaveProfile": "שמירת הפרופיל נכשלה.",
-    "failedUploadAvatar": "העלאת התמונה נכשלה."
+    "failedUploadAvatar": "העלאת התמונה נכשלה.",
+    "changeEmail": "שינוי אימייל",
+    "changeEmailDesc": "אימייל אישור יישלח לכתובת החדשה שלך.",
+    "newEmail": "כתובת אימייל חדשה",
+    "newEmailPlaceholder": "new@example.com",
+    "sendConfirmation": "שלח אימייל אישור",
+    "invalidEmail": "אימייל לא תקין",
+    "enterValidEmail": "אנא הזן כתובת אימייל תקינה.",
+    "emailChangeFailed": "שינוי האימייל נכשל",
+    "emailChangeRequested": "אימייל אישור נשלח",
+    "checkInboxConfirm": "בדוק את תיבת הדואר שלך בכתובת {{email}} לאישור השינוי.",
+    "createWorkspace": "צור סביבת עבודה",
+    "createWorkspaceDescription": "צור סביבת עבודה נוספת לפרויקט או צוות אחר.",
+    "createWorkspaceDialogDesc": "הזן שם לסביבת העבודה החדשה שלך.",
+    "workspaceNamePlaceholder": "סביבת העבודה החדשה שלי",
+    "createWorkspaceFailed": "יצירת סביבת העבודה נכשלה",
+    "workspaceCreated": "סביבת עבודה נוצרה",
+    "workspaceCreatedDesc": "\"{{name}}\" נוצרה בהצלחה."
   },
   "members": {
     "inviteMember": "הזמן חבר צוות",
@@ -704,7 +737,9 @@
     "justNow": "הרגע",
     "minutesAgo": "לפני {{count}} דק׳",
     "hoursAgo": "לפני {{count}} שע׳",
-    "daysAgo": "לפני {{count}} ימים"
+    "daysAgo": "לפני {{count}} ימים",
+    "notification": "התראה",
+    "deleteNotification": "מחק התראה"
   },
   "landing": {
     "pricing": "תמחור",
@@ -753,6 +788,7 @@
     "readyToSimplify": "מוכנים לפשט את הערימה שלכם?",
     "readySubtitle": "הצטרפו ל-{{count}}+ צוותים שהחליפו את ערימת הכלים שלהם ב-FormForge. התחילו בחינם — ללא כרטיס אשראי.",
     "features": "תכונות",
+    "privacy": "מדיניות פרטיות",
     "allRightsReserved": "כל הזכויות שמורות."
   },
   "pricing": {
@@ -1311,6 +1347,11 @@
       "testFailed": "החיבור נכשל",
       "testFailedDescription": "לא ניתן להגיע לכתובת ה-URL של המטא-דאטה",
       "metadataRequired": "כתובת URL של מטא-דאטה נדרשת",
+      "domainLabel": "דומיין הדוא\"ל של החברה",
+      "domainPlaceholder": "acme.com",
+      "domainHint": "הזן את דומיין הדוא\"ל של חברתך (למשל acme.com). זה חייב להתאים לדומיין שהוגדר בספק הזהות SSO שלך.",
+      "domainRequired": "דומיין הדוא\"ל נדרש",
+      "domainInvalid": "הזן דומיין תקני (למשל acme.com)",
       "loadError": "טעינת הגדרות SSO נכשלה. נסו שוב."
     },
     "whiteLabel": {
@@ -1362,6 +1403,11 @@
       "recordName": "שם",
       "recordValue": "ערך",
       "verifyDomain": "אמת דומיין",
+      "verificationInitiated": "בדיקת אימות החלה",
+      "verificationDescription": "רשומות DNS יכולות לקחת עד 48 שעות להתפשט. לאחר שהוספת את רשומת ה-TXT, לחץ כדי לבדוק — נאשר אוטומטית לאחר אימות ה-DNS בצד השרת.",
+      "ssoLoginDomain": "דומיין הדוא\"ל של החברה",
+      "ssoLoginDomainPlaceholder": "acme.com",
+      "ssoLoginDomainHint": "הזן את דומיין הדוא\"ל של חברתך (למשל acme.com). זה חייב להתאים לדומיין שהוגדר בספק הזהות SSO שלך.",
       "loadError": "טעינת דומיינים מותאמים נכשלה. נסו שוב."
     }
   },
@@ -1513,7 +1559,9 @@
       "changeStatus": "שנה סטטוס",
       "changeStatusDesc": "שינוי סטטוס של פנייה או רשומה",
       "addTag": "הוסף תגית",
-      "addTagDesc": "הוספת תגית לפנייה המשויכת"
+      "addTagDesc": "הוספת תגית לפנייה המשויכת",
+      "webhookUrlHttpsRequired": "כתובת ה-Webhook חייבת להשתמש ב-HTTPS למשלוח מאובטח",
+      "templateVariables": "משתני תבנית זמינים"
     },
     "template": {
       "npsAlertPipeline": "צינור התראות NPS",
@@ -1614,9 +1662,13 @@
       "workspaceData": "הגדרות סביבת עבודה",
       "formData": "כל הטפסים וההגדרות שלהם",
       "submissionData": "תשובות לטפסים",
-      "waitlistData": "רשומות רשימת המתנה",
-      "feedbackData": "תגובות משוב",
+      "notificationData": "התראות",
+      "waitlistData": "רשומות והזמנות רשימת המתנה",
+      "feedbackData": "תגובות משוב והתראות",
       "ticketData": "פניות תמיכה",
+      "ticketMessagesData": "הודעות פניות ושיחות",
+      "cannedResponsesData": "תגובות מוכנות",
+      "tagsData": "תגיות ושיוכי תגיות",
       "exporting": "מייצא את הנתונים שלך...",
       "exportButton": "ייצוא הנתונים שלי (JSON)",
       "success": "הייצוא הושלם",
@@ -1645,7 +1697,10 @@
       "success": "החשבון נמחק",
       "successDescription": "החשבון שלך וכל הנתונים נמחקו לצמיתות.",
       "failed": "המחיקה נכשלה",
-      "failedDescription": "חלק מהנתונים לא ניתנו למחיקה. אנא פנה לתמיכה."
+      "failedDescription": "חלק מהנתונים לא ניתנו למחיקה. אנא פנה לתמיכה.",
+      "activeSubscriptionWarning": "יש לך מנוי פעיל",
+      "activeSubscriptionDescription": "המנוי שלך ב-Stripe לא יבוטל אוטומטית בעת מחיקת החשבון. אנא בטל אותו תחילה דרך פורטל החיוב.",
+      "cancelSubscriptionLink": "עבור להגדרות חיוב"
     }
   },
   "errors": {

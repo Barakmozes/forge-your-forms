@@ -1,23 +1,37 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 type FeedbackResponse = Tables<"feedback_responses">;
 type FeedbackAlert = Tables<"feedback_alerts">;
 
+export const FEEDBACK_PAGE_SIZE = 50;
+
 export function useFeedback(formId: string) {
   const [responses, setResponses] = useState<FeedbackResponse[]>([]);
+  // analyticsData: lightweight fetch of all responses (no custom_answers/submission_id)
+  // used by useFeedbackAnalytics so NPS/trends reflect the full dataset, not just the current page.
+  const [analyticsData, setAnalyticsData] = useState<FeedbackResponse[]>([]);
   const [alerts, setAlerts] = useState<FeedbackAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchResponses = useCallback(async () => {
+  // Ref tracks current page for use inside realtime callbacks (avoids stale closure)
+  const pageRef = useRef(page);
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  const fetchResponses = useCallback(async (pageNum: number) => {
     setLoading(true);
-    const [{ data: resData }, { data: alertData }] = await Promise.all([
+    const [{ data: resData, count }, { data: alertData }] = await Promise.all([
       supabase
         .from("feedback_responses")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("form_id", formId)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .range(pageNum * FEEDBACK_PAGE_SIZE, (pageNum + 1) * FEEDBACK_PAGE_SIZE - 1),
       supabase
         .from("feedback_alerts")
         .select("*")
@@ -25,24 +39,60 @@ export function useFeedback(formId: string) {
         .order("created_at", { ascending: false }),
     ]);
     setResponses(resData ?? []);
+    if (count !== null) setTotalCount(count);
     setAlerts(alertData ?? []);
     setLoading(false);
   }, [formId]);
 
-  useEffect(() => {
-    fetchResponses();
+  const fetchAnalyticsData = useCallback(async () => {
+    const { data } = await supabase
+      .from("feedback_responses")
+      .select("id, nps_score, sentiment, category, created_at, flagged, respondent_email, follow_up")
+      .eq("form_id", formId)
+      .order("created_at", { ascending: false });
+    setAnalyticsData((data as FeedbackResponse[]) ?? []);
+  }, [formId]);
 
-    const channel = supabase
+  // Reset to page 0 whenever formId changes
+  useEffect(() => {
+    setPage(0);
+    setTotalCount(0);
+  }, [formId]);
+
+  // Fetch paginated responses + alerts on formId or page change
+  useEffect(() => {
+    fetchResponses(page);
+  }, [formId, page, fetchResponses]);
+
+  // Fetch lightweight analytics data for all responses (not paginated)
+  // Called on mount and whenever formId changes
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [formId, fetchAnalyticsData]);
+
+  // Keep fetchResponses and fetchAnalyticsData refs current for realtime callbacks
+  const fetchResponsesRef = useRef(fetchResponses);
+  useEffect(() => {
+    fetchResponsesRef.current = fetchResponses;
+  }, [fetchResponses]);
+
+  const fetchAnalyticsDataRef = useRef(fetchAnalyticsData);
+  useEffect(() => {
+    fetchAnalyticsDataRef.current = fetchAnalyticsData;
+  }, [fetchAnalyticsData]);
+
+  // Realtime subscriptions — re-created only when formId changes
+  useEffect(() => {
+    const responsesChannel = supabase
       .channel(`feedback-${formId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "feedback_responses", filter: `form_id=eq.${formId}` },
-        (payload) => {
-          const newResponse = payload.new as FeedbackResponse;
-          setResponses((prev) => {
-            if (prev.some((r) => r.id === newResponse.id)) return prev;
-            return [newResponse, ...prev];
-          });
+        () => {
+          // Refetch current page — new entries belong on page 0 (desc order), so don't blindly prepend
+          fetchResponsesRef.current(pageRef.current);
+          // Also refresh analytics data so NPS/trends stay accurate
+          fetchAnalyticsDataRef.current();
         }
       )
       .on(
@@ -53,6 +103,9 @@ export function useFeedback(formId: string) {
           setResponses((prev) =>
             prev.map((r) => (r.id === updated.id ? updated : r))
           );
+          setAnalyticsData((prev) =>
+            prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
+          );
         }
       )
       .on(
@@ -61,14 +114,43 @@ export function useFeedback(formId: string) {
         (payload) => {
           const deletedId = (payload.old as { id: string }).id;
           setResponses((prev) => prev.filter((r) => r.id !== deletedId));
+          setAnalyticsData((prev) => prev.filter((r) => r.id !== deletedId));
+          setTotalCount((prev) => Math.max(0, prev - 1));
+        }
+      )
+      .subscribe();
+
+    // NOTE: score_drop and keyword alert types exist in the DB enum (feedback_alert_type) but are not
+    // yet implemented. Currently only the 'detractor' alert type is created by the DB trigger in
+    // 005_feedback_tables.sql. See HANDOFF.md for planned implementations.
+    //
+    // NOTE: Detractor notifications (notifications table) are only sent to the workspace owner.
+    // Fixing this to also notify editors requires a migration-level change to the DB trigger. See HANDOFF.md.
+    const alertsChannel = supabase
+      .channel(`feedback-alerts-${formId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feedback_alerts", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          setAlerts((prev) => [payload.new as FeedbackAlert, ...prev]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "feedback_alerts", filter: `form_id=eq.${formId}` },
+        (payload) => {
+          setAlerts((prev) =>
+            prev.map((a) => (a.id === payload.new.id ? (payload.new as FeedbackAlert) : a))
+          );
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(responsesChannel);
+      supabase.removeChannel(alertsChannel);
     };
-  }, [formId, fetchResponses]);
+  }, [formId]);
 
   const submitFeedback = async (data: {
     nps_score: number;
@@ -105,6 +187,10 @@ export function useFeedback(formId: string) {
       setResponses((prev) =>
         prev.map((r) => (r.id === responseId ? { ...r, flagged } : r))
       );
+      // Keep analyticsData in sync so at-risk clients list updates correctly
+      setAnalyticsData((prev) =>
+        prev.map((r) => (r.id === responseId ? { ...r, flagged } : r))
+      );
     }
     return { error };
   };
@@ -123,13 +209,21 @@ export function useFeedback(formId: string) {
     return { error };
   };
 
+  const totalPages = Math.ceil(totalCount / FEEDBACK_PAGE_SIZE);
+
   return {
     responses,
+    analyticsData,
     alerts,
     loading,
     submitFeedback,
     toggleFlag,
     markAlertRead,
-    refetch: fetchResponses,
+    refetch: () => fetchResponses(page),
+    page,
+    setPage,
+    totalCount,
+    totalPages,
+    PAGE_SIZE: FEEDBACK_PAGE_SIZE,
   };
 }

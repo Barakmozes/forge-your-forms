@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { validatePassword } from "@/lib/passwordValidation";
+import { ConsentCheckbox } from "@/components/gdpr/ConsentCheckbox";
 import { Hammer, Mail, KeyRound } from "lucide-react";
 
 type AuthView = "login" | "signup" | "forgotPassword" | "pendingVerification" | "pendingReset";
@@ -15,12 +17,14 @@ type AuthView = "login" | "signup" | "forgotPassword" | "pendingVerification" | 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function Auth() {
+  useDocumentTitle("Sign In");
   const { t } = useTranslation();
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
@@ -100,7 +104,16 @@ export default function Auth() {
         setLoading(false);
         return;
       }
-      const { error } = await supabase.auth.signUp({
+      if (!consentGiven) {
+        toast({
+          title: t("auth.consentRequired"),
+          description: t("auth.consentRequiredDescription"),
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -111,6 +124,12 @@ export default function Auth() {
       if (error) {
         toast({ title: t("auth.signupFailed"), description: error.message, variant: "destructive" });
       } else {
+        // Store consent timestamp in profile (non-blocking)
+        if (signUpData?.user?.id) {
+          await supabase.from("profiles").update({
+            consent_given_at: new Date().toISOString(),
+          }).eq("id", signUpData.user.id);
+        }
         setView("pendingVerification");
         startCooldown();
       }
@@ -339,7 +358,13 @@ export default function Auth() {
                 </button>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            {view === "signup" && (
+              <ConsentCheckbox
+                checked={consentGiven}
+                onCheckedChange={setConsentGiven}
+              />
+            )}
+            <Button type="submit" className="w-full" disabled={loading || (view === "signup" && !consentGiven)}>
               {loading
                 ? (view === "login" ? t("auth.signingIn") : t("auth.signingUp"))
                 : (view === "login" ? t("auth.signIn") : t("auth.signUp"))}

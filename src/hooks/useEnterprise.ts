@@ -13,6 +13,8 @@ export interface EnterpriseSettings {
   sso_metadata_url: string | null;
   sso_certificate: string | null;
   sso_entity_id: string | null;
+  /** Company email domain for SSO login (e.g. "acme.com"). Added by migration 037. */
+  sso_domain: string | null;
   white_label_enabled: boolean;
   custom_logo_url: string | null;
   custom_favicon_url: string | null;
@@ -28,6 +30,7 @@ const DEFAULT_SETTINGS: Omit<EnterpriseSettings, "workspace_id" | "created_at" |
   sso_metadata_url: null,
   sso_certificate: null,
   sso_entity_id: null,
+  sso_domain: null,
   white_label_enabled: false,
   custom_logo_url: null,
   custom_favicon_url: null,

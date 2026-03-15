@@ -27,13 +27,10 @@ export default function FeatureGate({
   fallback,
 }: FeatureGateProps) {
   const { t } = useTranslation();
-  const { plan, isOwnerBypass, isLoading } = usePlanLimits();
+  const { plan, isLoading } = usePlanLimits();
   const [paywallOpen, setPaywallOpen] = useState(false);
 
   if (isLoading) return <>{children}</>;
-
-  // Workspace owners bypass all feature gates
-  if (isOwnerBypass) return <>{children}</>;
 
   const hasAccess = isPlanAtLeast(plan, requiredPlan);
 

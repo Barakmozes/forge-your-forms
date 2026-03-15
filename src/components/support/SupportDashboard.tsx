@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -87,6 +87,7 @@ import AtRiskWidget from "@/components/predictions/AtRiskWidget";
 import type { AiSubmissionInput } from "@/lib/ai";
 // === END AGENT 12 ===
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useAiAnalysis } from "@/hooks/useAiAnalysis";
 import SentimentBadge from "@/components/ai/SentimentBadge";
 
@@ -318,9 +319,10 @@ function CategoryTooltip({
 interface KanbanCardProps {
   ticket: { id: string; ticket_number: string; subject: string; priority: string; submitted_by_email: string | null; category: string | null; created_at: string };
   isDragOverlay?: boolean;
+  onNavigate?: (ticketId: string) => void;
 }
 
-function KanbanCard({ ticket, isDragOverlay }: KanbanCardProps) {
+function KanbanCard({ ticket, isDragOverlay, onNavigate }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: ticket.id,
   });
@@ -332,6 +334,7 @@ function KanbanCard({ ticket, isDragOverlay }: KanbanCardProps) {
     <Card
       ref={isDragOverlay ? undefined : setNodeRef}
       {...(isDragOverlay ? {} : { ...attributes, ...listeners })}
+      onClick={(!isDragOverlay && !isDragging && onNavigate) ? () => onNavigate(ticket.id) : undefined}
       className={`shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing border-l-4 ${slaClass} ${
         isDragging ? "opacity-40" : ""
       } ${isDragOverlay ? "shadow-lg rotate-2" : ""}`}
@@ -380,7 +383,7 @@ interface KanbanColumnProps {
   dropHereLabel: string;
 }
 
-function KanbanColumn({ status, statusLabel, tickets: columnTickets, dropHereLabel }: KanbanColumnProps) {
+function KanbanColumn({ status, statusLabel, tickets: columnTickets, onNavigate, dropHereLabel }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -413,7 +416,7 @@ function KanbanColumn({ status, statusLabel, tickets: columnTickets, dropHereLab
           </div>
         ) : (
           columnTickets.map((ticket) => (
-            <KanbanCard key={ticket.id} ticket={ticket} />
+            <KanbanCard key={ticket.id} ticket={ticket} onNavigate={onNavigate} />
           ))
         )}
       </div>
@@ -432,7 +435,7 @@ export default function SupportDashboard({
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? "";
-  const { tickets, loading, updateTicket, bulkUpdateStatus, ticketsByStatus } =
+  const { tickets, loading, updateTicket, bulkUpdateStatus, ticketsByStatus, page, setPage, PAGE_SIZE } =
     useTickets(formId);
   const {
     stats,
@@ -444,6 +447,7 @@ export default function SupportDashboard({
     resolutionTrend,
   } = useSupportAnalytics(tickets);
 
+  const [activeTab, setActiveTab] = useState("overview");
   const [copyLabel, setCopyLabel] = useState<"copy" | "copied">("copy");
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -451,6 +455,41 @@ export default function SupportDashboard({
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | "all">("all");
   const [bulkStatus, setBulkStatus] = useState<TicketStatus | "">("");
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [workspaceMembers, setWorkspaceMembers] = useState<{ user_id: string; email: string; full_name: string | null }[]>([]);
+
+  // Fetch workspace members for assigned_to name resolution
+  useEffect(() => {
+    if (!workspaceId) return;
+    supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .then(async ({ data }) => {
+        if (!data?.length) return;
+        const userIds = data.map((m) => m.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, email, full_name")
+          .in("id", userIds);
+        if (profiles) {
+          setWorkspaceMembers(profiles.map((p) => ({ user_id: p.id, email: p.email, full_name: p.full_name ?? null })));
+        }
+      });
+  }, [workspaceId]);
+
+  const memberLookup = useMemo((): Record<string, string> => {
+    const map: Record<string, string> = {};
+    for (const m of workspaceMembers) {
+      map[m.user_id] = m.full_name || m.email;
+    }
+    return map;
+  }, [workspaceMembers]);
+
+  // Resolve agent UUIDs to names for the workload chart
+  const agentWorkloadResolved = useMemo(
+    () => agentWorkload.map((a) => ({ ...a, agent: memberLookup[a.agent] ?? a.agent })),
+    [agentWorkload, memberLookup]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -488,6 +527,15 @@ export default function SupportDashboard({
 
   const filteredByStatus = (status: TicketStatus) =>
     filteredTickets.filter((t) => t.status === status);
+
+  // ─── Pagination for Tickets Table ─────────────────────────────────────────
+  // Reset to page 0 whenever filters or search change.
+  useEffect(() => {
+    setPage(0);
+  }, [statusFilter, priorityFilter, searchQuery, setPage]);
+
+  const filteredTotalPages = Math.ceil(filteredTickets.length / PAGE_SIZE);
+  const paginatedFilteredTickets = filteredTickets.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const activeDragTicket = activeDragId
     ? tickets.find((t) => t.id === activeDragId) ?? null
@@ -676,7 +724,7 @@ export default function SupportDashboard({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate(`/forms/${formId}/tickets`)}
+            onClick={() => setActiveTab("tickets")}
           >
             <ExternalLink className="ltr:mr-1.5 rtl:ml-1.5 h-4 w-4" />
             {t('support.viewAllTickets')}
@@ -717,7 +765,7 @@ export default function SupportDashboard({
                       variant="ghost"
                       size="sm"
                       className="shrink-0 h-7 text-xs text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
-                      onClick={() => navigate(`/forms/${formId}/tickets`)}
+                      onClick={() => navigate(`/forms/${formId}/tickets/${ticket.id}`)}
                     >
                       {t('support.viewTicket')}
                       <ArrowRight className="ltr:ml-1 rtl:mr-1 h-3 w-3" />
@@ -782,7 +830,7 @@ export default function SupportDashboard({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="overview">{t('support.overview')}</TabsTrigger>
           <TabsTrigger value="kanban">{t('support.kanbanBoard')}</TabsTrigger>
@@ -1036,10 +1084,10 @@ export default function SupportDashboard({
                   ) : (
                     <ResponsiveContainer
                       width="100%"
-                      height={Math.max(200, agentWorkload.length * 48)}
+                      height={Math.max(200, agentWorkloadResolved.length * 48)}
                     >
                       <BarChart
-                        data={agentWorkload}
+                        data={agentWorkloadResolved}
                         layout="vertical"
                         margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
                       >
@@ -1293,12 +1341,13 @@ export default function SupportDashboard({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTickets.map((ticket) => (
+                          {paginatedFilteredTickets.map((ticket) => (
                             <TableRow
                               key={ticket.id}
                               className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => navigate(`/forms/${formId}/tickets/${ticket.id}`)}
                             >
-                              <TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
                                   checked={selectedTickets.has(ticket.id)}
                                   onCheckedChange={() =>
@@ -1354,7 +1403,7 @@ export default function SupportDashboard({
                                 {formatDateTime(ticket.created_at)}
                               </TableCell>
                               <TableCell className="hidden lg:table-cell text-sm text-muted-foreground truncate max-w-[120px]">
-                                {ticket.assigned_to ?? "--"}
+                                {ticket.assigned_to ? (memberLookup[ticket.assigned_to] ?? ticket.assigned_to) : "--"}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1364,6 +1413,33 @@ export default function SupportDashboard({
                   )}
                 </CardContent>
               </Card>
+
+              {/* Pagination controls */}
+              {filteredTotalPages > 1 && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>
+                    {t('support.page', { page: page + 1, total: filteredTotalPages })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0}
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    >
+                      {t('common.previous')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= filteredTotalPages - 1}
+                      onClick={() => setPage((p) => Math.min(filteredTotalPages - 1, p + 1))}
+                    >
+                      {t('common.next')}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </TabsContent>

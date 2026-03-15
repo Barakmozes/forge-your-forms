@@ -46,6 +46,31 @@ interface StepResult {
 
 // --- Condition evaluation ---
 
+// Evaluate a comparison using the explicit operator field (fixes Issue #66: operator was ignored).
+function evaluateByOperator(value: unknown, operator: string, expected: unknown): boolean {
+  switch (operator) {
+    case "equals":
+      return String(value) === String(expected);
+    case "not_equals":
+      return String(value) !== String(expected);
+    case "contains":
+      return String(value).toLowerCase().includes(String(expected).toLowerCase());
+    case "not_contains":
+      return !String(value).toLowerCase().includes(String(expected).toLowerCase());
+    case "greater_than":
+      return Number(value) > Number(expected);
+    case "less_than":
+      return Number(value) < Number(expected);
+    case "is_empty":
+      return !value || String(value).trim() === "";
+    case "is_not_empty":
+      return !!value && String(value).trim() !== "";
+    default:
+      // Unknown operator falls back to equality check
+      return String(value) === String(expected);
+  }
+}
+
 function evaluateCondition(
   condition: WorkflowCondition,
   triggerData: Record<string, unknown>
@@ -54,7 +79,8 @@ function evaluateCondition(
 
   switch (condition.type) {
     case "field_equals":
-      return String(fieldValue) === String(condition.value);
+      // Use the operator field for flexible comparison (fixes Issue #66)
+      return evaluateByOperator(fieldValue, condition.operator, condition.value);
 
     case "score_below":
       return Number(fieldValue) < Number(condition.value);
@@ -63,10 +89,9 @@ function evaluateCondition(
       return Number(fieldValue) > Number(condition.value);
 
     case "status_is":
-      return String(fieldValue) === String(condition.value);
-
     case "priority_is":
-      return String(fieldValue) === String(condition.value);
+      // Use the operator field for flexible comparison (fixes Issue #66)
+      return evaluateByOperator(fieldValue, condition.operator, condition.value);
 
     case "count_exceeds":
       return Number(fieldValue) > Number(condition.value);
@@ -194,15 +219,28 @@ async function executeAction(
       }
 
       case "fire_webhook": {
-        const { error } = await supabaseAdmin.functions.invoke("dispatch-webhook", {
-          body: {
-            workspace_id: workspaceId,
-            event_type: String(config.eventType || "workflow.action"),
-            payload: { trigger_data: triggerData, workflow_action: config },
-          },
-        });
-        if (error) return { success: false, error: error.message };
-        return { success: true, result: "Webhook fired" };
+        // Retry with exponential backoff on failure (fixes Issue #64: webhook retries non-functional).
+        const MAX_WEBHOOK_RETRIES = 3;
+        let lastWebhookError: string | null = null;
+        for (let attempt = 0; attempt <= MAX_WEBHOOK_RETRIES; attempt++) {
+          const { error: webhookError } = await supabaseAdmin.functions.invoke("dispatch-webhook", {
+            body: {
+              workspace_id: workspaceId,
+              event_type: String(config.eventType || "workflow.action"),
+              payload: { trigger_data: triggerData, workflow_action: config },
+            },
+          });
+          if (!webhookError) {
+            return { success: true, result: `Webhook fired (attempt ${attempt + 1})` };
+          }
+          lastWebhookError = webhookError.message;
+          if (attempt < MAX_WEBHOOK_RETRIES) {
+            const delayMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+            console.warn(`Webhook attempt ${attempt + 1} failed: ${lastWebhookError}. Retrying in ${delayMs}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          }
+        }
+        return { success: false, error: `Webhook failed after ${MAX_WEBHOOK_RETRIES + 1} attempts: ${lastWebhookError}` };
       }
 
       case "change_status": {
@@ -339,6 +377,43 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ success: false, error: "Workflow not found or inactive" }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
+  }
+
+  // Waitlist milestone guard: only fire at the configured milestone position (fixes Issue #67).
+  // WaitlistLandingPage dispatches "waitlist_milestone" on every signup; we gate it here.
+  if (trigger_type === "waitlist_milestone") {
+    const triggerCfg = workflow.trigger_config as TriggerConfig;
+    const configuredMilestone = triggerCfg?.config?.milestone as number | undefined;
+    const currentPosition = Number(trigger_data.position ?? 0);
+    const defaultMilestones = [10, 25, 50, 100, 250, 500, 1000];
+    const isAtMilestone =
+      configuredMilestone !== undefined
+        ? currentPosition === configuredMilestone
+        : defaultMilestones.includes(currentPosition);
+
+    if (!isAtMilestone) {
+      console.log(`Workflow ${workflow_id}: waitlist_milestone skipped (position=${currentPosition}, milestone=${configuredMilestone ?? defaultMilestones.join(",")})`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "Not at milestone" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  // NPS below threshold guard: only fire when the NPS score is below the configured threshold
+  // (fixes Issue #68: nps_below_threshold trigger was dead code — the edge function never evaluated the threshold).
+  // Note: FeedbackSurveyPage must also dispatch "nps_below_threshold" events (currently dispatches "detractor_alert").
+  if (trigger_type === "nps_below_threshold") {
+    const triggerCfg = workflow.trigger_config as TriggerConfig;
+    const threshold = (triggerCfg?.config?.threshold as number) ?? 7;
+    const npsScore = Number(trigger_data.nps_score ?? NaN);
+    if (isNaN(npsScore) || npsScore >= threshold) {
+      console.log(`Workflow ${workflow_id}: nps_below_threshold skipped (score=${npsScore}, threshold=${threshold})`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "NPS score at or above threshold" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
   }
 
   // Create run record
