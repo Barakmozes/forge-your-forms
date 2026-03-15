@@ -1561,12 +1561,58 @@ async function generateSummary(state) {
 // § 15. Status Dashboard
 // ────────────────────────────────────────────────────────────────────────────
 
+// V4: Role parsing and color support
+const ROLE_COLORS = {
+  ENGINEER:               '\x1b[32m',   // green
+  RESPONSIVE_SPECIALIST:  '\x1b[36m',   // cyan
+  SECURITY_ENGINEER:      '\x1b[31m',   // red
+  PERFORMANCE_ENGINEER:   '\x1b[33m',   // yellow
+  DEVOPS_ENGINEER:        '\x1b[33m',   // yellow
+  PRODUCT_BUILDER:        '\x1b[35m',   // magenta
+  ARCHITECT:              '\x1b[34m',   // blue
+  DOCS_WRITER:            '\x1b[0m',    // default
+  ROADMAP_COMPILER:       '\x1b[35m',   // magenta
+  VERIFIER:               '\x1b[1;32m', // bold green
+  UNKNOWN:                '\x1b[0m',    // default
+};
+
+async function parseAgentRole(agentDir) {
+  const agentMd = join(agentDir, "AGENT.md");
+  try {
+    const content = await readFile(agentMd, "utf-8");
+    const firstLine = content.replace(/\r\n/g, "\n").split("\n")[0];
+    const match = firstLine.match(/\[(\w+)\]/);
+    return match ? match[1] : "UNKNOWN";
+  } catch {
+    return "UNKNOWN";
+  }
+}
+
+async function readProjectType() {
+  const profilePath = join(ROOT, "scanner-reports", "PROJECT-PROFILE.md");
+  try {
+    const content = (await readFile(profilePath, "utf-8")).replace(/\r\n/g, "\n");
+    // Extract project type
+    const typeMatch = content.match(/Project Type[:\s]*(\w[\w\s]*)/i);
+    const projectType = typeMatch ? typeMatch[1].trim() : "Unknown";
+    // Count active dimensions
+    const activeCount = (content.match(/\[x\]/gi) || []).length;
+    return { projectType, activeCount };
+  } catch {
+    return { projectType: "pending scan", activeCount: 0 };
+  }
+}
+
 async function showStatus() {
   const state = await loadState();
   const line = "═".repeat(60);
 
+  // V4: Read project type
+  const { projectType, activeCount } = await readProjectType();
+
   console.log(`\n${c.bold}${c.cyan}${line}${c.reset}`);
-  console.log(`${c.bold}  ORCHESTRATOR STATUS  |  Last update: ${state.updatedAt || "N/A"}${c.reset}`);
+  console.log(`${c.bold}  AGENT ORCHESTRATION DASHBOARD — V4${c.reset}`);
+  console.log(`${c.bold}  Project: ${basename(ROOT)} | Type: ${projectType} | Dims: ${activeCount}/24${c.reset}`);
   console.log(`${c.bold}${c.cyan}${line}${c.reset}\n`);
 
   const phases = [
@@ -1581,26 +1627,58 @@ async function showStatus() {
 
   for (const [name, phase] of phases) {
     const statusStr = (phase.status || "pending").toUpperCase();
-    const statusColor =
-      statusStr === "COMPLETE" ? `${c.green}${statusStr}${c.reset}` :
-      statusStr === "IN_PROGRESS" ? `${c.yellow}${statusStr}${c.reset}` :
-      statusStr === "FAILED" ? `${c.red}${statusStr}${c.reset}` :
-      `${c.dim}${statusStr}${c.reset}`;
     const dur = phase.duration ? formatDuration(phase.duration) : "--";
     const sess = phase.sessions || "--";
     console.log(`  ${name.padEnd(12)} ${statusStr.padEnd(14)} ${dur.padEnd(10)} ${sess}`);
   }
 
-  // Agent details
+  // V4: Agent details with role colors
   const batchData = state.phases.agents.batches || {};
+  const agentsDir = state.agentsDir || DEFAULTS.agentsDir;
+  const roleCounts = {};
+
   if (Object.keys(batchData).length > 0) {
     console.log(`\n  Agent Details:`);
     for (const [batchNum, batch] of Object.entries(batchData)) {
       console.log(`    Batch ${batchNum} (${batch.type}):`);
       for (const agent of batch.agents || []) {
         const icon = agent.status === "complete" ? `${c.green}✓${c.reset}` : `${c.red}✗${c.reset}`;
-        console.log(`      ${icon} Agent ${agent.id} (${agent.name}) — ${agent.attempts} sessions`);
+
+        // Parse role from AGENT.md
+        let role = "UNKNOWN";
+        const agentDirPath = join(ROOT, agentsDir, agent.name || `agent-${String(agent.id).padStart(2, "0")}`);
+        try {
+          role = await parseAgentRole(agentDirPath);
+        } catch { /* use UNKNOWN */ }
+
+        const roleColor = ROLE_COLORS[role] || ROLE_COLORS.UNKNOWN;
+        const roleLabel = isColorSupported ? `${roleColor}(${role})${c.reset}` : `(${role})`;
+
+        roleCounts[role] = (roleCounts[role] || 0) + 1;
+
+        const nameStr = (agent.name || `agent-${agent.id}`).padEnd(30);
+        console.log(`      ${icon} ${nameStr} ${agent.status.padEnd(10)} [${agent.attempts}]  ${roleLabel}`);
       }
+    }
+  }
+
+  // V4: Role distribution summary
+  if (Object.keys(roleCounts).length > 0) {
+    const roleSummary = Object.entries(roleCounts)
+      .map(([role, count]) => `${role}:${count}`)
+      .join(", ");
+    console.log(`\n  Roles: ${roleSummary}`);
+  }
+
+  // V4: Gate history
+  const gates = state.gateHistory || [];
+  if (gates.length > 0) {
+    console.log(`\n  Quality Gates:`);
+    for (const gate of gates) {
+      const icon = gate.status === "PASSED" ? `${c.green}PASS${c.reset}` :
+                   gate.status === "SKIPPED" ? `${c.yellow}SKIP${c.reset}` :
+                   `${c.red}FAIL${c.reset}`;
+      console.log(`    Batch ${gate.batch} (${gate.gateName}): ${icon}`);
     }
   }
 
