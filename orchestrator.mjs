@@ -827,7 +827,7 @@ async function runBuilder(cfg, state) {
 
   // Check if already complete
   const mc = await parseMasterContext(agentsDir);
-  if (mc && mc.status === "COMPLETE") {
+  if (mc && (mc.status === "COMPLETE" || mc.status === "BUILDER_COMPLETE")) {
     // Verify COMMANDS.md exists
     const dir = join(ROOT, agentsDir);
     try {
@@ -914,7 +914,7 @@ async function runBuilder(cfg, state) {
 
       // Exit 0, no signal — check file state
       const mcNow = await parseMasterContext(cfg.agentsDir);
-      if (mcNow && mcNow.status === "COMPLETE") {
+      if (mcNow && (mcNow.status === "COMPLETE" || mcNow.status === "BUILDER_COMPLETE")) {
         log("Builder complete (detected from file state)", "ok");
         break;
       }
@@ -937,7 +937,7 @@ async function runBuilder(cfg, state) {
   // Post-builder validation
   const agDir = cfg.agentsDir;
   const mcFinal = await parseMasterContext(agDir);
-  if (!mcFinal || mcFinal.status !== "COMPLETE") {
+  if (!mcFinal || (mcFinal.status !== "COMPLETE" && mcFinal.status !== "BUILDER_COMPLETE")) {
     log("Builder validation FAILED: MASTER-CONTEXT.md not COMPLETE", "error");
     state.phases.builder.status = "failed";
     await saveState(state);
