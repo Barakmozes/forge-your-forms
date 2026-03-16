@@ -805,6 +805,7 @@ export default function FeedbackDashboard({
                   </p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -861,6 +862,7 @@ export default function FeedbackDashboard({
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

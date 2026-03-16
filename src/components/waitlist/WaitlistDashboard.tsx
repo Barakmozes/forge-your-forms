@@ -412,12 +412,13 @@ export default function WaitlistDashboard({
                   </p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>{t('common.email')}</TableHead>
-                      <TableHead>{t('common.name')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('common.name')}</TableHead>
                       <TableHead className="text-right">{t('waitlist.referrals')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -440,7 +441,7 @@ export default function WaitlistDashboard({
                         <TableCell className="max-w-[180px] truncate text-sm">
                           {entry.email}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                           {entry.name ?? "--"}
                         </TableCell>
                         <TableCell className="text-right">
@@ -452,6 +453,7 @@ export default function WaitlistDashboard({
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global mobile overflow protection */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 @layer base {
   :root {
     --background: 150 20% 99%;

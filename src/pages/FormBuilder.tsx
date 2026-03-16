@@ -348,25 +348,25 @@ export default function FormBuilder() {
     <div className="flex flex-col h-screen bg-muted/10">
       {/* Top Bar */}
       <header className="h-14 border-b bg-background flex items-center justify-between px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 z-10">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/")}>
             <BackArrow className="h-4 w-4" />
           </Button>
-          <div className="w-full sm:w-64">
-            <Input 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
+          <div className="min-w-0 w-full sm:w-64">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="font-semibold border-none bg-transparent focus-visible:ring-1 h-8 px-2"
               placeholder={t("builder.formTitlePlaceholder")}
             />
           </div>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <span className="hidden sm:flex text-xs text-muted-foreground items-center gap-1">
             {saveStatus === "Saved" ? <CheckCircle2 className="h-3 w-3 text-success" /> : null}
             {saveStatusLabels[saveStatus]}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="h-8 w-28 text-xs">
               <SelectValue />

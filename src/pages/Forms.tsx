@@ -264,7 +264,7 @@ export default function Forms() {
   return (
     <AppLayout>
       <Tabs defaultValue="dashboard">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <TabsList className="h-9">
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs">
               <LayoutDashboard className="h-3.5 w-3.5" /> {t("forms.dashboard")}

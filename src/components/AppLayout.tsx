@@ -54,7 +54,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // === END AGENT 14 ===
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* === AGENT 16: Skip-to-content link (WCAG 2.4.1) === */}
       <a
         href="#main-content"
