@@ -134,7 +134,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Authenticate user via JWT decode (gateway already validated the token)
+    // Auth: verify_jwt is disabled (gateway was blocking valid JWTs).
+    // We validate the JWT ourselves via decodeJwtPayload().
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
