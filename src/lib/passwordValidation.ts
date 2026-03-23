@@ -17,7 +17,6 @@ export const PASSWORD_MIN_LENGTH = 8;
  * - At least one uppercase letter
  * - At least one lowercase letter
  * - At least one number
- * - At least one special character
  *
  * Usage in Auth.tsx signup handler:
  *   import { validatePassword } from "@/lib/passwordValidation";
@@ -43,9 +42,5 @@ export function validatePassword(password: string): PasswordValidationResult {
   if (!/[0-9]/.test(password)) {
     errors.push("At least one number required.");
   }
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    errors.push("At least one special character required.");
-  }
-
   return { valid: errors.length === 0, errors };
 }
