@@ -6,6 +6,7 @@
 // ============================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
+import { decodeJwtPayload } from "../_shared/supabase.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -141,7 +142,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate — only authorized users/services may trigger webhook delivery
+    // Authenticate via JWT decode (gateway already validated the token)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -150,12 +151,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-
-    if (authError || !user) {
+    let userId: string;
+    try {
+      const token = authHeader.replace("Bearer ", "");
+      ({ sub: userId } = decodeJwtPayload(token));
+    } catch (err) {
+      console.error("dispatch-webhook auth failed:", err instanceof Error ? err.message : err);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -175,7 +176,7 @@ Deno.serve(async (req) => {
     const { data: member, error: memberError } = await supabase
       .from("workspace_members")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("workspace_id", workspace_id)
       .maybeSingle();
 

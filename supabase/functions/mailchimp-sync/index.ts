@@ -5,7 +5,7 @@
 // Deploy: supabase functions deploy mailchimp-sync
 // ============================================
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decodeJwtPayload } from "../_shared/supabase.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -147,14 +147,10 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing authorization header" }, 401);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    try {
+      const token = authHeader.replace("Bearer ", "");
+      decodeJwtPayload(token);
+    } catch {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
   } catch {

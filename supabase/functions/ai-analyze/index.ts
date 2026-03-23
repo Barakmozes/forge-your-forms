@@ -7,11 +7,11 @@
 // ============================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.98.0";
+import { decodeJwtPayload } from "../_shared/supabase.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 
 // Admin client for cache operations (bypasses RLS)
@@ -79,26 +79,21 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Authenticate user via per-request client
+    // Authenticate user via JWT decode (gateway already validated the token)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("ai-analyze: missing Authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const {
-      data: { user },
-      error: authError,
-    } = await userClient.auth.getUser();
-
-    if (authError || !user) {
-      console.error("ai-analyze auth failed:", authError?.message, "Header present:", !!authHeader);
+    let userId: string;
+    try {
+      const token = authHeader.replace("Bearer ", "");
+      ({ sub: userId } = decodeJwtPayload(token));
+    } catch (err) {
+      console.error("ai-analyze auth failed:", err instanceof Error ? err.message : err);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -124,7 +119,7 @@ Deno.serve(async (req: Request) => {
     const { data: member } = await adminClient
       .from("workspace_members")
       .select("user_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("workspace_id", workspace_id)
       .maybeSingle();
 

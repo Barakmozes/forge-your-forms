@@ -29,10 +29,31 @@ export function createAdminClient(): SupabaseClient {
 }
 
 /**
+ * Decode and extract claims from a JWT payload without verification.
+ * The Supabase gateway (verify_jwt: true) already validates the token
+ * before Edge Functions execute, so we only need to decode the payload.
+ * Includes a defensive exp check as a safety net.
+ */
+export function decodeJwtPayload(token: string): { sub: string; email?: string } {
+  const parts = token.split(".");
+  if (parts.length !== 3) throw new Error("Invalid JWT format");
+  let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  const padLength = (4 - (base64.length % 4)) % 4;
+  base64 += "=".repeat(padLength);
+  const payloadJson = atob(base64);
+  const payload = JSON.parse(payloadJson);
+  if (!payload.sub) throw new Error("No sub claim in JWT");
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error("Token expired");
+  }
+  return { sub: payload.sub, email: payload.email };
+}
+
+/**
  * Authenticate a request using the Authorization header (JWT).
- * Creates a per-request Supabase client with the user's token
- * so that auth.getUser() resolves correctly (instead of using
- * the service-role client which can fail on cold starts).
+ * Decodes the JWT payload to extract user ID and email.
+ * The Supabase gateway validates the token before the function runs,
+ * so we only need to decode — no HTTP round-trip to auth service.
  * Returns the authenticated user or null.
  */
 export async function authenticateUser(
@@ -44,17 +65,12 @@ export async function authenticateUser(
     return null;
   }
 
-  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const {
-    data: { user },
-    error,
-  } = await userClient.auth.getUser();
-
-  if (error || !user) {
-    console.error("authenticateUser failed:", error?.message, "Header present:", !!authHeader);
+  try {
+    const token = authHeader.replace("Bearer ", "");
+    const { sub, email } = decodeJwtPayload(token);
+    return { id: sub, email };
+  } catch (err) {
+    console.error("authenticateUser failed:", err instanceof Error ? err.message : err);
     return null;
   }
-  return { id: user.id, email: user.email };
 }
